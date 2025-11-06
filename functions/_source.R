@@ -66,7 +66,7 @@ get_data <- function(type = c("tree", "box"), data_name, with_meta = FALSE, path
       ), call. = FALSE)
     }
     meta <- read_csv(file.path(path, meta_file), show_col_types = FALSE)
-    join_col <- if (type == "tree") "id_number" else "boxlabel"
+    join_col <- if (type == "tree") "tree_id" else "boxlabel"
     df <- df %>% left_join(meta, by = join_col)
   }
   

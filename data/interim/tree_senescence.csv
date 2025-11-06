@@ -1,4 +1,4 @@
-id_number,date,percent_senesced,chl1,chl2,chlavg,comment
+tree_id,date,percent_senesced,chl1,chl2,chlavg,comment
 1,2025-09-03,15,11.1,10.8,10.95,NA
 1,2025-09-10,20,10.8,6.1,8.45,NA
 1,2025-09-17,40,7.9,9.3,8.600000000000001,NA

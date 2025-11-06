@@ -1,4 +1,4 @@
-id_number,n_samples,weight_mm,weight_per_sample,area_mm2,weight_mg,sla_mm2_per_mg,comments
+tree_id,n_samples,weight_mm,weight_per_sample,area_mm2,weight_mg,sla_mm2_per_mg,comments
 1,4,0.06649,0.0166225,314.1592653589793,66.49,4.724909991863128,NA
 3,4,0.06901,0.0172525,314.1592653589793,69.01,4.552373067076935,NA
 7,4,0.07469,0.0186725,314.1592653589793,74.69000000000001,4.2061757311417765,NA
