@@ -6,13 +6,20 @@ library(lubridate)
 library(janitor)
 
 # Main Functions
-get_meta <- function(which){
+get_meta <- function(which = c("tree", "box", "both")) {
   if (which == "tree") {
     return(read_csv("./data/interim/meta_tree.csv"))
   } else if (which == "box") {
     return(read_csv("./data/interim/meta_box.csv"))
+  } else if (which == "both"){
+    return(
+      left_join(
+        read_csv("./data/interim/meta_tree.csv"),
+        read_csv("./data/interim/meta_box.csv"),
+      )
+    )
   } else {
-    stop("Invalid 'which' argument. Use 'tree' or 'box'.")
+    stop("Invalid 'which' argument. Use 'tree' or 'box' or 'both'.")
   }
 }
 
