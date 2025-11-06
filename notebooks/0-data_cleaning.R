@@ -24,18 +24,18 @@ meta_tree <- read_excel(fp, sheet = "All_labels") %>%
   remove_empty(which = "cols") %>%
   clean_names() %>%
   mutate(across(where(is.character), ~ tolower(trimws(.x)))) %>%
-  mutate(across(where(is.character), ~ gsub("-", "_", .x))) %>%
-  mutate(treelabel = sub("^[^-]+-", "", treelabel)) |> 
+  mutate(across(where(is.character), ~ gsub("_", "-", .x))) %>%
+  mutate(treelabel = sub("^[^-]+-", "", species_treelabel)) |> 
   rename(tree_id = id_number) %>%
   # Remove robinia and NA in id
-  filter(!is.na(species), species != "robinia")
+  filter(!is.na(species))
 
 # Box meta data
 meta_box <- read_excel(fp, sheet = "Label_Compartment") %>%
   remove_empty(which = "cols") %>%
   clean_names() %>%
   mutate(across(where(is.character), ~ tolower(trimws(.x)))) %>%
-  mutate(across(where(is.character), ~ gsub("-", "_", .x)))
+  mutate(across(where(is.character), ~ gsub("_", "-", .x)))
 
 # Save meta
 write_csv(meta_tree, "./data/interim/meta_tree.csv")
@@ -69,7 +69,8 @@ df <- read_excel(fp, sheet = "Fluoropen QY") %>%
 df <- df %>%
   left_join(meta_tree %>% select(treelabel, tree_id), by = "treelabel") %>%
   select(tree_id, date, qy) %>%
-  arrange(tree_id, date)
+  arrange(tree_id, date) |> 
+  filter(!is.na(tree_id))
 
 write_csv(df, "./data/interim/tree_quantym_yield.csv")
 glimpse(df)
@@ -92,12 +93,13 @@ df <- read_excel(fp, sheet = "Chlorophyll content") %>%
   select(treelabel, date, chl) %>%
   arrange(treelabel, date) %>%
   clean_names() %>%
-  mutate(across(where(is.character), ~ tolower(trimws(.x))))
+  mutate(across(where(is.character), ~ tolower(trimws(.x)))) 
 
 df <- df %>%
   left_join(meta_tree %>% select(tree_id, treelabel), by = "treelabel") %>%
   select(tree_id, date, chl) %>%
-  arrange(tree_id, date)
+  arrange(tree_id, date) |> 
+  filter(!is.na(tree_id))
 
 write_csv(df, "./data/interim/tree_chlorophyll.csv")
 glimpse(df)
@@ -128,7 +130,8 @@ df <- read_excel(fp, sheet = "Tree Condition") %>%
     comment   = as.character(comment)
   ) %>%
   select(tree_id, date, condition, comment) %>%
-  arrange(tree_id, date)
+  arrange(tree_id, date) |> 
+  filter(!is.na(tree_id))
 
 write_csv(df, "./data/interim/tree_condition.csv")
 glimpse(df)
@@ -164,7 +167,8 @@ df <- read_excel(fp, sheet = "Senescence") %>%
     chlavg           = rowMeans(cbind(chl1, chl2), na.rm = TRUE)
   ) %>%
   select(tree_id, date, percent_senesced, chl1, chl2, chlavg, comment) %>%
-  arrange(tree_id, date)
+  arrange(tree_id, date) |> 
+  filter(!is.na(tree_id))
 
 write_csv(df, "./data/interim/tree_senescence.csv")
 glimpse(df)
@@ -197,7 +201,8 @@ df <- read_excel(fp, sheet = "Growth_Measurements_D_H") %>%
     height    = parse_number(height_cm)
   ) %>%
   select(tree_id, date, diameter, height) %>%
-  arrange(tree_id, date)
+  arrange(tree_id, date) |> 
+  filter(!is.na(tree_id))
 
 write_csv(df, "./data/interim/tree_growth.csv")
 glimpse(df)
@@ -207,7 +212,8 @@ glimpse(df)
 df <- read_excel(fp, sheet = "SLA") %>%
   select(-Label) %>%
   rename_with(tolower) |> 
-  rename(tree_id = id_number)
+  rename(tree_id = id_number) |> 
+  filter(!is.na(tree_id))
 
 write_csv(df, "./data/interim/tree_sla.csv")
 glimpse(df)
@@ -216,8 +222,9 @@ glimpse(df)
 ## Phenology ----
 df <- read_excel(fp, sheet = "Phenology") %>%
   rename_with(tolower) %>%
-  select(id_number, starts_with("stage"), starts_with("doy")) |> 
-  rename(tree_id = id_number)
+  select(id_number, starts_with("stage"), starts_with("doy"), discard, comments,) |> 
+  rename(tree_id = id_number) |> 
+  filter(!is.na(tree_id))
 
 write_csv(df, "./data/interim/tree_phenology.csv")
 glimpse(df)
@@ -231,7 +238,7 @@ df <- read_excel(fp, sheet = "Soil isotope CN") %>%
   select(-Soil, -Robinia, -Condition) %>%
   rename_with(tolower) %>%
   mutate(across(where(is.character), ~ tolower(trimws(.x)))) %>%
-  mutate(across(where(is.character), ~ gsub("-", "_", .x)))
+  mutate(across(where(is.character), ~ gsub("_", "-", .x)))
 
 write_csv(df, "./data/interim/box_cn_isotopes.csv")
 glimpse(df)
@@ -242,7 +249,7 @@ df <- read_excel(fp, sheet = "Soil Water") %>%
   select(-Plot, -Bloc, -box, -Drought) %>%
   rename_with(tolower) %>%
   mutate(across(where(is.character), ~ tolower(trimws(.x)))) %>%
-  mutate(across(where(is.character), ~ gsub("-", "_", .x))) %>%
+  mutate(across(where(is.character), ~ gsub("_", "-", .x))) %>%
   pivot_longer(
     cols = matches("^\\d{2}\\.\\d{2}\\.\\d{4}$"),
     names_to = "date",
@@ -261,7 +268,7 @@ df <- read_excel(fp, sheet = "Soil Respiration") %>%
   select(-Species, -Treatment) %>%
   rename_with(tolower) %>%
   mutate(across(where(is.character), ~ tolower(trimws(.x)))) %>%
-  mutate(across(where(is.character), ~ gsub("-", "_", .x))) %>%
+  mutate(across(where(is.character), ~ gsub("_", "-", .x))) %>%
   pivot_longer(
     cols = starts_with("co2mean_"),
     names_to = "date",
