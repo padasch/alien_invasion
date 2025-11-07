@@ -4,26 +4,28 @@ library(ggalluvial)
 library(readxl)
 library(lubridate)
 library(janitor)
+library(ggpubr)
+library(ggpattern)
+library(rlang)
 
 # Main Functions
-get_meta <- function(which = c("tree", "box", "both")) {
+get_meta <- function(which = c("tree", "box")) {
   if (which == "tree") {
-    return(read_csv("./data/interim/meta_tree.csv"))
-  } else if (which == "box") {
-    return(read_csv("./data/interim/meta_box.csv"))
-  } else if (which == "both"){
     return(
       left_join(
-        read_csv("./data/interim/meta_tree.csv"),
-        read_csv("./data/interim/meta_box.csv"),
+        read_csv("./data/interim/meta_tree.csv",show_col_types = FALSE),
+        read_csv("./data/interim/meta_box.csv",show_col_types = FALSE),
+        by="boxlabel"
       )
     )
+  } else if (which == "box") {
+    return(read_csv("./data/interim/meta_box.csv", show_col_types = FALSE))
   } else {
-    stop("Invalid 'which' argument. Use 'tree' or 'box' or 'both'.")
+    stop("Invalid 'which' argument. Use 'tree' or 'box'.")
   }
 }
 
-get_data <- function(type = c("tree", "box"), data_name, with_meta = FALSE, path = "./data/interim") {
+get_data <- function(type = c("tree", "box"), data_name, with_meta = TRUE, path = "./data/interim") {
   type <- match.arg(type)
   if (missing(data_name) || !nzchar(data_name)) {
     stop("Provide data_name (e.g., 'growth', 'respiration', 'chlorophyll').", call. = FALSE)
@@ -65,16 +67,12 @@ get_data <- function(type = c("tree", "box"), data_name, with_meta = FALSE, path
   
   # Optionally attach meta
   if (with_meta) {
-    if (!meta_file %in% files) {
-      stop(paste0(
-        "❌ Meta file '", meta_file, "' not found in ", normalizePath(path, mustWork = FALSE), ".\n\n",
-        "Available meta files here: ",
-        paste(grep("^meta_(tree|box)\\.csv$", files, value = TRUE), collapse = ", ")
-      ), call. = FALSE)
+    if (type == "tree"){
+      df <- df %>% left_join(get_meta("tree"), by="tree_id")
+    } else {
+      df <- df %>% left_join(get_meta("box"), by="boxlabel")
     }
-    meta <- read_csv(file.path(path, meta_file), show_col_types = FALSE)
-    join_col <- if (type == "tree") "tree_id" else "boxlabel"
-    df <- df %>% left_join(meta, by = join_col)
+    
   }
   
   message("✅ Loaded ", data_file, if (with_meta) paste0(" with ", meta_file) else "")
