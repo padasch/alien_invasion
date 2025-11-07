@@ -1,0 +1,175 @@
+---
+title: "ALINV – Summary Figures"
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show code"
+execute:
+  warning: false
+  message: false
+  echo: true
+  results: hide
+output:
+  html_document: 
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    toc-expand: true     # <-- always fully open
+    code_folding: hide
+    highlight: espresso
+    theme: journal
+    fig_width: 10
+    fig_height: 10
+---
+
+```{r setup, include=FALSE}
+# Knitr settings
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  results = 'hide',  # hides console output
+  fig.show = 'hold'  # shows plots only
+)
+
+# Functions
+source("./functions/_source.R")
+source("./functions/0-summary_figures.R")
+
+# Global choice for soil type used by tree-level plots:
+soil_type <- "both"        # "both", "inoc-beech", or "inoc-robinia"
+```
+
+# Summary of Results for Soil Type: ==`r soil_type`==
+
+# Soil differences
+
+## Soil water content (SWC)
+```{r swc, fig.width=10, fig.height=5}
+plot_ts_swc(filter_soiltype = soil_type,
+            style = "band",
+            drought_bars = TRUE,
+            save_fig = FALSE, device = "pdf")
+```
+
+## Soil respiration (inoc-beech soil type only)
+```{r respiration}
+plot_ts_resp(filter_soiltype = soil_type,
+            style = "band",
+            drought_bars = TRUE,
+            save_fig = FALSE, device = "pdf")
+```
+
+## Soil C/N & isotopes
+
+```{r}
+boxplot_soil_cn_isotopes_simple()
+```
+
+```{r soil-cn-isotopes}
+boxplot_soil_cn_isotopes(save_fig = FALSE, device = "pdf") 
+```
+
+
+
+# Growing season start
+
+## Phenology
+```{r phenology-band}
+plot_ts_phenology(style = "band",
+                  filter_soiltype = soil_type,
+                  save_fig = FALSE, device = "pdf"
+                  )
+```
+
+## Specific leaf area (SLA)
+```{r sla}
+boxplot_sla(save_fig = FALSE, device = "pdf")
+```
+
+# Growth timeseries
+
+## Height increment
+```{r height-inc}
+plot_ts_height_inc(filter_soiltype = soil_type,
+                   style = "band",
+                   drought_bars = TRUE,
+                   save_fig = FALSE, device = "pdf")
+```
+
+## Diameter increment
+```{r diam-inc}
+plot_ts_diam_inc(filter_soiltype = soil_type,
+                 style = "band",
+                 drought_bars = TRUE,
+                 save_fig = FALSE, device = "pdf")
+```
+
+# Growth until extreme event
+
+## Up to 2025-07-09 (pre-extreme)
+```{r growth-pre-jul09}
+boxplot_growth_increment_on("2025-07-09", "height",
+                            filter_soiltype = soil_type,
+                            save_fig = FALSE, device = "pdf") 
+
+boxplot_growth_increment_on("2025-07-09", "diameter",
+                            filter_soiltype = soil_type,
+                            save_fig = FALSE, device = "pdf") 
+```
+
+## Up to 2025-09-29 (including extreme)
+```{r growth-incl-sep29}
+boxplot_growth_increment_on("2025-09-29", "height",
+                            filter_soiltype = soil_type,
+                            save_fig = FALSE, device = "pdf") 
+
+boxplot_growth_increment_on("2025-09-29", "diameter",
+                            filter_soiltype = soil_type,
+                            save_fig = FALSE, device = "pdf") 
+```
+
+# Performance during extreme event
+
+## Quantum yield (QY)
+```{r qy}
+plot_ts_qy(filter_soiltype = soil_type,
+           style = "band",
+           drought_bars = TRUE,
+           save_fig = FALSE, device = "pdf")
+```
+
+## Chlorophyll
+```{r chl}
+plot_ts_chl(filter_soiltype = soil_type,
+            style = "band",
+            drought_bars = TRUE,
+            save_fig = FALSE, device = "pdf")
+```
+
+## Tree condition (-)
+```{r condition}
+plot_ts_condition(filter_soiltype = soil_type,
+                  style = "band",
+                  drought_bars = TRUE,
+                  save_fig = FALSE, device = "pdf")
+```
+
+# Senescence
+
+## Senescence (%)
+```{r senescence, fig.width=10, fig.height=5}
+plot_ts_senescence_percent(filter_soiltype = soil_type,
+                           style = "band",
+                           drought_bars = FALSE,
+                           save_fig = FALSE, device = "pdf") 
+```
+
+## Senescence Chlorophyll
+```{r, fig.width=10, fig.height=5}
+plot_ts_senescence_chl(filter_soiltype = soil_type,
+                           style = "band",
+                           drought_bars = FALSE,
+                           save_fig = FALSE, device = "pdf") 
+```
+
