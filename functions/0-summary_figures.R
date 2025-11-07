@@ -12,7 +12,7 @@ PLOT_STYLE <- list(
     precipitation = c(control = "black", drought = "#D62728")
   ),
   linetypes = list(
-    culture = c(mono = "solid", mixed = "dashed")
+    culture = c(mono = "solid", mixed = "dotted")
   ),
   alphas = list(
     culture = c(mono = 0.8, mixed = 0.25)   # <- boxplots
