@@ -52,7 +52,7 @@ ggplot(df_summary,
       robinia = c(`without-robinia` = "without robinia",
                   `with-robinia`    = "with robinia"))
   ) +
-  scale_color_manual(values = c(control = "black", drought = "#D62728"),
+  scale_color_manual(values = c(control = "#4F6674", drought = "indianred"),
                      name = "Precipitation") +
   scale_linetype_manual(values = c(mixed = "solid", mono = "dashed"),
                         name = "Culture") +
@@ -96,9 +96,9 @@ df_sla %>%
       robinia = c(`without-robinia` = "without robinia",
                   `with-robinia`    = "with robinia"))
   ) +
-  scale_fill_manual(values = c(control = "grey70", drought = "#E64B35"),
+  scale_fill_manual(values = c(control = "grey70", drought = "indianred"),
                     name = "Precipitation") +
-  scale_color_manual(values = c(control = "black", drought = "#D62728"),
+  scale_color_manual(values = c(control = "#4F6674", drought = "indianred"),
                      name = "Precipitation") +
   scale_alpha_manual(values = c(mixed = 1, mono = 0.6),
                      name = "Culture") +
@@ -106,11 +106,16 @@ df_sla %>%
     x = "Culture", y = expression(SLA~(mm^2~mg^-1)),
     title = "Specific Leaf Area (SLA) across species, precipitation, culture, and robinia"
   ) +
-  theme_minimal(base_size = 12) +
+  theme_bw(base_size = 12) +
   theme(
     legend.position = "bottom",
-    axis.line.x.bottom = element_line(),
-    axis.line.y.left   = element_line()
+    panel.grid.major = element_line(color = "lightgrey", linewidth = 0.3),
+    panel.grid.minor = element_line(color = "lightgrey", linewidth = 0.2),
+    panel.grid.major.x = element_line(),
+    panel.grid.major.y = element_line(),
+    panel.grid.minor.x = element_line(),
+    panel.grid.minor.y = element_line(),
+    # panel.border = element_rect(color = "black", fill = NA, linewidth = 0.4)
   )
 
 # Growth ------------------------------------------------------------------------------------
@@ -164,8 +169,8 @@ ggplot(df_plot, aes(
     cols = vars(robinia),
     scales = "fixed"
   ) +
-  scale_color_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
-  scale_fill_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
+  scale_color_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
+  scale_fill_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
   scale_x_date(date_labels = "%m/%y") +
   coord_cartesian(ylim = c(0, 8)) + # Diameter
   labs(
@@ -217,8 +222,8 @@ ggplot(df_plot, aes(
     cols = vars(robinia),
     scales = "fixed"
   ) +
-  scale_color_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
-  scale_fill_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
+  scale_color_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
+  scale_fill_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
   scale_x_date(date_labels = "%m/%y") +
   coord_cartesian(ylim = c(0, 75)) + # Height
   labs(
@@ -262,8 +267,8 @@ df_growth %>%
       `with-robinia` = "with robinia"
     ))
   ) +
-  scale_color_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
-  scale_fill_manual(values = c(control = "grey70", drought = "#E64B35"), name = "Precipitation") +
+  scale_color_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
+  scale_fill_manual(values = c(control = "grey70", drought = "indianred"), name = "Precipitation") +
   scale_alpha_manual(values = c(mixed = 1, mono = 0.6), name = "Culture") +
   labs(
     x = "Culture", y = "Diameter increment (mm)",
@@ -310,7 +315,7 @@ df_growth %>%
       `with-robinia` = "with robinia"
     ))
   ) +
-  scale_color_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
+  scale_color_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
   scale_fill_manual(values = c(control = "grey70", drought = "#E64B35"), name = "Precipitation") +
   scale_alpha_manual(values = c(mixed = 1, mono = 0.1), name = "Culture") +
   labs(
@@ -324,7 +329,7 @@ df_growth %>%
 # Quantum Yield -------------------------------------------------------------------------------
 
 # Load quantum yield data
-df_qy <- get_data("tree", "quantym_yield")
+df_qy <- get_data("tree", "quantum_yield")
 
 # Choose soiltype filter
 filter_soiltype <- "inoc-robinia"
@@ -367,8 +372,8 @@ ggplot(df_plot, aes(
     cols = vars(robinia),
     scales = "fixed"
   ) +
-  scale_color_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
-  scale_fill_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
+  scale_color_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
+  scale_fill_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
   scale_x_date(date_labels = "%m/%y") +
   coord_cartesian(ylim = c(0, 1)) +
   labs(
@@ -427,8 +432,8 @@ ggplot(df_plot, aes(
     cols = vars(robinia),
     scales = "fixed"
   ) +
-  scale_color_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
-  scale_fill_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
+  scale_color_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
+  scale_fill_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
   scale_x_date(date_labels = "%m/%y") +
   coord_cartesian(ylim = c(0, 100)) +
   labs(
@@ -477,8 +482,8 @@ ggplot(df_plot, aes(
     cols = vars(robinia),
     scales = "fixed"
   ) +
-  scale_color_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
-  scale_fill_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
+  scale_color_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
+  scale_fill_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
   scale_x_date(date_labels = "%m/%y") +
   coord_cartesian(ylim = c(0, 22)) +
   labs(
@@ -536,8 +541,8 @@ ggplot(df_plot, aes(
     cols = vars(robinia),
     scales = "fixed"
   ) +
-  scale_color_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
-  scale_fill_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
+  scale_color_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
+  scale_fill_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
   scale_x_date(date_labels = "%m/%y") +
   coord_cartesian(ylim = c(0, 5)) +
   labs(
@@ -585,7 +590,7 @@ df %>%
     y = -1, yend = -1,
     size = 2.5, color = "orange", lineend = "round"
   ) +
-  geom_hline(yintercept = 0, linetype = "solid", color = "black") +
+  geom_hline(yintercept = 0, linetype = "solid", color = "#4F6674") +
   geom_hline(yintercept = 7.5, linetype = "dotted", color = "gray40") +
   # geom_vline(xintercept = lubridate::ymd("2025-06-20"), linetype = "solid", color = "orange") +
   # geom_vline(xintercept = lubridate::ymd("2025-07-02"), linetype = "solid", color = "orange") +
@@ -602,8 +607,8 @@ df %>%
     )),
     scales = "fixed"
   ) +
-  scale_color_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
-  scale_fill_manual(values = c(control = "black", drought = "#D62728"), name = "Precipitation") +
+  scale_color_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
+  scale_fill_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
   scale_linetype_manual(
     values = c(inoc_beech = "dashed", inoc_robinia = "solid"),
     labels = c(inoc_beech = "beech soil", inoc_robinia = "robinia soil"),
