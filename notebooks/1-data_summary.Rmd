@@ -4,23 +4,26 @@ date: "`r format(Sys.Date(), '%d %b %Y')`"
 format:
   html:
     code-fold: true
-    code-summary: "Show code"
+    code-summary: Show code
+output:
+  pdf_document:
+    toc: true
+    toc_depth: '3'
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    toc-expand: true
+    code_folding: hide
+    highlight: espresso
+    theme: journal
+    fig_width: 6
+    fig_height: 8
 execute:
   warning: false
   message: false
   echo: true
   results: hide
-output:
-  html_document: 
-    toc: true
-    toc_depth: 3
-    toc_float: true
-    toc-expand: true     # <-- always fully open
-    code_folding: hide
-    highlight: espresso
-    theme: journal
-    fig_width: 10
-    fig_height: 10
 ---
 
 ```{r setup, include=FALSE}
@@ -52,7 +55,7 @@ plot_ts_swc(filter_soiltype = soil_type,
             save_fig = FALSE, device = "pdf")
 ```
 
-## Soil respiration (inoc-beech soil type only)
+## Soil respiration (inoc-robinia soil type only)
 ```{r respiration, fig.width=10, fig.height=5}
 plot_ts_resp(filter_soiltype = soil_type,
             style = "band",
@@ -62,7 +65,7 @@ plot_ts_resp(filter_soiltype = soil_type,
 
 ## Soil C/N & isotopes
 
-```{r}
+```{r isotopes, fig.width=10, fig.height=10}
 boxplot_soil_cn_isotopes_simple()
 ```
 
