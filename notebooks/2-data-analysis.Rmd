@@ -1,0 +1,148 @@
+---
+params:
+  soil_type: "both"
+title: "2-data-analysis"
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+format:
+  html:
+    code-fold: true
+    code-summary: Show code
+output:
+  pdf_document:
+    toc: true
+    toc_depth: '3'
+    fig_width: 10  
+    fig_height: 6
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: false
+    toc-expand: true
+    code_folding: hide
+    highlight: espresso
+    theme: journal
+    fig_width: 12
+    fig_height: 10
+execute:
+  warning: false
+  message: false
+  echo: true
+  results: hide
+output_file: '`r paste0("2-data-analysis-soil-", params$soil_type, ".pdf")`'
+---
+
+```{r setup, include=FALSE}
+# Knitr settings
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  results = 'hide',  # hides console output
+  fig.show = 'hold'  # shows plots only
+)
+
+# # Functions
+source("./functions/_source.R")
+source("./functions/1-data_analysis.R")
+```
+
+# Effect sizes of treatments over time
+
+```{r, include=TRUE}
+# Global choice for soil type used by tree-level plots:
+soil_type <- params$soil_type
+print(paste0("Using Soil Type: ", soil_type))
+```
+
+# Fagus
+
+```{r}
+species <- "fagus"
+```
+
+## Growth
+
+```{r}
+make_effect_figure_generic(
+  type = "tree", data_name = "growth", resp_var = "height", target_species = species, soil_type = soil_type
+)$plot
+```
+
+```{r}
+make_effect_figure_generic(
+  type = "tree", data_name = "growth", resp_var = "diameter", target_species = species, soil_type = soil_type
+)$plot
+```
+
+## Chlorophyll
+
+```{r}
+make_effect_figure_generic(
+  type = "tree", data_name = "chlorophyll", resp_var = "chl", target_species = species, soil_type = soil_type
+)$plot
+```
+
+## Quantum Yield Efficiency
+
+```{r}
+make_effect_figure_generic(
+  type = "tree", data_name = "quantum_yield", resp_var = "qy", target_species = species, soil_type = soil_type
+)$plot
+```
+
+## Tree Stress
+
+```{r}
+make_effect_figure_generic(
+  type = "tree", data_name = "condition", resp_var = "condition", target_species = species, soil_type = soil_type
+)$plot
+```
+
+## Senescence
+
+```{r}
+make_effect_figure_generic(
+  type = "tree", data_name = "senescence", resp_var = "percent_senesced", target_species = species, soil_type = soil_type
+)$plot
+```
+
+```{r}
+make_effect_figure_generic(
+  type = "tree", data_name = "senescence", resp_var = "chlavg", target_species = species, soil_type = soil_type
+)$plot
+```
+
+# Quercus
+
+```{r}
+species <- "quercus"
+```
+
+## Growth
+
+```{r}
+make_effect_figure_generic(
+  type = "tree", data_name = "growth", resp_var = "height", target_species = species, soil_type = soil_type
+)$plot
+```
+
+```{r}
+make_effect_figure_generic(
+  type = "tree", data_name = "growth", resp_var = "diameter", target_species = species, soil_type = soil_type
+)$plot
+```
+
+## Chlorophyll
+
+```{r}
+make_effect_figure_generic(
+  type = "tree", data_name = "chlorophyll", resp_var = "chl", target_species = species, soil_type = soil_type
+)$plot
+```
+
+## Quantum Yield Efficiency
+
+```{r}
+make_effect_figure_generic(
+  type = "tree", data_name = "quantum_yield", resp_var = "qy", target_species = species, soil_type = soil_type
+)$plot
+```
