@@ -9,7 +9,8 @@ PLOT_STYLE <- list(
     soiltype      = c("inoc_beech","inoc_robinia")
   ),
   colors = list(
-    precipitation = c(control = "black", drought = "#D62728")
+    precipitation = c(control = "#4F6674", drought = "indianred")
+    # precipitation = c(control = "#4F6674", drought = "indianred")
   ),
   linetypes = list(
     culture = c(mono = "solid", mixed = "dotted")
@@ -69,16 +70,19 @@ normalize_factors_soil <- function(df) {
 
 # -------- universal theme & scales --------
 theme_common <- function() {
-  theme_grey(base_size = 12) +
-    theme(
-      legend.position = "bottom",
-    )
-  # theme_classic(base_size = 12) +
-  #   theme(
-  #     legend.position = "bottom",
-  #     axis.line.x.bottom = element_line(),
-  #     axis.line.y.left   = element_line()
-  #   )
+  theme_linedraw() +
+  theme(
+    legend.position = "bottom",
+    panel.grid.major = element_line(color = "lightgrey", linewidth = 0.3),
+    panel.grid.minor = element_line(color = "lightgrey", linewidth = 0.2),
+    panel.grid.major.x = element_line(),
+    panel.grid.major.y = element_line(),
+    panel.grid.minor.x = element_line(),
+    strip.text = element_text(face = "bold"),
+    # panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 0.4)  # keeps full borders in facets
+  )
 }
 scale_precip_color <- function(name = "Precipitation") {
   scale_color_manual(values = PLOT_STYLE$colors$precipitation, name = name)
@@ -335,7 +339,7 @@ plot_ts_qy <- function(filter_soiltype = c("both", "inoc-beech", "inoc-robinia")
                        drought_bars = FALSE,
                        save_fig = FALSE, device = "pdf") {
   
-  df <- get_data("tree","quantym_yield") %>%
+  df <- get_data("tree","quantum_yield") %>%
     { if (filter_soiltype != "both") filter(., soiltype == filter_soiltype) else . } %>%
     filter(!is.na(qy)) %>%
     normalize_factors_tree()
@@ -487,8 +491,8 @@ plot_ts_resp <- function(filter_soiltype = c("both","inoc-beech","inoc-robinia")
   
   filter_soiltype <- match.arg(filter_soiltype)
   
-  if (filter_soiltype != "inoc-beech"){
-    print("🚨 Soil respiration data only available for inoc-beech soil type.")
+  if (filter_soiltype != "inoc-robinia"){
+    print("🚨 Soil respiration data only available for inoc-robinia soil type.")
     return ()
   }
   
