@@ -52,3 +52,7 @@ rsconnect/
 _archive/*
 notebooks/*.html
 /output
+*.xlsx
+*.dat
+*.pdf
+*.xlsx
