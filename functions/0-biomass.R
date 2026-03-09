@@ -134,10 +134,11 @@ fit_biomass_glmm <- function(df_biomass, species_keep = "fagus", metric = "root_
       robinia       = factor(robinia,       levels = c("without-robinia", "with-robinia")),
       soiltype_f    = factor(soiltype,      levels = c("inoc-beech", "inoc-robinia"))
     ) %>%
-    rename(y = !!metric)
+    rename(y = !!metric) %>%
+    mutate(y_z = as.numeric(scale(y)))
 
   mod <- lme4::lmer(
-    y ~ precipitation + culture + robinia + soiltype_f + (1 | boxlabel),
+    y_z ~ precipitation + culture + robinia + soiltype_f + (1 | boxlabel),
     data = df_m,
     REML = TRUE
   )
@@ -199,32 +200,22 @@ plot_biomass_effects <- function(df_effects) {
     root_shoot_biomass = "Root:shoot biomass"
   )
 
-  # Normalize estimates to [-1, 1] within each metric
   df_effects <- df_effects %>%
     mutate(
       term_label   = .rename_glmm_terms(term),
       metric_label = metric_labels[metric]
-    ) %>%
-    group_by(metric) %>%
-    mutate(
-      max_abs      = max(abs(estimate), na.rm = TRUE),
-      norm_est     = if_else(max_abs > 0, estimate / max_abs, 0),
-      norm_ci_lo   = if_else(max_abs > 0, ci_lo / max_abs, 0),
-      norm_ci_hi   = if_else(max_abs > 0, ci_hi / max_abs, 0)
-    ) %>%
-    ungroup()
+    )
 
   ggplot2::ggplot(df_effects, ggplot2::aes(
-    x = term_label, y = norm_est, color = significant
+    x = term_label, y = estimate, color = significant
   )) +
     ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
     ggplot2::geom_pointrange(
-      ggplot2::aes(ymin = norm_ci_lo, ymax = norm_ci_hi),
+      ggplot2::aes(ymin = ci_lo, ymax = ci_hi),
       size = 0.6, linewidth = 0.7, fatten = 2.5
     ) +
-    ggplot2::facet_wrap(~ metric_label, ncol = 1) +
-    ggplot2::coord_flip(ylim = c(-1, 1)) +
-    ggplot2::scale_y_continuous(breaks = seq(-1, 1, 0.5)) +
+    ggplot2::facet_wrap(~ metric_label, ncol = 1, scales = "free_x") +
+    ggplot2::coord_flip() +
     ggplot2::scale_color_manual(
       values = c(`TRUE` = "indianred", `FALSE` = "grey50"),
       labels = c(`TRUE` = "95% CI excludes 0", `FALSE` = "95% CI includes 0"),
@@ -232,7 +223,7 @@ plot_biomass_effects <- function(df_effects) {
     ) +
     ggplot2::labs(
       title = paste("Treatment effects on biomass \u2013", df_effects$species[1]),
-      x = NULL, y = "Normalized effect (\u00b195% CI)"
+      x = NULL, y = "Standardized effect (SD units, \u00b195% CI)"
     ) +
     ggplot2::theme_bw(base_size = 11) +
     ggplot2::theme(
