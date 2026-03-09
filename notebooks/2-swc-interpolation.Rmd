@@ -434,33 +434,285 @@ p_que <- plot_importance_panel(summarise_importance(infl_df, "quercus"), "Quercu
 
 ## Full SEM Figure Comparison
 
-```{r swc-comp-sem-figures, results='asis', fig.width=16, fig.height=7}
+```{r swc-comp-helpers-get}
 get_swc_fit <- function(sec, dn, rv, sp, int, src) {
   swc_fit_tasks %>%
     filter(.data$section == sec, .data$data_name == dn, .data$resp_var == rv,
            .data$species == sp, .data$include_interaction == int, .data$swc_source == src) %>%
     pull(result) %>% .[[1]]
 }
+```
 
-for (i in seq_len(nrow(swc_model_grid))) {
-  row <- swc_model_grid[i, ]
-  cat("\n\n### ", row$section, "\n", sep = "")
-  for (sp in species_levels) {
-    cat("\n\n#### Species: ", sp, "\n", sep = "")
+### Chlorophyll
 
-    res_meas <- get_swc_fit(row$section, row$data_name, row$resp_var, sp, FALSE, "measured")
-    res_imp  <- get_swc_fit(row$section, row$data_name, row$resp_var, sp, FALSE, "imputed_gam")
-    cat("\n\n##### No Interaction\n")
-    print(plot_sem_pair(res_meas, res_imp,
-      paste0("SEM no interaction: ", row$data_name, "/", row$resp_var, "/", sp)))
+#### Fagus
 
-    res_meas_int <- get_swc_fit(row$section, row$data_name, row$resp_var, sp, TRUE, "measured")
-    res_imp_int  <- get_swc_fit(row$section, row$data_name, row$resp_var, sp, TRUE, "imputed_gam")
-    cat("\n\n##### With Interaction\n")
-    print(plot_sem_pair(res_meas_int, res_imp_int,
-      paste0("SEM with interaction: ", row$data_name, "/", row$resp_var, "/", sp)))
-  }
-}
+```{r sem-chl-fagus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Chlorophyll", "chlorophyll", "chl", "fagus", FALSE, "measured"),
+  get_swc_fit("Chlorophyll", "chlorophyll", "chl", "fagus", FALSE, "imputed_gam"),
+  "SEM no interaction: chlorophyll/chl/fagus")
+```
+
+```{r sem-chl-fagus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Chlorophyll", "chlorophyll", "chl", "fagus", TRUE, "measured"),
+  get_swc_fit("Chlorophyll", "chlorophyll", "chl", "fagus", TRUE, "imputed_gam"),
+  "SEM with interaction: chlorophyll/chl/fagus")
+```
+
+#### Quercus
+
+```{r sem-chl-quercus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Chlorophyll", "chlorophyll", "chl", "quercus", FALSE, "measured"),
+  get_swc_fit("Chlorophyll", "chlorophyll", "chl", "quercus", FALSE, "imputed_gam"),
+  "SEM no interaction: chlorophyll/chl/quercus")
+```
+
+```{r sem-chl-quercus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Chlorophyll", "chlorophyll", "chl", "quercus", TRUE, "measured"),
+  get_swc_fit("Chlorophyll", "chlorophyll", "chl", "quercus", TRUE, "imputed_gam"),
+  "SEM with interaction: chlorophyll/chl/quercus")
+```
+
+### Tree Condition
+
+#### Fagus
+
+```{r sem-cond-fagus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Tree Condition", "condition", "condition", "fagus", FALSE, "measured"),
+  get_swc_fit("Tree Condition", "condition", "condition", "fagus", FALSE, "imputed_gam"),
+  "SEM no interaction: condition/condition/fagus")
+```
+
+```{r sem-cond-fagus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Tree Condition", "condition", "condition", "fagus", TRUE, "measured"),
+  get_swc_fit("Tree Condition", "condition", "condition", "fagus", TRUE, "imputed_gam"),
+  "SEM with interaction: condition/condition/fagus")
+```
+
+#### Quercus
+
+```{r sem-cond-quercus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Tree Condition", "condition", "condition", "quercus", FALSE, "measured"),
+  get_swc_fit("Tree Condition", "condition", "condition", "quercus", FALSE, "imputed_gam"),
+  "SEM no interaction: condition/condition/quercus")
+```
+
+```{r sem-cond-quercus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Tree Condition", "condition", "condition", "quercus", TRUE, "measured"),
+  get_swc_fit("Tree Condition", "condition", "condition", "quercus", TRUE, "imputed_gam"),
+  "SEM with interaction: condition/condition/quercus")
+```
+
+### Growth Height
+
+#### Fagus
+
+```{r sem-height-fagus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Growth Height", "growth", "height", "fagus", FALSE, "measured"),
+  get_swc_fit("Growth Height", "growth", "height", "fagus", FALSE, "imputed_gam"),
+  "SEM no interaction: growth/height/fagus")
+```
+
+```{r sem-height-fagus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Growth Height", "growth", "height", "fagus", TRUE, "measured"),
+  get_swc_fit("Growth Height", "growth", "height", "fagus", TRUE, "imputed_gam"),
+  "SEM with interaction: growth/height/fagus")
+```
+
+#### Quercus
+
+```{r sem-height-quercus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Growth Height", "growth", "height", "quercus", FALSE, "measured"),
+  get_swc_fit("Growth Height", "growth", "height", "quercus", FALSE, "imputed_gam"),
+  "SEM no interaction: growth/height/quercus")
+```
+
+```{r sem-height-quercus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Growth Height", "growth", "height", "quercus", TRUE, "measured"),
+  get_swc_fit("Growth Height", "growth", "height", "quercus", TRUE, "imputed_gam"),
+  "SEM with interaction: growth/height/quercus")
+```
+
+### Growth Diameter
+
+#### Fagus
+
+```{r sem-diameter-fagus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Growth Diameter", "growth", "diameter", "fagus", FALSE, "measured"),
+  get_swc_fit("Growth Diameter", "growth", "diameter", "fagus", FALSE, "imputed_gam"),
+  "SEM no interaction: growth/diameter/fagus")
+```
+
+```{r sem-diameter-fagus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Growth Diameter", "growth", "diameter", "fagus", TRUE, "measured"),
+  get_swc_fit("Growth Diameter", "growth", "diameter", "fagus", TRUE, "imputed_gam"),
+  "SEM with interaction: growth/diameter/fagus")
+```
+
+#### Quercus
+
+```{r sem-diameter-quercus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Growth Diameter", "growth", "diameter", "quercus", FALSE, "measured"),
+  get_swc_fit("Growth Diameter", "growth", "diameter", "quercus", FALSE, "imputed_gam"),
+  "SEM no interaction: growth/diameter/quercus")
+```
+
+```{r sem-diameter-quercus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Growth Diameter", "growth", "diameter", "quercus", TRUE, "measured"),
+  get_swc_fit("Growth Diameter", "growth", "diameter", "quercus", TRUE, "imputed_gam"),
+  "SEM with interaction: growth/diameter/quercus")
+```
+
+### Phenology Stage
+
+#### Fagus
+
+```{r sem-phenology-fagus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Phenology Stage", "phenology", "stage", "fagus", FALSE, "measured"),
+  get_swc_fit("Phenology Stage", "phenology", "stage", "fagus", FALSE, "imputed_gam"),
+  "SEM no interaction: phenology/stage/fagus")
+```
+
+```{r sem-phenology-fagus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Phenology Stage", "phenology", "stage", "fagus", TRUE, "measured"),
+  get_swc_fit("Phenology Stage", "phenology", "stage", "fagus", TRUE, "imputed_gam"),
+  "SEM with interaction: phenology/stage/fagus")
+```
+
+#### Quercus
+
+```{r sem-phenology-quercus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Phenology Stage", "phenology", "stage", "quercus", FALSE, "measured"),
+  get_swc_fit("Phenology Stage", "phenology", "stage", "quercus", FALSE, "imputed_gam"),
+  "SEM no interaction: phenology/stage/quercus")
+```
+
+```{r sem-phenology-quercus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Phenology Stage", "phenology", "stage", "quercus", TRUE, "measured"),
+  get_swc_fit("Phenology Stage", "phenology", "stage", "quercus", TRUE, "imputed_gam"),
+  "SEM with interaction: phenology/stage/quercus")
+```
+
+### Quantum Yield
+
+#### Fagus
+
+```{r sem-qy-fagus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Quantum Yield", "quantum_yield", "qy", "fagus", FALSE, "measured"),
+  get_swc_fit("Quantum Yield", "quantum_yield", "qy", "fagus", FALSE, "imputed_gam"),
+  "SEM no interaction: quantum_yield/qy/fagus")
+```
+
+```{r sem-qy-fagus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Quantum Yield", "quantum_yield", "qy", "fagus", TRUE, "measured"),
+  get_swc_fit("Quantum Yield", "quantum_yield", "qy", "fagus", TRUE, "imputed_gam"),
+  "SEM with interaction: quantum_yield/qy/fagus")
+```
+
+#### Quercus
+
+```{r sem-qy-quercus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Quantum Yield", "quantum_yield", "qy", "quercus", FALSE, "measured"),
+  get_swc_fit("Quantum Yield", "quantum_yield", "qy", "quercus", FALSE, "imputed_gam"),
+  "SEM no interaction: quantum_yield/qy/quercus")
+```
+
+```{r sem-qy-quercus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Quantum Yield", "quantum_yield", "qy", "quercus", TRUE, "measured"),
+  get_swc_fit("Quantum Yield", "quantum_yield", "qy", "quercus", TRUE, "imputed_gam"),
+  "SEM with interaction: quantum_yield/qy/quercus")
+```
+
+### Senescence Percent
+
+#### Fagus
+
+```{r sem-senpct-fagus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Senescence Percent", "senescence", "percent_senesced", "fagus", FALSE, "measured"),
+  get_swc_fit("Senescence Percent", "senescence", "percent_senesced", "fagus", FALSE, "imputed_gam"),
+  "SEM no interaction: senescence/percent_senesced/fagus")
+```
+
+```{r sem-senpct-fagus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Senescence Percent", "senescence", "percent_senesced", "fagus", TRUE, "measured"),
+  get_swc_fit("Senescence Percent", "senescence", "percent_senesced", "fagus", TRUE, "imputed_gam"),
+  "SEM with interaction: senescence/percent_senesced/fagus")
+```
+
+#### Quercus
+
+```{r sem-senpct-quercus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Senescence Percent", "senescence", "percent_senesced", "quercus", FALSE, "measured"),
+  get_swc_fit("Senescence Percent", "senescence", "percent_senesced", "quercus", FALSE, "imputed_gam"),
+  "SEM no interaction: senescence/percent_senesced/quercus")
+```
+
+```{r sem-senpct-quercus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Senescence Percent", "senescence", "percent_senesced", "quercus", TRUE, "measured"),
+  get_swc_fit("Senescence Percent", "senescence", "percent_senesced", "quercus", TRUE, "imputed_gam"),
+  "SEM with interaction: senescence/percent_senesced/quercus")
+```
+
+### Senescence Chlorophyll
+
+#### Fagus
+
+```{r sem-senchl-fagus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Senescence Chlorophyll", "senescence", "chlavg", "fagus", FALSE, "measured"),
+  get_swc_fit("Senescence Chlorophyll", "senescence", "chlavg", "fagus", FALSE, "imputed_gam"),
+  "SEM no interaction: senescence/chlavg/fagus")
+```
+
+```{r sem-senchl-fagus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Senescence Chlorophyll", "senescence", "chlavg", "fagus", TRUE, "measured"),
+  get_swc_fit("Senescence Chlorophyll", "senescence", "chlavg", "fagus", TRUE, "imputed_gam"),
+  "SEM with interaction: senescence/chlavg/fagus")
+```
+
+#### Quercus
+
+```{r sem-senchl-quercus-noint, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Senescence Chlorophyll", "senescence", "chlavg", "quercus", FALSE, "measured"),
+  get_swc_fit("Senescence Chlorophyll", "senescence", "chlavg", "quercus", FALSE, "imputed_gam"),
+  "SEM no interaction: senescence/chlavg/quercus")
+```
+
+```{r sem-senchl-quercus-int, fig.width=16, fig.height=7}
+plot_sem_pair(
+  get_swc_fit("Senescence Chlorophyll", "senescence", "chlavg", "quercus", TRUE, "measured"),
+  get_swc_fit("Senescence Chlorophyll", "senescence", "chlavg", "quercus", TRUE, "imputed_gam"),
+  "SEM with interaction: senescence/chlavg/quercus")
 ```
 
 ---
