@@ -1,0 +1,838 @@
+---
+title: 'ALINV – Comprehensive Analysis: Timeseries & Modeling Results'
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    code_folding: hide
+    highlight: espresso
+    theme: journal
+    fig_width: 9
+    fig_height: 6
+execute:
+  warning: false
+  message: false
+  echo: true
+  results: hide
+---
+
+```{r setup, include=FALSE}
+# Knitr settings
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  results = 'hide',
+  fig.show = 'hold',
+  fig.width = 9,
+  fig.height = 6
+)
+
+# Resolve project root from notebook location (robust to knit working directory)
+input_file <- knitr::current_input()
+input_dir <- dirname(normalizePath(input_file, winslash = "/", mustWork = TRUE))
+proj_root <- normalizePath(file.path(input_dir, ".."), winslash = "/", mustWork = TRUE)
+
+# Functions
+source(file.path(proj_root, "functions", "_source.R"))
+source(file.path(proj_root, "functions", "0-summary_figures.R"))
+source(file.path(proj_root, "functions", "x-effect-size-factorial.R"))
+source(file.path(proj_root, "scripts", "x-structural-equation-model.R"))
+source(file.path(proj_root, "scripts", "x-effect-size-model-aggregation.R"))
+source(file.path(proj_root, "scripts", "x-combining-glmm-sem.R"))
+
+# Global choices
+soil_type <- "both"        # "both", "inoc-beech", or "inoc-robinia"
+species_vec <- c("fagus", "quercus")
+```
+
+---
+
+# Overview: Treatment Effects Summary
+
+This section provides an aggregate view of temporal treatment effects across all tree variables.
+
+```{r treatment-effects-overview, fig.width=6, fig.height=12}
+# Collect all temporal GLMM effects across variables and species
+all_eff <- collect_all_effects(
+  var_grid    = get_data_var_grid() %>% dplyr::filter(type == "tree"),
+  species_vec = c("fagus", "quercus"),
+  soil_type   = "both"
+)
+
+if (nrow(all_eff) > 0) {
+  all_eff_imp <- all_eff %>% 
+    add_importance_metric(use_stat = FALSE, scale_within = TRUE)
+  all_eff_imp_phase <- add_phase_to_effects(all_eff_imp)
+  
+  # Overall effects across all species
+  p_all <- plot_treatment_importance_phases(
+    all_eff_imp_phase, 
+    stat = "mean_se"
+  ) + coord_cartesian(ylim = c(0, 3)) + ggtitle("All species")
+  
+  # Fagus only
+  p_fag <- plot_treatment_importance_phases(
+    all_eff_imp_phase %>% dplyr::filter(species == "fagus"),
+    stat = "mean_se"
+  ) + coord_cartesian(ylim = c(0, 3)) + ggtitle("Fagus")
+  
+  # Quercus only
+  p_que <- plot_treatment_importance_phases(
+    all_eff_imp_phase %>% dplyr::filter(species == "quercus"),
+    stat = "mean_se"
+  ) + coord_cartesian(ylim = c(0, 3)) + ggtitle("Quercus")
+  
+  p_combined <- (p_all / p_fag / p_que) +
+    patchwork::plot_layout(guides = "collect") +
+    patchwork::plot_annotation(tag_levels = "A") &
+    ggplot2::theme(legend.position = "bottom",
+                   plot.tag = ggplot2::element_text(face = "bold"))
+  
+  print(p_combined)
+} else {
+  message("No effects data collected. This may happen on first run.")
+}
+```
+
+---
+
+# Context: Soil Conditions
+
+## Soil Water Content (SWC)
+
+```{r swc, fig.width=12, fig.height=6}
+plot_ts_swc(filter_soiltype = soil_type,
+            style = "band",
+            drought_bars = TRUE,
+            save_fig = FALSE, device = "pdf")
+```
+
+## Soil Water Potential (Matric Potential)
+
+### Raw Data + LOESS Smoothed
+```{r water-potential-both, fig.width=10, fig.height=6}
+plot_ts_soil_mp(
+  filter_soiltype = soil_type,
+  show="both",
+  save_fig = FALSE,
+  device = "pdf"
+)
+```
+
+### Raw Data
+```{r water-potential-raw, fig.width=10, fig.height=6}
+plot_ts_soil_mp(
+  filter_soiltype = soil_type,
+  show="raw",
+  save_fig = FALSE,
+  device = "pdf"
+)
+```
+
+
+## Soil Respiration
+
+```{r respiration, fig.width=12, fig.height=6}
+plot_ts_resp(filter_soiltype = soil_type,
+            style = "band",
+            drought_bars = TRUE,
+            save_fig = FALSE, device = "pdf")
+```
+
+
+## Soil C/N & Isotopes
+
+```{r isotopes, fig.width=12, fig.height=10}
+boxplot_soil_cn_isotopes(save_fig = FALSE, device = "pdf")
+```
+
+---
+
+# Tree Variables: Timeseries, Temporal Models & SEM
+
+## Chlorophyll Content (Chl)
+
+### Timeseries (Beech and Oak)
+
+```{r chl-ts, fig.width=9.5, fig.height=5.8}
+plot_ts_chl(filter_soiltype = soil_type,
+            style = "band",
+            drought_bars = TRUE,
+            save_fig = FALSE, device = "pdf")
+```
+
+### Analysis Beech (Fagus)
+
+#### Effect Size Over Time
+
+```{r chl-fagus-effect-size, fig.width=9.5, fig.height=5.8}
+res_chl_fagus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "chlorophyll",
+  resp_var = "chl",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_chl_fagus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r chl-fagus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_chl_fagus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r chl-fagus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_chl_fagus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "chlorophyll",
+  resp_var = "chl",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_chl_fagus_int$sem$plot)
+```
+
+### Analysis Oak (Quercus)
+
+#### Effect Size Over Time
+
+```{r chl-quercus-effect-size, fig.width=9.5, fig.height=5.8}
+res_chl_quercus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "chlorophyll",
+  resp_var = "chl",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_chl_quercus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r chl-quercus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_chl_quercus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r chl-quercus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_chl_quercus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "chlorophyll",
+  resp_var = "chl",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_chl_quercus_int$sem$plot)
+```
+
+---
+
+## Tree Condition
+
+### Timeseries (Beech and Oak)
+
+```{r cond-ts, fig.width=9.5, fig.height=5.8}
+plot_ts_condition(filter_soiltype = soil_type,
+                  style = "band",
+                  drought_bars = TRUE,
+                  save_fig = FALSE, device = "pdf")
+```
+
+### Analysis Beech (Fagus)
+
+#### Effect Size Over Time
+
+```{r cond-fagus-effect-size, fig.width=9.5, fig.height=5.8}
+res_cond_fagus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "condition",
+  resp_var = "condition",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_cond_fagus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r cond-fagus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_cond_fagus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r cond-fagus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_cond_fagus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "condition",
+  resp_var = "condition",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_cond_fagus_int$sem$plot)
+```
+
+### Analysis Oak (Quercus)
+
+#### Effect Size Over Time
+
+```{r cond-quercus-effect-size, fig.width=9.5, fig.height=5.8}
+res_cond_quercus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "condition",
+  resp_var = "condition",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_cond_quercus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r cond-quercus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_cond_quercus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r cond-quercus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_cond_quercus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "condition",
+  resp_var = "condition",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_cond_quercus_int$sem$plot)
+```
+
+---
+
+## Growth: Height
+
+### Timeseries (Beech and Oak)
+
+```{r height-ts, fig.width=9.5, fig.height=5.8}
+plot_ts_height_inc(filter_soiltype = soil_type,
+                   style = "band",
+                   drought_bars = TRUE,
+                   save_fig = FALSE, device = "pdf")
+```
+
+### Analysis Beech (Fagus)
+
+#### Effect Size Over Time
+
+```{r height-fagus-effect-size, fig.width=9.5, fig.height=5.8}
+res_height_fagus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "growth",
+  resp_var = "height",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_height_fagus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r height-fagus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_height_fagus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r height-fagus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_height_fagus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "growth",
+  resp_var = "height",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_height_fagus_int$sem$plot)
+```
+
+### Analysis Oak (Quercus)
+
+#### Effect Size Over Time
+
+```{r height-quercus-effect-size, fig.width=9.5, fig.height=5.8}
+res_height_quercus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "growth",
+  resp_var = "height",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_height_quercus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r height-quercus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_height_quercus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r height-quercus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_height_quercus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "growth",
+  resp_var = "height",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_height_quercus_int$sem$plot)
+```
+
+---
+
+## Growth: Diameter
+
+### Timeseries (Beech and Oak)
+
+```{r diameter-ts, fig.width=9.5, fig.height=5.8}
+plot_ts_diam_inc(filter_soiltype = soil_type,
+                 style = "band",
+                 drought_bars = TRUE,
+                 save_fig = FALSE, device = "pdf")
+```
+
+### Analysis Beech (Fagus)
+
+#### Effect Size Over Time
+
+```{r diameter-fagus-effect-size, fig.width=9.5, fig.height=5.8}
+res_diameter_fagus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "growth",
+  resp_var = "diameter",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_diameter_fagus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r diameter-fagus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_diameter_fagus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r diameter-fagus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_diameter_fagus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "growth",
+  resp_var = "diameter",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_diameter_fagus_int$sem$plot)
+```
+
+### Analysis Oak (Quercus)
+
+#### Effect Size Over Time
+
+```{r diameter-quercus-effect-size, fig.width=9.5, fig.height=5.8}
+res_diameter_quercus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "growth",
+  resp_var = "diameter",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_diameter_quercus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r diameter-quercus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_diameter_quercus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r diameter-quercus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_diameter_quercus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "growth",
+  resp_var = "diameter",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_diameter_quercus_int$sem$plot)
+```
+
+---
+
+## Phenology: Leaf Development Stage
+
+### Timeseries (Beech and Oak)
+
+```{r phenology-ts, fig.width=9.5, fig.height=5.8}
+plot_ts_phenology(style = "band",
+                  filter_soiltype = soil_type,
+                  save_fig = FALSE, device = "pdf")
+```
+
+### Analysis Beech (Fagus)
+
+#### Effect Size Over Time
+
+```{r phenology-fagus-effect-size, fig.width=9.5, fig.height=5.8}
+res_phenology_fagus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "phenology",
+  resp_var = "stage",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_phenology_fagus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r phenology-fagus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_phenology_fagus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r phenology-fagus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_phenology_fagus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "phenology",
+  resp_var = "stage",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_phenology_fagus_int$sem$plot)
+```
+
+### Analysis Oak (Quercus)
+
+#### Effect Size Over Time
+
+```{r phenology-quercus-effect-size, fig.width=9.5, fig.height=5.8}
+res_phenology_quercus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "phenology",
+  resp_var = "stage",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_phenology_quercus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r phenology-quercus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_phenology_quercus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r phenology-quercus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_phenology_quercus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "phenology",
+  resp_var = "stage",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_phenology_quercus_int$sem$plot)
+```
+
+---
+
+## Quantum Yield (QY)
+
+### Timeseries (Beech and Oak)
+
+```{r qy-ts, fig.width=9.5, fig.height=5.8}
+plot_ts_qy(filter_soiltype = soil_type,
+           style = "band",
+           drought_bars = TRUE,
+           save_fig = FALSE, device = "pdf")
+```
+
+### Analysis Beech (Fagus)
+
+#### Effect Size Over Time
+
+```{r qy-fagus-effect-size, fig.width=9.5, fig.height=5.8}
+res_qy_fagus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "quantum_yield",
+  resp_var = "qy",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_qy_fagus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r qy-fagus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_qy_fagus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r qy-fagus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_qy_fagus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "quantum_yield",
+  resp_var = "qy",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_qy_fagus_int$sem$plot)
+```
+
+### Analysis Oak (Quercus)
+
+#### Effect Size Over Time
+
+```{r qy-quercus-effect-size, fig.width=9.5, fig.height=5.8}
+res_qy_quercus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "quantum_yield",
+  resp_var = "qy",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_qy_quercus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r qy-quercus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_qy_quercus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r qy-quercus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_qy_quercus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "quantum_yield",
+  resp_var = "qy",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_qy_quercus_int$sem$plot)
+```
+
+---
+
+## Senescence: Percent Senesced
+
+### Timeseries (Beech and Oak)
+
+```{r senescence-pct-ts, fig.width=9.5, fig.height=5.8}
+plot_ts_senescence_percent(filter_soiltype = soil_type,
+                           style = "band",
+                           drought_bars = FALSE,
+                           save_fig = FALSE, device = "pdf")
+```
+
+### Analysis Beech (Fagus)
+
+#### Effect Size Over Time
+
+```{r senescence-pct-fagus-effect-size, fig.width=9.5, fig.height=5.8}
+res_sen_pct_fagus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "senescence",
+  resp_var = "percent_senesced",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_sen_pct_fagus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r senescence-pct-fagus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_sen_pct_fagus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r senescence-pct-fagus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_sen_pct_fagus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "senescence",
+  resp_var = "percent_senesced",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_sen_pct_fagus_int$sem$plot)
+```
+
+### Analysis Oak (Quercus)
+
+#### Effect Size Over Time
+
+```{r senescence-pct-quercus-effect-size, fig.width=9.5, fig.height=5.8}
+res_sen_pct_quercus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "senescence",
+  resp_var = "percent_senesced",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_sen_pct_quercus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r senescence-pct-quercus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_sen_pct_quercus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r senescence-pct-quercus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_sen_pct_quercus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "senescence",
+  resp_var = "percent_senesced",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_sen_pct_quercus_int$sem$plot)
+```
+
+---
+
+## Senescence: Chlorophyll
+
+### Timeseries (Beech and Oak)
+
+```{r senescence-chl-ts, fig.width=9.5, fig.height=5.8}
+plot_ts_senescence_chl(filter_soiltype = soil_type,
+                       style = "band",
+                       drought_bars = FALSE,
+                       save_fig = FALSE, device = "pdf")
+```
+
+### Analysis Beech (Fagus)
+
+#### Effect Size Over Time
+
+```{r senescence-chl-fagus-effect-size, fig.width=9.5, fig.height=5.8}
+res_sen_chl_fagus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "senescence",
+  resp_var = "chlavg",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_sen_chl_fagus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r senescence-chl-fagus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_sen_chl_fagus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r senescence-chl-fagus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_sen_chl_fagus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "senescence",
+  resp_var = "chlavg",
+  species = "fagus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_sen_chl_fagus_int$sem$plot)
+```
+
+### Analysis Oak (Quercus)
+
+#### Effect Size Over Time
+
+```{r senescence-chl-quercus-effect-size, fig.width=9.5, fig.height=5.8}
+res_sen_chl_quercus <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "senescence",
+  resp_var = "chlavg",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = FALSE
+)
+print(res_sen_chl_quercus$temporal$plot)
+```
+
+#### SEM Without Interaction
+
+```{r senescence-chl-quercus-sem-no-int, fig.width=9.5, fig.height=5.8}
+print(res_sen_chl_quercus$sem$plot)
+```
+
+#### SEM With Interaction
+
+```{r senescence-chl-quercus-sem-with-int, fig.width=9.5, fig.height=5.8}
+res_sen_chl_quercus_int <- make_temporal_sem_combo(
+  type = "tree",
+  data_name = "senescence",
+  resp_var = "chlavg",
+  species = "quercus",
+  soil_type = soil_type,
+  include_interaction = TRUE
+)
+print(res_sen_chl_quercus_int$sem$plot)
+```
+
+---
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```
