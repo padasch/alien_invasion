@@ -203,7 +203,8 @@ plot_biomass_effects <- function(df_effects) {
   df_effects <- df_effects %>%
     mutate(
       term_label   = .rename_glmm_terms(term),
-      metric_label = metric_labels[metric]
+      metric_label = factor(metric_labels[metric],
+                            levels = c("Shoot biomass", "Root biomass", "Root:shoot biomass"))
     )
 
   ggplot2::ggplot(df_effects, ggplot2::aes(
@@ -235,7 +236,7 @@ plot_biomass_effects <- function(df_effects) {
 }
 
 run_biomass_glmm_species <- function(df_biomass, species_keep = "fagus",
-                                     metrics = c("root_biomass", "shoot_biomass", "root_shoot_biomass")) {
+                                     metrics = c("shoot_biomass", "root_biomass", "root_shoot_biomass")) {
   fits <- lapply(metrics, function(m) fit_biomass_glmm(df_biomass, species_keep, m))
   effects <- do.call(rbind, lapply(fits, extract_biomass_effects))
   perf    <- do.call(rbind, lapply(fits, extract_model_performance))
