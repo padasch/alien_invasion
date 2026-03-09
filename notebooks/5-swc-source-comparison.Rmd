@@ -43,14 +43,29 @@ library(tidyverse)
 library(patchwork)
 ```
 
-# Goal
+# Introduction
 
-This notebook now focuses only on SEM comparisons between SWC sources:
+The piecewise structural equation models (SEM) in the main analysis use soil water content (SWC) as a mediator variable through which treatments can affect tree responses indirectly. SWC can be sourced in two ways:
 
-- `measured`: nearest observed SWC within a +/- 7 day window
-- `imputed_gam`: daily GAM-imputed SWC
+- **Measured**: the nearest gravimetric SWC observation within a ±7 day window of each tree measurement date. This is the "gold standard" but introduces temporal misalignment and missing data.
+- **Imputed (GAM)**: daily SWC predicted from a treatment-agnostic GAM (see Notebook 4). This provides perfect temporal alignment and complete coverage, but relies on model assumptions.
 
-No temporal GLMM comparison is included.
+This notebook systematically compares SEM results obtained under each SWC source to assess whether the choice of SWC input materially changes the scientific conclusions.
+
+**Contents:**
+
+1. **Faceted 1:1 metrics** — $R^2$ (marginal and conditional) for both the SWC and response sub-models, plotted as measured vs. imputed pairs across all trait × species × interaction combinations.
+2. **Factor influence summary** — mean absolute SEM path coefficients for each treatment factor, grouped by path type (direct, indirect, total), compared between SWC sources.
+3. **Full SEM figure comparison** — side-by-side SEM path diagrams for every trait × species combination under both SWC sources.
+
+## SEM Specification
+
+The SEM consists of two `lme4::lmer()` models linked via `piecewiseSEM::psem()`:
+
+$$\text{SWC} = \beta_0 + \beta_1 \text{DOY} + \beta_2 \text{DOY}^2 + \sum_j \beta_j X_j + b_{\text{box}} + \varepsilon$$
+$$y = \gamma_0 + \gamma_1 \text{DOY} + \gamma_2 \text{DOY}^2 + \gamma_3 \text{SWC} + \sum_j \gamma_j X_j + b_{\text{box}} + b_{\text{tree}} + \varepsilon$$
+
+where $X_j \in \{\text{Precipitation, Robinia, Culture, Soiltype, ExtremeEvent}\}$. Treatment effects decompose into direct ($c'$), indirect ($a \times b$ via SWC), and total paths. The comparison grid covers 8 traits × 2 species × 2 interaction modes = 32 SEM fits per SWC source (64 total).
 
 # Controls
 

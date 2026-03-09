@@ -50,11 +50,58 @@ soil_type <- "both"        # "both", "inoc-beech", or "inoc-robinia"
 species_vec <- c("fagus", "quercus")
 ```
 
+# Introduction
+
+This notebook presents a comprehensive analysis of the ALINV (Alien Invasion) experiment, which investigates how drought, species mixing, *Robinia* presence, and legacy soil type affect tree physiology and growth. The experiment uses a full-factorial design with two target species — European beech (*Fagus sylvatica*) and sessile oak (*Quercus petraea*) — grown in mesocosm boxes under controlled treatment combinations.
+
+**Contents:**
+
+1. **Treatment Effects Summary** — aggregated temporal GLMM effect sizes across all response variables, grouped by experimental phase.
+2. **Biomass** — end-of-experiment destructive harvest data (shoot, root, root:shoot ratio), visualised as treatment boxplots and quantified with a one-off GLMM.
+3. **Soil Conditions** — time series of soil water content (SWC), soil water potential (SWP), soil respiration, and C/N isotopes.
+4. **Tree Variables** — for each trait (chlorophyll, condition, height growth, diameter growth, phenology, quantum yield, senescence), the notebook shows: (i) a treatment-level time series, (ii) temporal effect sizes from date-specific GLMMs, and (iii) piecewise structural equation models (SEM) decomposing direct and SWC-mediated indirect effects.
+
+## Methods
+
+### Temporal GLMM (time-varying treatment effects)
+
+For each tree-level response variable, a linear mixed-effects model is fitted across all measurement dates:
+
+$$y_{ijk} = \mu + \alpha_t + (\alpha_t \times \text{Robinia})_{j} + (\alpha_t \times \text{Precipitation})_{j} + (\alpha_t \times \text{Culture})_{j} + (\alpha_t \times \text{Soiltype})_{j} + b_{\text{box}} + b_{\text{tree}} + \varepsilon_{ijk}$$
+
+where $\alpha_t$ is a date fixed effect and treatment effects are estimated per date via date×treatment interactions. Random intercepts are fitted for box ($b_{\text{box}}$) and tree ($b_{\text{tree}}$). Treatment contrasts at each date are extracted using estimated marginal means (`emmeans`, reverse pairwise).
+
+### Piecewise Structural Equation Model (SEM)
+
+Two-equation piecewise SEM fitted separately per species and trait, using `piecewiseSEM::psem()`:
+
+**SWC sub-model:**
+$$\text{SWC} = \beta_0 + \beta_1 \text{DOY} + \beta_2 \text{DOY}^2 + \beta_3 \text{Precipitation} + \beta_4 \text{Robinia} + \beta_5 \text{Soiltype} + \beta_6 \text{Culture} + \beta_7 \text{ExtremeEvent} + b_{\text{box}} + \varepsilon$$
+
+**Response sub-model:**
+$$y = \gamma_0 + \gamma_1 \text{DOY} + \gamma_2 \text{DOY}^2 + \gamma_3 \text{SWC} + \gamma_4 \text{Precipitation} + \cdots + b_{\text{box}} + b_{\text{tree}} + \varepsilon$$
+
+Both are `lme4::lmer()` models. Treatment effects are decomposed into:
+
+- **Direct path** ($c'$): treatment → response
+- **Indirect path** ($a \times b$): treatment → SWC → response
+- **Total effect**: $c' + a \times b$
+
+All numeric predictors are centred and scaled before fitting.
+
+### Biomass GLMM
+
+A single-timepoint linear mixed model for each biomass metric (shoot, root, root:shoot ratio), fitted on z-scored responses to produce standardised coefficients:
+
+$$y_z = \beta_0 + \beta_1 \text{Precipitation} + \beta_2 \text{Culture} + \beta_3 \text{Robinia} + \beta_4 \text{Soiltype} + b_{\text{box}} + \varepsilon$$
+
+Coefficients are in standard deviation units of the response. 95% Wald confidence intervals are used to assess significance.
+
 ---
 
 # Overview: Treatment Effects Summary
 
-This section provides an aggregate view of temporal treatment effects across all tree variables.
+Aggregated temporal GLMM effect sizes across all tree response variables, grouped by experimental phase (until June / July–August / September+).
 
 ```{r treatment-effects-overview, fig.width=6, fig.height=12}
 # Collect all temporal GLMM effects across variables and species

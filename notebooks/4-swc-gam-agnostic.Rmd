@@ -39,14 +39,32 @@ library(mgcv)
 library(scales)
 ```
 
-# Goal
+# Introduction
 
-Build a daily SWC time series for all boxes using an **agnostic** model:
+Soil water content (SWC) in the ALINV experiment is measured manually at irregular intervals (roughly weekly during the growing season). Many downstream models — temporal GLMMs and structural equation models — require a daily SWC value aligned to each tree measurement date. This notebook builds a **treatment-agnostic** daily SWC imputation model using a Generalised Additive Model (GAM) so that the imputed values do not encode treatment information and can serve as an independent mediator in SEMs.
 
-- Use measured `swc` (irregular, all boxes)
-- Use measured SWP signal from sensors (`kPa*`)
-- Use site-level daily meteo (`air_temp`, `rh`, `vpd`, `radiation`)
-- Avoid treatment predictors (`soiltype`, `culture`, `robinia`, `precipitation`)
+**Contents:**
+
+1. **Data wrangling** — aggregation of 10-minute meteorological and soil sensor records to daily resolution.
+2. **Exploratory figures** — site-level SWP signal, climate covariates, and SWC sampling sparsity.
+3. **GAM fitting** — a single mixed GAM predicting observed SWC from time, soil water potential, and climate.
+4. **Diagnostics** — observed vs. fitted, residual checks, example per-box trajectories with 95% prediction intervals.
+5. **Export** — daily SWC predictions for all boxes written to `data/interim/box_soilwater_daily_gam_agnostic.csv`.
+
+## Model Specification
+
+The GAM is fitted with `mgcv::gam()` using REML:
+
+$$\text{SWC}_{it} = f_1(t) + f_2(\text{SWP}_{\text{site},t}) + f_3(T_{\text{air},t}) + f_4(\text{VPD}_t) + f_5(\text{Rad}_t) + b_i + \varepsilon_{it}$$
+
+where:
+
+- $f_1, \ldots, f_5$ are thin-plate regression splines (penalised, with basis dimensions $k = 8$–$10$)
+- $b_i \sim N(0, \sigma^2_b)$ is a random intercept per box (`s(boxlabel, bs = "re")`)
+- Predictors are **treatment-agnostic**: calendar date, site-median log-transformed SWP, air temperature, VPD, and solar radiation
+- No treatment variables (precipitation regime, culture, *Robinia*, soil type) enter the model, ensuring imputed SWC reflects only environmental drivers
+
+The resulting daily predictions are used as an alternative SWC source (`imputed_gam`) in the analysis pipeline.
 
 # Data Wrangling
 
