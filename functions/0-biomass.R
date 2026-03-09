@@ -214,8 +214,9 @@ plot_biomass_effects <- function(df_effects) {
       ggplot2::aes(ymin = ci_lo, ymax = ci_hi),
       size = 0.6, linewidth = 0.7, fatten = 2.5
     ) +
-    ggplot2::facet_wrap(~ metric_label, ncol = 1, scales = "free_x") +
-    ggplot2::coord_flip() +
+    ggplot2::facet_wrap(~ metric_label, ncol = 1) +
+    ggplot2::coord_flip(ylim = c(-2, 2)) +
+    ggplot2::scale_y_continuous(breaks = seq(-2, 2, 1)) +
     ggplot2::scale_color_manual(
       values = c(`TRUE` = "indianred", `FALSE` = "grey50"),
       labels = c(`TRUE` = "95% CI excludes 0", `FALSE` = "95% CI includes 0"),
