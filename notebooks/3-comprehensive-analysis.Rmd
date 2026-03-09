@@ -42,6 +42,9 @@ source(file.path(proj_root, "scripts", "x-structural-equation-model.R"))
 source(file.path(proj_root, "scripts", "x-effect-size-model-aggregation.R"))
 source(file.path(proj_root, "scripts", "x-combining-glmm-sem.R"))
 
+# Biomass functions
+source(file.path(proj_root, "functions", "0-biomass.R"))
+
 # Global choices
 soil_type <- "both"        # "both", "inoc-beech", or "inoc-robinia"
 species_vec <- c("fagus", "quercus")
@@ -94,6 +97,44 @@ if (nrow(all_eff) > 0) {
 } else {
   message("No effects data collected. This may happen on first run.")
 }
+```
+
+---
+
+# Biomass: Treatment Comparison
+
+```{r biomass-data}
+df_biomass <- wrangle_tree_biomass(file.path(proj_root, "data", "raw", "data_20260309.xlsx"))
+```
+
+## Fagus – Boxplots
+
+```{r biomass-boxplot-fagus, fig.width=9, fig.height=10}
+print(plot_tree_biomass_treatments(df_biomass, species_keep = "fagus"))
+```
+
+## Quercus – Boxplots
+
+```{r biomass-boxplot-quercus, fig.width=9, fig.height=10}
+print(plot_tree_biomass_treatments(df_biomass, species_keep = "quercus"))
+```
+
+## GLMM: Treatment Effects on Biomass
+
+A one-off GLMM (no temporal factor) quantifies the influence of precipitation, culture, robinia presence, and soil type on root, shoot, and root:shoot biomass.
+
+### Fagus
+
+```{r biomass-glmm-fagus, fig.width=8, fig.height=8}
+res_fag <- run_biomass_glmm_species(df_biomass, species_keep = "fagus")
+print(res_fag$plot)
+```
+
+### Quercus
+
+```{r biomass-glmm-quercus, fig.width=8, fig.height=8}
+res_que <- run_biomass_glmm_species(df_biomass, species_keep = "quercus")
+print(res_que$plot)
 ```
 
 ---
