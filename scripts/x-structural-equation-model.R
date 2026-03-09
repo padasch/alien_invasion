@@ -527,6 +527,7 @@ run_sem_for_trait <- function(type = "tree",
                               scale_all_numeric = TRUE,
                               do_rfe = FALSE,
                               aic_improve = 2,
+                              swc_source = "measured",
                               force_run = FALSE) {
   # --- 0) caching: save / load SEM run for today ---
   today_str <- format(Sys.Date(), "%Y-%m-%d")
@@ -540,6 +541,7 @@ run_sem_for_trait <- function(type = "tree",
   int_tag <- if (isTRUE(include_interaction)) "int" else "noInt"
   scale_tag <- if (isTRUE(scale_all_numeric)) "scaled" else "unscaled"
   rfe_tag <- if (isTRUE(do_rfe)) paste0("rfeAIC", aic_improve) else "noRFE"
+  swc_tag <- if (swc_source == "measured") "swcMeas" else "swcImputed"
 
   file_name <- paste0(
     "sem-",
@@ -550,7 +552,8 @@ run_sem_for_trait <- function(type = "tree",
     soil_type, "-",
     int_tag, "-",
     scale_tag, "-",
-    rfe_tag,
+    rfe_tag, "-",
+    swc_tag,
     ".rds"
   )
 
@@ -569,7 +572,8 @@ run_sem_for_trait <- function(type = "tree",
     species_keep = species,
     add_covars   = FALSE, # SEM doesn’t use the extra temporal covars
     covars_fun   = NULL,
-    soil_type    = soil_type
+    soil_type    = soil_type,
+    swc_source   = swc_source
   )
 
   # 2) Prepare specifically for SEM (generic y, scaling, etc.)

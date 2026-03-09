@@ -87,12 +87,13 @@ prepare_df_generic <- function(
     species_keep = NULL,             # e.g., c("fagus","quercus") or "fagus"
     add_covars = FALSE,
     covars_fun = NULL,                # function returning covariates (boxlabel+date)
-    soil_type = "both"
+    soil_type = "both",
+    swc_source = "measured"          # "measured" or "imputed_gam"
 ) {
   data_name <- match.arg(data_name)
   
   # Pull 
-  df_raw <- get_data(type = type, data_name = data_name)
+  df_raw <- get_data(type = type, data_name = data_name, swc_source = swc_source)
   
   # Early species filter if present
   if (!is.null(species_keep) && "species" %in% names(df_raw)) {
@@ -135,6 +136,12 @@ prepare_df_generic <- function(
   
   df <- .standardize_and_clean(df, cols_needed)
   df <- df |> drop_na(y)
+
+  # Keep a standardized SWC covariate available for temporal GLMMs.
+  # This allows add_covars=TRUE to include SWC regardless of an external covariate join.
+  if ("swc" %in% names(df)) {
+    df <- df %>% mutate(swc_sc = as.numeric(scale(swc)))
+  }
   
   df
 }
@@ -302,6 +309,7 @@ make_effect_figure_generic <- function(
     soil_type = "both",
     add_covars = FALSE,
     covars_fun = NULL,
+    swc_source = "measured",         # "measured" or "imputed_gam"
     force_run = FALSE                # NEW: overwrite existing results for today
 ) {
   data_name <- match.arg(data_name)
@@ -318,6 +326,7 @@ make_effect_figure_generic <- function(
   
   resp_tag <- if (!is.null(resp_var)) resp_var else "default"
   covar_tag <- if (isTRUE(add_covars)) "withCovars" else "noCovars"
+  swc_tag <- if (swc_source == "measured") "swcMeas" else "swcImputed"
   
   file_name <- paste0(
     "effect-",
@@ -326,7 +335,8 @@ make_effect_figure_generic <- function(
     resp_tag, "-",
     target_species, "-",
     soil_type, "-",
-    covar_tag,
+    covar_tag, "-",
+    swc_tag,
     ".rds"
   )
   
@@ -350,7 +360,8 @@ make_effect_figure_generic <- function(
     species_keep = target_species,
     add_covars   = add_covars,
     covars_fun   = covars_fun,
-    soil_type    = soil_type
+    soil_type    = soil_type,
+    swc_source   = swc_source
   )
   
   fit <- fit_glmm_per_date(dfm, include_covars = add_covars)
@@ -394,11 +405,11 @@ make_figs_for_species <- function(
 # out_chl_fagus$plot
 #
 # Growth - HEIGHT increments on Fagus
-out_grow_h_fagus <- make_effect_figure_generic(
-  type = "tree", data_name = "growth",
-  resp_var = "diameter_inc_t0", target_species = "fagus"
-)
-out_grow_h_fagus$plot
+# out_grow_h_fagus <- make_effect_figure_generic(
+#   type = "tree", data_name = "growth",
+#   resp_var = "diameter_inc_t0", target_species = "fagus"
+# )
+# out_grow_h_fagus$plot
 #
 # # Growth - DIAMETER increments on Quercus
 # out_grow_d_quer <- make_effect_figure_generic(
