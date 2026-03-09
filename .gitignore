@@ -56,3 +56,4 @@ notebooks/*.html
 *.dat
 *.pdf
 *.xlsx
+notebooks/output/
