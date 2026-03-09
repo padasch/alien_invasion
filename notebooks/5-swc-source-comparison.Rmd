@@ -1,0 +1,413 @@
+---
+title: "SWC Source Comparison: SEM-Focused (Measured vs. Imputed GAM)"
+author: "Analysis Pipeline"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+    fig_width: 12
+    fig_height: 8
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.show = "asis"
+)
+
+proj_root <- normalizePath(
+  if (dir.exists(file.path(getwd(), "data", "interim"))) {
+    getwd()
+  } else if (dir.exists(file.path(dirname(getwd()), "data", "interim"))) {
+    dirname(getwd())
+  } else {
+    stop("Could not locate project root")
+  },
+  winslash = "/"
+)
+
+setwd(proj_root)
+suppressMessages({
+  source("functions/_source.R")
+  source("functions/x-effect-size-factorial.R")
+  source("scripts/x-structural-equation-model.R")
+  source("scripts/x-combining-glmm-sem.R")
+})
+
+library(tidyverse)
+library(patchwork)
+```
+
+# Goal
+
+This notebook now focuses only on SEM comparisons between SWC sources:
+
+- `measured`: nearest observed SWC within a +/- 7 day window
+- `imputed_gam`: daily GAM-imputed SWC
+
+No temporal GLMM comparison is included.
+
+# Controls
+
+```{r controls}
+soil_type <- "both"
+force_refit <- FALSE
+
+swc_levels <- c("measured", "imputed_gam")
+species_levels <- c("fagus", "quercus")
+interaction_levels <- c(FALSE, TRUE)
+
+# Same trait grid as 3-comprehensive-analysis.Rmd
+model_grid <- tribble(
+  ~section, ~data_name, ~resp_var,
+  "Chlorophyll", "chlorophyll", "chl",
+  "Tree Condition", "condition", "condition",
+  "Growth Height", "growth", "height",
+  "Growth Diameter", "growth", "diameter",
+  "Phenology Stage", "phenology", "stage",
+  "Quantum Yield", "quantum_yield", "qy",
+  "Senescence Percent", "senescence", "percent_senesced",
+  "Senescence Chlorophyll", "senescence", "chlavg"
+)
+```
+
+# SEM Helpers
+
+```{r helper-functions}
+fit_sem <- function(data_name, resp_var, species, include_interaction, swc_source) {
+  tryCatch(
+    run_sem_for_trait(
+      type = "tree",
+      data_name = data_name,
+      resp_var = resp_var,
+      species = species,
+      soil_type = soil_type,
+      include_interaction = include_interaction,
+      scale_all_numeric = TRUE,
+      do_rfe = FALSE,
+      swc_source = swc_source,
+      force_run = force_refit
+    ),
+    error = function(e) {
+      message(
+        "SEM fit failed for ", data_name, "/", resp_var,
+        " species=", species,
+        " include_interaction=", include_interaction,
+        " swc_source=", swc_source,
+        " -> ", conditionMessage(e)
+      )
+      NULL
+    }
+  )
+}
+
+plot_sem_pair <- function(res_meas, res_imp, panel_title = NULL) {
+  p_meas <- if (!is.null(res_meas) && !is.null(res_meas$plot)) {
+    res_meas$plot + ggtitle("Measured SWC")
+  } else {
+    ggplot() + theme_void() + ggtitle("Measured SWC (missing)")
+  }
+
+  p_imp <- if (!is.null(res_imp) && !is.null(res_imp$plot)) {
+    res_imp$plot + ggtitle("Imputed SWC")
+  } else {
+    ggplot() + theme_void() + ggtitle("Imputed SWC (missing)")
+  }
+
+  p <- p_meas | p_imp
+  if (!is.null(panel_title)) {
+    p <- p + plot_annotation(title = panel_title)
+  }
+  p
+}
+
+extract_sem_r2 <- function(res) {
+  if (is.null(res) || is.null(res$sem)) {
+    return(tibble(
+      sem_r2_swc_marginal = NA_real_,
+      sem_r2_swc_conditional = NA_real_,
+      sem_r2_resp_marginal = NA_real_,
+      sem_r2_resp_conditional = NA_real_
+    ))
+  }
+
+  r2_tbl <- tryCatch(piecewiseSEM::rsquared(res$sem), error = function(e) NULL)
+  if (is.null(r2_tbl)) {
+    return(tibble(
+      sem_r2_swc_marginal = NA_real_,
+      sem_r2_swc_conditional = NA_real_,
+      sem_r2_resp_marginal = NA_real_,
+      sem_r2_resp_conditional = NA_real_
+    ))
+  }
+
+  tibble(
+    sem_r2_swc_marginal = r2_tbl$Marginal[r2_tbl$Response == "swc"][1],
+    sem_r2_swc_conditional = r2_tbl$Conditional[r2_tbl$Response == "swc"][1],
+    sem_r2_resp_marginal = r2_tbl$Marginal[r2_tbl$Response == "y"][1],
+    sem_r2_resp_conditional = r2_tbl$Conditional[r2_tbl$Response == "y"][1]
+  )
+}
+
+extract_sem_paths <- function(res) {
+  empty <- tibble(
+    factor = character(), effect_class = character(), path = character(),
+    estimate = double(), p_value = double(), abs_estimate = double()
+  )
+
+  if (is.null(res)) return(empty)
+
+  out <- list()
+
+  if (!is.null(res$effects) && nrow(res$effects) > 0) {
+    main_long <- bind_rows(
+      res$effects %>% transmute(factor, effect_class = "main", path = "to_swc (a)", estimate = a, p_value = p_a),
+      res$effects %>% transmute(factor, effect_class = "main", path = "to_target_direct (c')", estimate = c_direct, p_value = p_c),
+      res$effects %>% transmute(factor, effect_class = "main", path = "to_target_indirect (a*b)", estimate = indirect, p_value = p_ind),
+      res$effects %>% transmute(factor, effect_class = "main", path = "to_target_total", estimate = total, p_value = p_tot)
+    ) %>%
+      mutate(
+        abs_estimate = abs(estimate)
+      )
+
+    out[[length(out) + 1L]] <- main_long
+  }
+
+  if (!is.null(res$effects_int) && nrow(res$effects_int) > 0) {
+    int_long <- bind_rows(
+      res$effects_int %>% transmute(factor, effect_class = "interaction", path = "to_swc (a)", estimate = a, p_value = p_a),
+      res$effects_int %>% transmute(factor, effect_class = "interaction", path = "to_target_direct (c')", estimate = c_direct, p_value = p_c),
+      res$effects_int %>% transmute(factor, effect_class = "interaction", path = "to_target_indirect (a*b)", estimate = indirect, p_value = p_ind),
+      res$effects_int %>% transmute(factor, effect_class = "interaction", path = "to_target_total", estimate = total, p_value = p_tot)
+    ) %>%
+      mutate(
+        abs_estimate = abs(estimate)
+      )
+
+    out[[length(out) + 1L]] <- int_long
+  }
+
+  if (!length(out)) return(empty)
+  bind_rows(out)
+}
+```
+
+# Fit Full SEM Grid Once
+
+```{r fit-all-sems}
+fit_tasks <- tidyr::crossing(
+  model_grid,
+  species = species_levels,
+  include_interaction = interaction_levels,
+  swc_source = swc_levels
+) %>%
+  mutate(
+    result = purrr::pmap(
+      list(data_name, resp_var, species, include_interaction, swc_source),
+      fit_sem
+    )
+  )
+
+metrics_long <- fit_tasks %>%
+  mutate(metrics = purrr::map(result, extract_sem_r2)) %>%
+  tidyr::unnest(metrics) %>%
+  mutate(target_label = paste0(section, " | ", species, if_else(include_interaction, " | int", " | no-int")))
+
+sem_paths_long <- fit_tasks %>%
+  mutate(
+    sem_paths = purrr::map(result, extract_sem_paths)
+  ) %>%
+  tidyr::unnest(sem_paths)
+```
+
+```{r summary-data-prep}
+sem_metric_cols <- c(
+  "sem_r2_swc_marginal",
+  "sem_r2_swc_conditional",
+  "sem_r2_resp_marginal",
+  "sem_r2_resp_conditional"
+)
+
+metrics_wide <- metrics_long %>%
+  select(section, data_name, resp_var, species, include_interaction, target_label, swc_source, all_of(sem_metric_cols)) %>%
+  pivot_longer(cols = all_of(sem_metric_cols), names_to = "metric", values_to = "value") %>%
+  pivot_wider(names_from = swc_source, values_from = value) %>%
+  mutate(delta_imputed_minus_measured = imputed_gam - measured)
+```
+
+# Faceted 1:1 SEM Metrics (All At Once)
+
+```{r faceted-1to1-sem-metrics, fig.width=14, fig.height=10}
+metrics_plot_df <- metrics_wide %>%
+  filter(is.finite(measured), is.finite(imputed_gam)) %>%
+  mutate(
+    metric = factor(
+      metric,
+      levels = c(
+        "sem_r2_swc_marginal",
+        "sem_r2_swc_conditional",
+        "sem_r2_resp_marginal",
+        "sem_r2_resp_conditional"
+      ),
+      labels = c(
+        "SWC R2 Marginal",
+        "SWC R2 Conditional",
+        "Target R2 Marginal",
+        "Target R2 Conditional"
+      )
+    ),
+    interaction_label = if_else(include_interaction, "With interaction", "No interaction")
+  )
+
+p_metrics <- ggplot(metrics_plot_df, aes(x = measured, y = imputed_gam, color = species)) +
+  geom_abline(slope = 1, intercept = 0, linetype = 2, color = "grey40") +
+  geom_point(size = 2.2, alpha = 0.9) +
+  geom_text(aes(label = section), size = 2.8, check_overlap = TRUE, vjust = -0.6, show.legend = FALSE) +
+  facet_grid(interaction_label ~ metric) +
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
+  labs(
+    title = "SEM performance by SWC source",
+    subtitle = "Points above 1:1 line indicate higher metric with imputed SWC",
+    x = "Measured SWC",
+    y = "Imputed SWC",
+    color = "Species"
+  ) +
+  theme_linedraw(base_size = 11) +
+  theme(
+    legend.position = "bottom"
+  )
+
+print(p_metrics)
+```
+
+# SEM Factor Influence Summary
+
+```{r sem-factor-influence, fig.width=16, fig.height=10}
+# Focus on no-interaction SEM for clean factor-level comparison.
+infl_df <- sem_paths_long %>%
+  filter(include_interaction == FALSE, effect_class == "main") %>%
+  filter(path %in% c("to_swc (a)", "to_target_direct (c')", "to_target_indirect (a*b)", "to_target_total"))
+
+summarise_importance <- function(df, species_keep = NULL) {
+  x <- df
+  if (!is.null(species_keep)) {
+    x <- x %>% filter(species == species_keep)
+  }
+
+  x %>%
+    group_by(swc_source, factor, path) %>%
+    summarise(
+      mean_abs = mean(abs_estimate, na.rm = TRUE),
+      se_abs = sd(abs_estimate, na.rm = TRUE) / sqrt(dplyr::n()),
+      .groups = "drop"
+    )
+}
+
+plot_importance_panel <- function(df_imp, title_txt) {
+  ggplot(df_imp, aes(x = reorder(factor, mean_abs), y = mean_abs, fill = swc_source)) +
+    geom_col(position = position_dodge(width = 0.8), width = 0.72) +
+    geom_errorbar(
+      aes(ymin = pmax(0, mean_abs - se_abs), ymax = mean_abs + se_abs),
+      position = position_dodge(width = 0.8),
+      width = 0.2
+    ) +
+    facet_wrap(~ path, scales = "free_y", ncol = 2) +
+    coord_flip() +
+    labs(
+      title = title_txt,
+      x = "Factor",
+      y = "Mean |effect|",
+      fill = "SWC source"
+    ) +
+    theme_linedraw(base_size = 11) +
+    theme(legend.position = "bottom")
+}
+
+p_all <- plot_importance_panel(
+  summarise_importance(infl_df),
+  "All species"
+)
+
+p_fag <- plot_importance_panel(
+  summarise_importance(infl_df, species_keep = "fagus"),
+  "Fagus"
+)
+
+p_que <- plot_importance_panel(
+  summarise_importance(infl_df, species_keep = "quercus"),
+  "Quercus"
+)
+
+p_combined <- (p_all | p_fag | p_que) +
+  patchwork::plot_layout(guides = "collect") +
+  patchwork::plot_annotation(tag_levels = "A") &
+  ggplot2::theme(
+    legend.position = "bottom",
+    plot.tag = ggplot2::element_text(face = "bold")
+  )
+
+print(p_combined)
+```
+
+# Full SEM Figure Comparison
+
+```{r full-sem-figure-comparison, results='asis', fig.width=16, fig.height=7}
+get_fit <- function(section, data_name, resp_var, species, include_interaction, swc_source) {
+  fit_tasks %>%
+    filter(
+      .data$section == section,
+      .data$data_name == data_name,
+      .data$resp_var == resp_var,
+      .data$species == species,
+      .data$include_interaction == include_interaction,
+      .data$swc_source == swc_source
+    ) %>%
+    pull(result) %>%
+    .[[1]]
+}
+
+for (i in seq_len(nrow(model_grid))) {
+  row <- model_grid[i, ]
+
+  cat("\n\n## ", row$section, "\n", sep = "")
+
+  for (sp in species_levels) {
+    cat("\n\n### Species: ", sp, "\n", sep = "")
+
+    res_meas_no_int <- get_fit(row$section, row$data_name, row$resp_var, sp, FALSE, "measured")
+    res_imp_no_int <- get_fit(row$section, row$data_name, row$resp_var, sp, FALSE, "imputed_gam")
+
+    cat("\n\n#### SEM (No Interaction): Measured vs Imputed\n")
+    print(
+      plot_sem_pair(
+        res_meas_no_int,
+        res_imp_no_int,
+        panel_title = paste0("SEM no interaction: ", row$data_name, " / ", row$resp_var, " / ", sp)
+      )
+    )
+
+    res_meas_int <- get_fit(row$section, row$data_name, row$resp_var, sp, TRUE, "measured")
+    res_imp_int <- get_fit(row$section, row$data_name, row$resp_var, sp, TRUE, "imputed_gam")
+
+    cat("\n\n#### SEM (With Interaction): Measured vs Imputed\n")
+    print(
+      plot_sem_pair(
+        res_meas_int,
+        res_imp_int,
+        panel_title = paste0("SEM with interaction: ", row$data_name, " / ", row$resp_var, " / ", sp)
+      )
+    )
+  }
+}
+```
+
+# Session Info
+
+```{r sessioninfo}
+sessionInfo()
+```
