@@ -125,16 +125,28 @@ A one-off GLMM (no temporal factor) quantifies the influence of precipitation, c
 
 ### Fagus
 
-```{r biomass-glmm-fagus, fig.width=8, fig.height=8}
+```{r biomass-glmm-fagus, fig.width=8, fig.height=6}
 res_fag <- run_biomass_glmm_species(df_biomass, species_keep = "fagus")
 print(res_fag$plot)
 ```
 
+```{r biomass-glmm-fagus-perf, results='asis'}
+knitr::kable(res_fag$performance %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))),
+  caption = "Fagus biomass GLMM performance")
+```
+
 ### Quercus
 
-```{r biomass-glmm-quercus, fig.width=8, fig.height=8}
+```{r biomass-glmm-quercus, fig.width=8, fig.height=6}
 res_que <- run_biomass_glmm_species(df_biomass, species_keep = "quercus")
 print(res_que$plot)
+```
+
+```{r biomass-glmm-quercus-perf, results='asis'}
+knitr::kable(res_que$performance %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))),
+  caption = "Quercus biomass GLMM performance")
 ```
 
 ---

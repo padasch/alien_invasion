@@ -166,6 +166,32 @@ extract_biomass_effects <- function(fit_obj) {
   df_eff
 }
 
+# Readable labels for GLMM coefficient names
+.rename_glmm_terms <- function(terms) {
+  lookup <- c(
+    "precipitationdrought"  = "Precipitation: Control \u2192 Drought",
+    "culturemixed"          = "Culture: Mono \u2192 Mixed",
+    "robiniawith-robinia"   = "Robinia: Without \u2192 With",
+    "soiltype_finoc-robinia" = "Soil: Beech Soil \u2192 Robinia Soil"
+  )
+  ifelse(terms %in% names(lookup), lookup[terms], terms)
+}
+
+extract_model_performance <- function(fit_obj) {
+
+  mod <- fit_obj$model
+  r2  <- tryCatch(MuMIn::r.squaredGLMM(mod), error = function(e) matrix(c(NA, NA), nrow = 1, dimnames = list(NULL, c("R2m", "R2c"))))
+  tibble::tibble(
+    metric   = fit_obj$metric,
+    species  = fit_obj$species,
+    AIC      = stats::AIC(mod),
+    BIC      = stats::BIC(mod),
+    R2_marginal    = r2[1, "R2m"],
+    R2_conditional = r2[1, "R2c"],
+    n_obs    = nrow(fit_obj$data)
+  )
+}
+
 plot_biomass_effects <- function(df_effects) {
   metric_labels <- c(
     root_biomass       = "Root biomass",
@@ -173,42 +199,40 @@ plot_biomass_effects <- function(df_effects) {
     root_shoot_biomass = "Root:shoot biomass"
   )
 
-  # Normalize estimates to [0, 1] within each metric for comparability
+  # Normalize estimates to [-1, 1] within each metric
   df_effects <- df_effects %>%
-    mutate(metric_label = metric_labels[metric]) %>%
+    mutate(
+      term_label   = .rename_glmm_terms(term),
+      metric_label = metric_labels[metric]
+    ) %>%
     group_by(metric) %>%
     mutate(
-      abs_est = abs(estimate),
-      max_abs = max(abs_est, na.rm = TRUE),
-      norm_estimate = if_else(max_abs > 0, abs_est / max_abs, 0),
-      norm_se = if_else(max_abs > 0, se / max_abs, 0),
-      direction = if_else(estimate >= 0, "positive", "negative")
+      max_abs      = max(abs(estimate), na.rm = TRUE),
+      norm_est     = if_else(max_abs > 0, estimate / max_abs, 0),
+      norm_ci_lo   = if_else(max_abs > 0, ci_lo / max_abs, 0),
+      norm_ci_hi   = if_else(max_abs > 0, ci_hi / max_abs, 0)
     ) %>%
     ungroup()
 
   ggplot2::ggplot(df_effects, ggplot2::aes(
-    x = reorder(term, norm_estimate), y = norm_estimate,
-    fill = significant
+    x = term_label, y = norm_est, color = significant
   )) +
-    ggplot2::geom_col(width = 0.7, alpha = 0.8) +
-    ggplot2::geom_errorbar(
-      ggplot2::aes(
-        ymin = pmax(norm_estimate - norm_se, 0),
-        ymax = pmin(norm_estimate + norm_se, 1)
-      ),
-      width = 0.25, color = "grey30"
+    ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+    ggplot2::geom_pointrange(
+      ggplot2::aes(ymin = norm_ci_lo, ymax = norm_ci_hi),
+      size = 0.6, linewidth = 0.7, fatten = 2.5
     ) +
-    ggplot2::facet_wrap(~ metric_label, scales = "free_y", ncol = 1) +
-    ggplot2::coord_flip() +
-    ggplot2::scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.25)) +
-    ggplot2::scale_fill_manual(
-      values = c(`TRUE` = "indianred", `FALSE` = "grey60"),
+    ggplot2::facet_wrap(~ metric_label, ncol = 1) +
+    ggplot2::coord_flip(ylim = c(-1, 1)) +
+    ggplot2::scale_y_continuous(breaks = seq(-1, 1, 0.5)) +
+    ggplot2::scale_color_manual(
+      values = c(`TRUE` = "indianred", `FALSE` = "grey50"),
       labels = c(`TRUE` = "95% CI excludes 0", `FALSE` = "95% CI includes 0"),
       name = NULL
     ) +
     ggplot2::labs(
-      title = paste("Normalized treatment effect sizes -", df_effects$species[1]),
-      x = NULL, y = "Normalized |effect size| (0\u20131)"
+      title = paste("Treatment effects on biomass \u2013", df_effects$species[1]),
+      x = NULL, y = "Normalized effect (\u00b195% CI)"
     ) +
     ggplot2::theme_bw(base_size = 11) +
     ggplot2::theme(
@@ -222,6 +246,7 @@ run_biomass_glmm_species <- function(df_biomass, species_keep = "fagus",
                                      metrics = c("root_biomass", "shoot_biomass", "root_shoot_biomass")) {
   fits <- lapply(metrics, function(m) fit_biomass_glmm(df_biomass, species_keep, m))
   effects <- do.call(rbind, lapply(fits, extract_biomass_effects))
+  perf    <- do.call(rbind, lapply(fits, extract_model_performance))
   p <- plot_biomass_effects(effects)
-  list(fits = fits, effects = effects, plot = p)
+  list(fits = fits, effects = effects, performance = perf, plot = p)
 }
