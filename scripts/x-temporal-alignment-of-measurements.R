@@ -171,5 +171,5 @@ plot_measurement_schedule <- function(meas_tbl) {
 # -------------------------------------------------------------------
 # grid      <- get_sem_dataset_grid()
 # meas_tbl  <- build_measurement_table(grid)
-plot_measurement_schedule(meas_tbl)
+# plot_measurement_schedule(meas_tbl)
 

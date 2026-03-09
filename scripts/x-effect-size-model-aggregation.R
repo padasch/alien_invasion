@@ -85,7 +85,8 @@ plot_treatment_importance_phases <- function(
       "mean_sd", "mean_se", "mean_ci",
       "pointrange_sd", "pointrange_se", "pointrange_ci"
     ),
-    ylab          = "Standardized importance (|test statistic|)"
+    # ylab          = "Standardized importance (|test statistic|)"
+    ylab          = "Importance (Standardized Effect Size)"
 ) {
   stat <- match.arg(stat)
   
@@ -261,26 +262,29 @@ add_phase_to_effects <- function(effects_imp) {
     dplyr::select(-month)
 }
 
-all_eff <- collect_all_effects()
-all_eff_imp <- all_eff %>% add_importance_metric(use_stat = FALSE, scale_within = TRUE)
-all_eff_imp_phase <- add_phase_to_effects(all_eff_imp)
-
-mystat <- "mean_se"
-p_all <- plot_treatment_importance_phases(all_eff_imp_phase, stat = mystat)
-p_fag <- plot_treatment_importance_phases(all_eff_imp_phase |> filter(species=="fagus"), stat = mystat)
-p_que <- plot_treatment_importance_phases(all_eff_imp_phase |> filter(species=="quercus"), stat = mystat)
-
-ymin <- 0
-ymax <- 3
-
-p_all_fix <- p_all + coord_cartesian(ylim = c(ymin, ymax)) + ggtitle("All species")
-p_fag_fix <- p_fag + coord_cartesian(ylim = c(ymin, ymax)) + ggtitle("Fagus")
-p_que_fix <- p_que + coord_cartesian(ylim = c(ymin, ymax)) + ggtitle("Quercus")
-
-p_3panel <- (p_all_fix | p_fag_fix | p_que_fix) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        plot.tag = element_text(face = "bold"))
-
-p_3panel
+# ============================================================
+# EXAMPLE CODE: Uncomment and run to generate effect summaries
+# ============================================================
+# all_eff <- collect_all_effects()
+# all_eff_imp <- all_eff %>% add_importance_metric(use_stat = FALSE, scale_within = TRUE)
+# all_eff_imp_phase <- add_phase_to_effects(all_eff_imp)
+#
+# mystat <- "mean_se"
+# p_all <- plot_treatment_importance_phases(all_eff_imp_phase, stat = mystat)
+# p_fag <- plot_treatment_importance_phases(all_eff_imp_phase |> filter(species=="fagus"), stat = mystat)
+# p_que <- plot_treatment_importance_phases(all_eff_imp_phase |> filter(species=="quercus"), stat = mystat)
+#
+# ymin <- 0
+# ymax <- 3
+#
+# p_all_fix <- p_all + coord_cartesian(ylim = c(ymin, ymax)) + ggtitle("All species")
+# p_fag_fix <- p_fag + coord_cartesian(ylim = c(ymin, ymax)) + ggtitle("Fagus")
+# p_que_fix <- p_que + coord_cartesian(ylim = c(ymin, ymax)) + ggtitle("Quercus")
+#
+# p_3panel <- (p_all_fix | p_fag_fix | p_que_fix) +
+#   plot_layout(guides = "collect") +
+#   plot_annotation(tag_levels = "A") &
+#   theme(legend.position = "bottom",
+#         plot.tag = element_text(face = "bold"))
+#
+# p_3panel
