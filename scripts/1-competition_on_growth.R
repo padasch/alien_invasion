@@ -611,7 +611,7 @@ df %>%
   scale_fill_manual(values = c(control = "#4F6674", drought = "indianred"), name = "Precipitation") +
   scale_linetype_manual(
     values = c(inoc_beech = "dashed", inoc_robinia = "solid"),
-    labels = c(inoc_beech = "beech soil", inoc_robinia = "robinia soil"),
+    labels = c(inoc_beech = "Beech Soil (was drier)", inoc_robinia = "Robinia Soil (was wetter)"),
     name = "Soil type"
   ) +
   scale_x_date(date_labels = "%m/%y") +

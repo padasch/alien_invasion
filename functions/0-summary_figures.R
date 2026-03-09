@@ -101,6 +101,14 @@ scale_culture_alpha <- function(name = "Culture") {
   scale_alpha_manual(values = PLOT_STYLE$alphas$culture, name = name)
 }
 
+# -------- soiltype display labels --------
+SOILTYPE_LABELS <- c(
+  inoc_beech   = "Beech Soil (was drier)",
+  inoc_robinia = "Robinia Soil (was wetter)",
+  `inoc-beech`   = "Beech Soil (was drier)",
+  `inoc-robinia` = "Robinia Soil (was wetter)"
+)
+
 # -------- common facets --------
 facet_tree <- function() {
   facet_grid(
@@ -117,8 +125,9 @@ facet_soil <- function() {
     rows = vars(soiltype),
     cols = vars(robinia),
     labeller = labeller(
-      robinia = c(`without-robinia`="without robinia",
-                  `with-robinia`   ="with robinia")
+      robinia  = c(`without-robinia`="without robinia",
+                   `with-robinia`   ="with robinia"),
+      soiltype = SOILTYPE_LABELS
     )
   )
 }
@@ -655,20 +664,31 @@ plot_soil_mp <- function(df_soil,
     )
   )
   
+  # Aggregate to one line per treatment group (mean across boxes per date)
+  df_agg <- df_plot %>%
+    dplyr::group_by(.data$date, .data$precipitation, .data$culture, .data$soiltype, .data$robinia) %>%
+    dplyr::summarise(soil_mp_log = mean(.data$soil_mp_log, na.rm = TRUE), .groups = "drop")
+
   # Add layers based on show parameter
   if (show %in% c("both", "raw")) {
-    raw_alpha <- if (show == "raw") 1 else 0.16
-    p <- p + ggplot2::geom_line(
-      ggplot2::aes(group = interaction(.data$precipitation, .data$culture, .data$boxlabel)),
-      alpha = raw_alpha,
-      linewidth = 0.35
-    )
+    if (show == "raw") {
+      # Single aggregated line per treatment
+      p <- p + ggplot2::geom_line(data = df_agg, linewidth = 0.5)
+    } else {
+      # Thin faint per-box lines as background
+      p <- p + ggplot2::geom_line(
+        ggplot2::aes(group = interaction(.data$precipitation, .data$culture, .data$boxlabel)),
+        alpha = 0.16,
+        linewidth = 0.35
+      )
+    }
   }
   
   if (show %in% c("both", "smooth")) {
     p <- p +
-      ggplot2::geom_smooth(
-        ggplot2::aes(group = interaction(.data$precipitation, .data$culture)),
+      ggplot2::geom_line(
+        data = df_agg,
+        stat = "smooth",
         method = "loess",
         se = FALSE,
         linewidth = 1.1,
@@ -677,7 +697,8 @@ plot_soil_mp <- function(df_soil,
   }
   
   p <- p +
-    ggplot2::facet_grid(rows = ggplot2::vars(.data$soiltype), cols = ggplot2::vars(.data$robinia)) +
+    ggplot2::facet_grid(rows = ggplot2::vars(.data$soiltype), cols = ggplot2::vars(.data$robinia),
+                        labeller = ggplot2::labeller(soiltype = SOILTYPE_LABELS)) +
     scale_precip_color() +
     scale_culture_linetype() +
     ggplot2::scale_y_continuous(
@@ -690,8 +711,8 @@ plot_soil_mp <- function(df_soil,
       title = paste0(
         "Soil water potential: ",
         switch(show,
-               "both" = "raw trajectories and smoothed treatment trends",
-               "raw"  = "raw sensor trajectories",
+               "both" = "raw trajectories + smoothed treatment means",
+               "raw"  = "mean sensor trajectories per treatment",
                "smooth" = "smoothed treatment trends"),
         if (filter_soiltype != "both") paste0(" (soiltype = ", filter_soiltype, ")")
       )
