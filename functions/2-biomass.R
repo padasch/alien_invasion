@@ -1,4 +1,4 @@
-# 0-biomass.R
+# 2-biomass.R
 # Biomass wrangling, plotting, and GLMM functions
 
 wrangle_tree_biomass <- function(fp, sheet = "Biomass") {
