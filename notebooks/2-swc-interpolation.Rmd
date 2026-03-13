@@ -55,18 +55,18 @@ species_vec <- c("fagus", "quercus")
 
 Soil water content (SWC) is measured manually at irregular intervals in the ALINV experiment. The piecewise SEMs in the main analysis notebook use observed SWC matched to tree measurement dates within a ±7-day window. This notebook provides:
 
-1. **GAM Imputation** — a treatment-agnostic generalised additive model that produces daily SWC estimates from meteorological and soil-water-potential predictors, ensuring imputed values carry no treatment information.
+1. **GAM Imputation** — a treatment-agnostic generalised additive model that produces daily SWC estimates from meteorological, precipitation, and soil-water-potential predictors, ensuring imputed values carry no treatment information.
 2. **SEM Sensitivity Comparison** — systematic re-fitting of all trait-level SEMs using the GAM-imputed SWC in place of the measured values, to assess whether the choice of SWC source materially changes structural conclusions.
 
 ## Methods
 
 ### SWC Imputation GAM
 
-A treatment-agnostic GAM imputes daily SWC from site-level meteorological drivers:
+A treatment-agnostic GAM imputes daily SWC from site-level meteorological and hydrological drivers:
 
-$$\text{SWC}_{it} = f_1(t) + f_2(\text{SWP}_{\text{site},t}) + f_3(T_{\text{air},t}) + f_4(\text{VPD}_t) + f_5(\text{Rad}_t) + b_i + \varepsilon_{it}$$
+$$\text{SWC}_{it} = f_1(t) + f_2(\text{SWP}_{\text{site},t}) + f_3(T_{\text{air},t}) + f_4(\text{VPD}_t) + f_5(P_t) + f_6(\text{Rad}_t) + b_i + \varepsilon_{it}$$
 
-where $f_1, \ldots, f_5$ are penalised thin-plate splines and $b_i$ is a random intercept per box. Because only site-level predictors enter the model, the imputed SWC does not encode treatment group information.
+where $f_1, \ldots, f_6$ are penalised thin-plate splines and $b_i$ is a random intercept per box. Daily precipitation $P_t$ is derived from the MeteoSwiss 10-minute series aggregated to calendar-day sums, with the corrupted MeteoSwiss period on 13-15 July 2025 replaced by the corresponding LWF daily sums before modelling. A 2-day cumulative precipitation column is exported for future lag sensitivity checks, but the GAM currently uses same-day daily precipitation because SWC was measured in the upper 10 cm of soil, where responses to rainfall should be rapid. Because only site-level predictors enter the model, the imputed SWC does not encode treatment group information.
 
 ### SEM Sensitivity
 
@@ -118,14 +118,20 @@ swp_site_daily <- soil_raw %>%
   summarise(swp_site = median(swp_log10, na.rm = TRUE), .groups = "drop")
 ```
 
+```{r gam-precip-daily}
+precip_daily <- get_site_precipitation_daily(
+  export_path = "data/interim/site_precipitation_daily.csv"
+)
+```
+
 ```{r gam-panel-build}
 swc_obs <- readr::read_csv(
   .resolve_path("data/interim/box_soilwater.csv"), show_col_types = FALSE
 ) %>%
   transmute(boxlabel = as.character(boxlabel), date = as.Date(date), swc_obs = as.numeric(swc))
 
-date_min <- max(min(meteo_daily$date), min(swp_site_daily$date))
-date_max <- min(max(meteo_daily$date), max(swp_site_daily$date))
+date_min <- max(min(meteo_daily$date), min(swp_site_daily$date), min(precip_daily$date))
+date_max <- min(max(meteo_daily$date), max(swp_site_daily$date), max(precip_daily$date))
 
 panel_daily <- tidyr::expand_grid(
   swc_obs %>% distinct(boxlabel),
@@ -133,11 +139,13 @@ panel_daily <- tidyr::expand_grid(
 ) %>%
   left_join(swc_obs, by = c("boxlabel", "date")) %>%
   left_join(meteo_daily, by = "date") %>%
+  left_join(precip_daily, by = "date") %>%
   left_join(swp_site_daily, by = "date") %>%
   mutate(date_num = as.numeric(date), boxlabel = factor(boxlabel))
 
 fit_data <- panel_daily %>%
-  filter(!is.na(swc_obs), !is.na(swp_site), !is.na(air_temp), !is.na(vpd), !is.na(radiation))
+  filter(!is.na(swc_obs), !is.na(swp_site), !is.na(air_temp), !is.na(vpd),
+         !is.na(radiation), !is.na(precip_mm))
 ```
 
 ## GAM Fit & Diagnostics
@@ -145,7 +153,7 @@ fit_data <- panel_daily %>%
 ```{r gam-fit}
 gam_swc <- mgcv::gam(
   swc_obs ~ s(date_num, k = 10) + s(swp_site, k = 8) +
-    s(air_temp, k = 8) + s(vpd, k = 8) + s(radiation, k = 8) +
+    s(air_temp, k = 8) + s(vpd, k = 8) + s(precip_mm, k = 8) + s(radiation, k = 8) +
     s(boxlabel, bs = "re"),
   data = fit_data, method = "REML"
 )
@@ -163,7 +171,11 @@ plot(gam_swc, pages = 1, shade = TRUE, residuals = TRUE, scale = 0)
 
 ```{r gam-predict}
 pred_data <- panel_daily %>%
-  filter(!is.na(swp_site), !is.na(air_temp), !is.na(vpd), !is.na(radiation))
+  filter(!is.na(swp_site), !is.na(air_temp), !is.na(vpd), !is.na(radiation), !is.na(precip_mm)) %>%
+  select(
+    boxlabel, date, swc_obs, air_temp, rh, vpd, radiation,
+    precip_mm, precip_mm_2d, precip_source, swp_site, date_num
+  )
 pred <- predict(gam_swc, newdata = pred_data, se.fit = TRUE, type = "response")
 
 gam_out <- pred_data %>%

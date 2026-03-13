@@ -48,6 +48,149 @@ conflicts_prefer(
   file.path(.alinv_project_root(), path)
 }
 
+# Build a corrected site-level daily precipitation series from MeteoSwiss 10-min
+# data, replacing the known corrupted 2025-07-13 to 2025-07-15 window with LWF.
+get_site_precipitation_daily <- function(
+  ms_file = "data/raw/sensor_data/precipitation_10m_MS.dat",
+  lwf_file = "data/raw/sensor_data/precipitation_10m_LWF.csv",
+  replacement_dates = seq(as.Date("2025-07-13"), as.Date("2025-07-15"), by = "day"),
+  export_path = NULL
+) {
+  ms_file <- .resolve_path(ms_file)
+  lwf_file <- .resolve_path(lwf_file)
+
+  ms_daily <- read.table(
+    ms_file,
+    skip = 8,
+    header = FALSE,
+    fill = TRUE,
+    stringsAsFactors = FALSE,
+    na.strings = c("32767", "32767.0"),
+    col.names = c("sta", "year", "month", "day", "hour", "minute", "precip_mm")
+  ) %>%
+    mutate(
+      year = suppressWarnings(as.integer(year)),
+      month = suppressWarnings(as.integer(month)),
+      day = suppressWarnings(as.integer(day)),
+      hour = suppressWarnings(as.integer(hour)),
+      minute = suppressWarnings(as.integer(minute)),
+      precip_mm = suppressWarnings(as.numeric(precip_mm))
+    ) %>%
+    filter(!is.na(year), !is.na(month), !is.na(day), !is.na(hour), !is.na(minute)) %>%
+    transmute(
+      date = as.Date(sprintf("%04d-%02d-%02d", year, month, day)),
+      precip_mm
+    ) %>%
+    group_by(date) %>%
+    summarise(
+      precip_mm_ms = if (all(is.na(precip_mm))) NA_real_ else sum(precip_mm, na.rm = TRUE),
+      ms_records = n(),
+      ms_missing = sum(is.na(precip_mm)),
+      .groups = "drop"
+    )
+
+  if (file.exists(lwf_file)) {
+    lwf_raw <- readr::read_csv(lwf_file, show_col_types = FALSE)
+    if (ncol(lwf_raw) < 2) {
+      stop("LWF precipitation file must contain at least two columns.", call. = FALSE)
+    }
+
+    names(lwf_raw)[1:2] <- c("timestamp", "precip_mm")
+
+    lwf_daily <- lwf_raw %>%
+      transmute(
+        datetime = lubridate::ymd_hms(timestamp, quiet = TRUE),
+        date = as.Date(datetime),
+        precip_mm = suppressWarnings(readr::parse_number(as.character(precip_mm)))
+      ) %>%
+      filter(!is.na(datetime)) %>%
+      group_by(date) %>%
+      summarise(
+        precip_mm_lwf = if (all(is.na(precip_mm))) NA_real_ else sum(precip_mm, na.rm = TRUE),
+        lwf_records = n(),
+        lwf_missing = sum(is.na(precip_mm)),
+        .groups = "drop"
+      )
+  } else {
+    lwf_daily <- tibble(
+      date = as.Date(character()),
+      precip_mm_lwf = numeric(),
+      lwf_records = integer(),
+      lwf_missing = integer()
+    )
+  }
+
+  precip_daily <- ms_daily %>%
+    full_join(lwf_daily, by = "date") %>%
+    arrange(date) %>%
+    mutate(
+      use_lwf = date %in% replacement_dates & !is.na(precip_mm_lwf),
+      precip_mm = case_when(
+        use_lwf ~ precip_mm_lwf,
+        TRUE ~ precip_mm_ms
+      ),
+      precip_source = case_when(
+        use_lwf ~ "lwf_replacement",
+        !is.na(precip_mm_ms) ~ "ms",
+        !is.na(precip_mm_lwf) ~ "lwf_only",
+        TRUE ~ NA_character_
+      ),
+      # Keep a short cumulative variant for future lag sensitivity checks.
+      precip_mm_2d = if_else(
+        is.na(precip_mm),
+        NA_real_,
+        precip_mm + coalesce(dplyr::lag(precip_mm, 1), 0)
+      )
+    ) %>%
+    select(
+      date,
+      precip_mm,
+      precip_mm_2d,
+      precip_source,
+      precip_mm_ms,
+      precip_mm_lwf,
+      ms_records,
+      ms_missing,
+      lwf_records,
+      lwf_missing
+    )
+
+  replacement_rows <- precip_daily %>%
+    filter(date %in% replacement_dates) %>%
+    select(date, precip_source)
+
+  wrong_source_idx <- is.na(replacement_rows$precip_source) |
+    replacement_rows$precip_source != "lwf_replacement"
+
+  if (nrow(replacement_rows) != length(replacement_dates) ||
+      any(wrong_source_idx)) {
+    missing_dates <- setdiff(replacement_dates, replacement_rows$date)
+    wrong_source_dates <- replacement_rows$date[wrong_source_idx]
+    stop(
+      paste(
+        "Could not apply the required LWF precipitation replacements.",
+        if (length(missing_dates) > 0) {
+          paste("Missing date(s):", paste(as.character(missing_dates), collapse = ", "))
+        } else {
+          NULL
+        },
+        if (length(wrong_source_dates) > 0) {
+          paste("Non-LWF source on:", paste(as.character(wrong_source_dates), collapse = ", "))
+        } else {
+          NULL
+        }
+      ),
+      call. = FALSE
+    )
+  }
+
+  if (!is.null(export_path) && nzchar(export_path)) {
+    readr::write_csv(precip_daily, .resolve_path(export_path))
+  }
+
+  precip_daily
+}
+
 # Manual Functions ----------------------------------------------------------------------------
 
 # Main Functions
