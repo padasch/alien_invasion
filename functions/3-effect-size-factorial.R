@@ -22,7 +22,11 @@ emmeans::emm_options(lmer.df = "asymptotic")  # quiet, fast CIs
 .default_resp_map <- list(
   chlorophyll   = "chl",
   condition     = "condition",
-  growth        = c("height", "diameter"),       # requires increment!
+  growth        = c(
+    "height", "diameter",
+    "height_inc_t0_rel", "diameter_inc_t0_rel",
+    "height_inc_phase_rel", "diameter_inc_phase_rel"
+  ),
   quantum_yield = "qy",
   senescence    = c("percent_senesced", "chlavg"),
   phenology     = "doy"                          # special handling below
@@ -85,6 +89,7 @@ prepare_df_generic <- function(
     data_name = c("chlorophyll", "condition", "growth", "quantum_yield", "senescence", "phenology"),
     resp_var = NULL,                 # override mapping if you want a specific column
     species_keep = NULL,             # e.g., c("fagus","quercus") or "fagus"
+  standardize_response = TRUE,
     add_covars = FALSE,
     covars_fun = NULL,                # function returning covariates (boxlabel+date)
     soil_type = "both",
@@ -136,6 +141,14 @@ prepare_df_generic <- function(
   
   df <- .standardize_and_clean(df, cols_needed)
   df <- df |> drop_na(y)
+
+  if (isTRUE(standardize_response)) {
+    df <- df %>%
+      mutate(
+        y_org = y,
+        y = as.numeric(scale(y_org))
+      )
+  }
 
   # Keep a standardized SWC covariate available for temporal GLMMs.
   # This allows add_covars=TRUE to include SWC regardless of an external covariate join.
@@ -247,7 +260,7 @@ compute_combined_effects <- function(fit, df, factors = c("robinia", "precipitat
 }
 
 # Combined plot of effect-size time series (Robinia, Precipitation, Culture)
-plot_combined_effects <- function(effects_df, title, ylab = "Effect size (baseline − treatment)") {
+plot_combined_effects <- function(effects_df, title, ylab = "Effect size (baseline − treatment)", y_limits = NULL) {
   if (!nrow(effects_df)) stop("No contrasts to plot.")
   lab_map <- c(
     robinia = "Robinia (without − with)",
@@ -258,10 +271,13 @@ plot_combined_effects <- function(effects_df, title, ylab = "Effect size (baseli
   )
   
   ylowest <- effects_df$estimate - effects_df$se
-  ylowest <- min(ylowest)
+  ylowest <- min(ylowest, na.rm = TRUE)
   ylowest <- ylowest - abs(ylowest * 0.1)
+  if (!is.null(y_limits) && length(y_limits) == 2L) {
+    ylowest <- y_limits[1]
+  }
   
-  effects_df %>%
+  p <- effects_df %>%
     mutate(effect_lbl = dplyr::recode(effect, !!!lab_map)) %>%
     ggplot(aes(x = date, y = estimate, ymin = lower, ymax = upper,
                group = effect_lbl, color = effect_lbl, fill = effect_lbl)) +
@@ -296,6 +312,12 @@ plot_combined_effects <- function(effects_df, title, ylab = "Effect size (baseli
     ) +
     guides(color = guide_legend(nrow = 2, byrow = TRUE),
            fill  = guide_legend(nrow = 2, byrow = TRUE))
+
+  if (!is.null(y_limits) && length(y_limits) == 2L) {
+    p <- p + coord_cartesian(ylim = y_limits)
+  }
+
+  p
 }
 
 # ---------------------- ORCHESTRATORS --------------------------
@@ -309,6 +331,7 @@ make_effect_figure_generic <- function(
     soil_type = "both",
     add_covars = FALSE,
     covars_fun = NULL,
+    y_limits = NULL,
     swc_source = "measured",         # "measured" or "imputed_gam"
     force_run = FALSE                # NEW: overwrite existing results for today
 ) {
@@ -366,13 +389,26 @@ make_effect_figure_generic <- function(
   
   fit <- fit_glmm_per_date(dfm, include_covars = add_covars)
   eff <- compute_combined_effects(fit, dfm)
+  if (nrow(eff)) {
+    eff <- eff %>%
+      mutate(
+        scale_mode = "z_response",
+        swc_source = swc_source,
+        species = target_species,
+        include_interaction = FALSE
+      )
+  }
   
   ttl <- paste0(
     "Time-varying treatment effects on ", target_species,
     " (soil: ", soil_type, ", data: ",
     data_name, if (!is.null(resp_var)) paste0(", ", resp_var) else "", ")"
   )
-  p <- if (nrow(eff)) plot_combined_effects(eff, ttl) else NULL
+  p <- if (nrow(eff)) {
+    plot_combined_effects(eff, ttl, y_limits = y_limits)
+  } else {
+    NULL
+  }
   
   result <- list(plot = p, model = fit, effects = eff, data_model = dfm)
   
