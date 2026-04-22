@@ -661,7 +661,10 @@ write_sem_heatmap_csvs <- function(matrix_df,
 
 plot_sem_heatmap_panel <- function(panel_df,
                                    limit,
-                                   title = NULL) {
+                                   title = NULL,
+                                   annotate_values = FALSE,
+                                   value_digits = 2,
+                                   value_text_size = 3.1) {
   if (!nrow(panel_df)) {
     return(
       ggplot() +
@@ -670,11 +673,34 @@ plot_sem_heatmap_panel <- function(panel_df,
     )
   }
 
+  label_df <- if (isTRUE(annotate_values)) {
+    panel_df %>%
+      dplyr::filter(is.finite(.data$value)) %>%
+      dplyr::mutate(
+        value_label = formatC(.data$value, format = "f", digits = value_digits),
+        value_color = dplyr::if_else(abs(.data$value) >= 0.55 * limit, "white", "black")
+      )
+  } else {
+    tibble::tibble()
+  }
+
   ggplot(
     panel_df,
     aes(x = .data$col_label, y = .data$row_label, fill = .data$value)
   ) +
     geom_tile(color = "grey90", linewidth = 0.2) +
+    geom_text(
+      data = label_df,
+      mapping = aes(
+        x = .data$col_label,
+        y = .data$row_label,
+        label = .data$value_label,
+        color = .data$value_color
+      ),
+      inherit.aes = FALSE,
+      size = value_text_size,
+      fontface = "bold"
+    ) +
     scale_fill_gradient2(
       low = "indianred3",
       mid = "white",
@@ -684,6 +710,7 @@ plot_sem_heatmap_panel <- function(panel_df,
       na.value = "white",
       name = "Std. effect"
     ) +
+    scale_color_identity() +
     labs(
       x = NULL,
       y = NULL,

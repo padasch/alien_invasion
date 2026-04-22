@@ -225,7 +225,9 @@ plot_summary_total_sem_heatmaps <- function() {
       plot_sem_heatmap_panel(
         panel_df = panel_df,
         limit = shared_limit,
-        title = paste0(stringr::str_to_title(species_name), ": Total SEM effects")
+        title = paste0(stringr::str_to_title(species_name), ": Total SEM effects"),
+        annotate_values = TRUE,
+        value_digits = 2
       )
     }
   )
