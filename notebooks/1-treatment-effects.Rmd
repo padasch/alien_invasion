@@ -48,6 +48,22 @@ library(patchwork)
 # Global choices
 soil_type <- "both"        # "both", "inoc-beech", or "inoc-robinia"
 species_vec <- c("fagus", "quercus")
+
+# Global temporal effect y-axis limits (shared across all temporal GLMM figures)
+tmp_eff_for_ylim <- tryCatch(
+  collect_all_effects(
+    var_grid    = get_data_var_grid() %>% dplyr::filter(type == "tree"),
+    species_vec = species_vec,
+    soil_type   = soil_type
+  ),
+  error = function(e) tibble::tibble()
+)
+
+if (nrow(tmp_eff_for_ylim) > 0) {
+  options(alinv.temporal_y_limits = compute_global_effect_y_limits(tmp_eff_for_ylim))
+} else {
+  options(alinv.temporal_y_limits = NULL)
+}
 ```
 
 # Introduction
@@ -927,6 +943,203 @@ res_sen_chl_quercus_int <- make_temporal_sem_combo(
   include_interaction = TRUE
 )
 print(res_sen_chl_quercus_int$sem$plot)
+```
+
+---
+
+# SEM Aggregation Notebook
+
+The revised SEM matrix workflow (treatments x target variables, separate direct/indirect/combined panels, plus SWC-related panels) is now maintained in a dedicated notebook:
+
+- `notebooks/3-sem-aggregation.Rmd`
+
+## Exploratory Phase-Specific SEM (Growth-Derived Targets)
+
+Phase windows: until June, July-August, September-end.
+
+```{r sem-safe-helper, include=FALSE}
+safe_run_sem <- function(...) {
+  tryCatch(run_sem_for_trait(...), error = function(e) {
+    message("Skipping SEM fit: ", conditionMessage(e))
+    NULL
+  })
+}
+```
+
+```{r sem-phase-growth-derived, fig.width=14, fig.height=5}
+growth_targets <- c(
+  "height_inc_t0_rel",
+  "diameter_inc_t0_rel",
+  "height_inc_phase_rel",
+  "diameter_inc_phase_rel"
+)
+
+phase_windows <- c("until June", "July-August", "September-end")
+
+for (sp in species_vec) {
+  for (ph in phase_windows) {
+    cat("\n\n### Species:", sp, "| phase:", ph, "\n")
+    for (rv in growth_targets) {
+      sem_phase <- safe_run_sem(
+        type = "tree",
+        data_name = "growth",
+        resp_var = rv,
+        species = sp,
+        soil_type = soil_type,
+        include_interaction = FALSE,
+        phase_window = ph,
+        scale_all_numeric = TRUE,
+        swc_source = "measured",
+        force_run = FALSE
+      )
+
+      if (is.null(sem_phase)) next
+
+      cat("\n", rv, "| n:", sem_phase$n_rows_phase, "\n")
+      print(sem_phase$matrix_plots$direct)
+      print(sem_phase$matrix_plots$indirect)
+      print(sem_phase$matrix_plots$total)
+    }
+  }
+}
+```
+
+## Additional Growth-Derived Targets: Temporal + SEM
+
+```{r growth-derived-temporal-sem, fig.width=9.5, fig.height=5.8}
+safe_run_combo <- function(...) {
+  tryCatch(make_temporal_sem_combo(...), error = function(e) {
+    message("Skipping temporal+SEM combo: ", conditionMessage(e))
+    NULL
+  })
+}
+
+for (sp in species_vec) {
+  for (rv in growth_targets) {
+    cat("\n\n###", sp, "-", rv, "(no interaction)\n")
+    res_no <- safe_run_combo(
+      type = "tree",
+      data_name = "growth",
+      resp_var = rv,
+      species = sp,
+      soil_type = soil_type,
+      include_interaction = FALSE,
+      sem_phase_window = "all"
+    )
+    if (!is.null(res_no)) {
+      print(res_no$temporal$plot)
+      print(res_no$sem$plot)
+    }
+
+    cat("\n", sp, "-", rv, "(with interaction)\n")
+    res_yes <- safe_run_combo(
+      type = "tree",
+      data_name = "growth",
+      resp_var = rv,
+      species = sp,
+      soil_type = soil_type,
+      include_interaction = TRUE,
+      sem_phase_window = "all"
+    )
+    if (!is.null(res_yes)) {
+      print(res_yes$sem$plot)
+    }
+  }
+}
+```
+
+## Relative Growth Increments: Raw Timeseries
+
+The following plots show treatment-level raw timeseries (mean ± SE) for the relative increment targets, analogous to the raw height and diameter timeseries charts.
+
+```{r growth-relative-increment-timeseries, fig.width=10.5, fig.height=6.2}
+plot_relative_growth_ts <- function(resp_var, y_label, panel_title) {
+  df_rel <- get_data("tree", "growth") %>%
+    dplyr::filter(!is.na(.data[[resp_var]]))
+
+  if (!identical(soil_type, "both")) {
+    df_rel <- df_rel %>% dplyr::filter(.data$soiltype == soil_type)
+  }
+
+  if (!nrow(df_rel)) {
+    message("No rows available for ", resp_var, " after filtering.")
+    return(invisible(NULL))
+  }
+
+  df_rel <- df_rel %>%
+    dplyr::mutate(
+      precipitation = factor(.data$precipitation, levels = c("control", "drought")),
+      culture = factor(.data$culture, levels = c("mono", "mixed")),
+      robinia = factor(.data$robinia, levels = c("without-robinia", "with-robinia")),
+      species = factor(.data$species, levels = species_vec)
+    )
+
+  df_sum <- df_rel %>%
+    dplyr::group_by(.data$species, .data$robinia, .data$precipitation, .data$culture, .data$date) %>%
+    dplyr::summarise(
+      mean_val = mean(.data[[resp_var]], na.rm = TRUE),
+      se_val = sd(.data[[resp_var]], na.rm = TRUE) / sqrt(dplyr::n()),
+      .groups = "drop"
+    )
+
+  p <- ggplot(
+    df_sum,
+    aes(
+      x = date,
+      y = mean_val,
+      color = precipitation,
+      fill = precipitation,
+      linetype = culture,
+      group = interaction(precipitation, culture)
+    )
+  ) +
+    geom_ribbon(aes(ymin = mean_val - se_val, ymax = mean_val + se_val), alpha = 0.16, color = NA) +
+    geom_line(linewidth = 0.9) +
+    facet_grid(species ~ robinia) +
+    scale_color_manual(values = c(control = "grey50", drought = "indianred")) +
+    scale_fill_manual(values = c(control = "grey50", drought = "indianred")) +
+    scale_linetype_manual(values = c(mono = "solid", mixed = "dotted")) +
+    labs(
+      title = panel_title,
+      x = "Date",
+      y = y_label,
+      color = "Precipitation",
+      fill = "Precipitation",
+      linetype = "Culture"
+    ) +
+    theme_bw(base_size = 11) +
+    theme(
+      panel.grid.minor = element_blank(),
+      axis.text.x = element_text(angle = 35, hjust = 1),
+      legend.position = "bottom"
+    )
+
+  print(p)
+}
+
+plot_relative_growth_ts(
+  resp_var = "height_inc_t0_rel",
+  y_label = "Relative height increment from first measurement (-)",
+  panel_title = "Height relative increment (baseline = first measurement)"
+)
+
+plot_relative_growth_ts(
+  resp_var = "diameter_inc_t0_rel",
+  y_label = "Relative diameter increment from first measurement (-)",
+  panel_title = "Diameter relative increment (baseline = first measurement)"
+)
+
+plot_relative_growth_ts(
+  resp_var = "height_inc_phase_rel",
+  y_label = "Relative height increment within phase (-)",
+  panel_title = "Height relative increment (chained phase baseline)"
+)
+
+plot_relative_growth_ts(
+  resp_var = "diameter_inc_phase_rel",
+  y_label = "Relative diameter increment within phase (-)",
+  panel_title = "Diameter relative increment (chained phase baseline)"
+)
 ```
 
 ---
