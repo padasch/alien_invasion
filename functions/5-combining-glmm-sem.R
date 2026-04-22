@@ -112,7 +112,22 @@ make_temporal_sem_combo <- function(
     } else {
       res_temporal <- cache$temporal
       res_sem      <- cache$sem
-      cache_used   <- rds_path
+      cache_temporal_error <- !is.null(res_temporal$error) && nzchar(res_temporal$error)
+      cache_sem_error <- !is.null(res_sem$error) && nzchar(res_sem$error)
+      cache_temporal_empty <- {
+        data_model <- res_temporal$data_model %||% tibble::tibble()
+        effects <- res_temporal$effects %||% tibble::tibble()
+        nrow(data_model) > 0 && nrow(effects) == 0
+      }
+
+      if (cache_temporal_error || cache_sem_error || cache_temporal_empty) {
+        message("Cached combined result contained a stale failure or empty temporal effects. Re-fitting: ", rds_path)
+        res_temporal <- NULL
+        res_sem <- NULL
+        cache_used <- NA_character_
+      } else {
+        cache_used <- rds_path
+      }
     }
   } else {
     res_temporal <- NULL
@@ -176,11 +191,16 @@ make_temporal_sem_combo <- function(
       }
     )
 
-    saveRDS(
-      list(temporal = res_temporal, sem = res_sem),
-      file = rds_path
-    )
-    cache_used <- rds_path
+    if (is.null(temporal_err) && is.null(sem_err)) {
+      saveRDS(
+        list(temporal = res_temporal, sem = res_sem),
+        file = rds_path
+      )
+      cache_used <- rds_path
+    } else {
+      message("Skipping combined cache write because at least one submodel failed.")
+      cache_used <- NA_character_
+    }
 
     if (!is.null(temporal_err) || !is.null(sem_err)) {
       warn_parts <- c()

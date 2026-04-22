@@ -225,11 +225,67 @@ fit_glmm_per_date <- function(df,
   lme4::lmer(fml, data = df, REML = TRUE)
 }
 
+extract_per_date_contrasts_from_fixef <- function(fit, factor_name) {
+  mf <- stats::model.frame(fit)
+  if (!"date" %in% names(mf) || !factor_name %in% names(mf)) {
+    stop("Model frame does not contain 'date' and factor '", factor_name, "'.", call. = FALSE)
+  }
+
+  factor_levels <- levels(mf[[factor_name]])
+  if (length(factor_levels) < 2L) {
+    return(tibble())
+  }
+
+  treatment_level <- factor_levels[[2]]
+  date_levels <- levels(mf$date)
+  beta <- lme4::fixef(fit)
+  vc <- as.matrix(stats::vcov(fit))
+  coef_names <- paste0("date", date_levels, ":", factor_name, treatment_level)
+  keep <- coef_names %in% names(beta)
+
+  if (!any(keep)) {
+    stop(
+      "Could not find date-specific coefficients for factor '", factor_name,
+      "' in the fitted model.",
+      call. = FALSE
+    )
+  }
+
+  coef_names <- coef_names[keep]
+  date_levels <- date_levels[keep]
+  raw_est <- unname(beta[coef_names])
+  se <- vapply(
+    coef_names,
+    function(term_i) sqrt(unname(vc[term_i, term_i])),
+    numeric(1)
+  )
+
+  estimate <- -raw_est
+  stat <- estimate / se
+
+  tibble::tibble(
+    date = as.Date(date_levels),
+    contrast = paste0(factor_levels[[1]], " - ", treatment_level),
+    estimate = estimate,
+    se = se,
+    stat = stat,
+    df = NA_real_,
+    lower = estimate - 1.96 * se,
+    upper = estimate + 1.96 * se
+  ) %>%
+    dplyr::arrange(.data$date, .data$contrast)
+}
+
 # Robust per-date contrasts for ANY categorical factor; use revpairwise so
 # effect = baseline − treatment (matches your interpretation)
 extract_per_date_contrasts_any <- function(fit, factor_name) {
   if (!requireNamespace("emmeans", quietly = TRUE)) {
-    stop("Package 'emmeans' is required to extract temporal contrasts.", call. = FALSE)
+    message(
+      "Package 'emmeans' not available; extracting temporal contrasts from model coefficients for factor '",
+      factor_name,
+      "'."
+    )
+    return(extract_per_date_contrasts_from_fixef(fit, factor_name))
   }
 
   emm <- emmeans::emmeans(fit, specs = as.formula(paste("~", factor_name, "| date")), type = "link")
@@ -495,28 +551,38 @@ make_effect_figure_generic <- function(
   if (file.exists(cache_path) && !force_run) {
     message("Loading cached results from: ", cache_path)
     cached_result <- readRDS(cache_path)
-    cached_meta <- temporal_effect_plot_meta(
-      type = type,
-      data_name = data_name,
-      resp_var = resp_var,
-      target_species = target_species,
-      soil_type = soil_type,
-      include_soil_treatment = include_soil_treatment,
-      add_covars = add_covars,
-      swc_source = swc_source,
-      y_limits = alinv_temporal_effect_y_limits()
-    )
-    cached_result$plot <- plot_temporal_effects_from_csv(
-      effects_df = cached_result$effects %||% tibble::tibble(),
-      meta_df = cached_meta,
-      y_limits = y_limits %||% alinv_temporal_effect_y_limits()
-    )
-    write_temporal_effect_csv_bundle(
-      result = cached_result,
-      export_stem = export_stem,
-      meta = cached_meta
-    )
-    return(cached_result)
+    cache_has_empty_effects <- {
+      data_model <- cached_result$data_model %||% tibble::tibble()
+      effects <- cached_result$effects %||% tibble::tibble()
+      nrow(data_model) > 0 && nrow(effects) == 0
+    }
+
+    if (cache_has_empty_effects) {
+      message("Cached temporal results contained no extracted contrasts. Re-running: ", cache_path)
+    } else {
+      cached_meta <- temporal_effect_plot_meta(
+        type = type,
+        data_name = data_name,
+        resp_var = resp_var,
+        target_species = target_species,
+        soil_type = soil_type,
+        include_soil_treatment = include_soil_treatment,
+        add_covars = add_covars,
+        swc_source = swc_source,
+        y_limits = alinv_temporal_effect_y_limits()
+      )
+      cached_result$plot <- plot_temporal_effects_from_csv(
+        effects_df = cached_result$effects %||% tibble::tibble(),
+        meta_df = cached_meta,
+        y_limits = y_limits %||% alinv_temporal_effect_y_limits()
+      )
+      write_temporal_effect_csv_bundle(
+        result = cached_result,
+        export_stem = export_stem,
+        meta = cached_meta
+      )
+      return(cached_result)
+    }
   }
   
   # --------------------------------------------------

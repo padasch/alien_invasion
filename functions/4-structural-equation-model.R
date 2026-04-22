@@ -723,7 +723,11 @@ build_sem_graph_components <- function(effects_main,
     r2_swc_cond <- NA_real_
     r2_resp_marg <- NA_real_
     r2_resp_cond <- NA_real_
-    r2_label <- ""
+    r2_label <- if (!requireNamespace("piecewiseSEM", quietly = TRUE)) {
+      "R² omitted: package 'piecewiseSEM' unavailable in this R session."
+    } else {
+      ""
+    }
   }
 
   resp_node <- resp_var
@@ -1178,15 +1182,21 @@ run_sem_for_trait <- function(type = "tree",
   if (file.exists(cache_path) && !force_run) {
     message("Loading cached SEM results from: ", cache_path)
     cached_result <- readRDS(cache_path)
-    cached_result <- augment_sem_result_for_exports(
-      result = cached_result,
-      resp_var = resp_var,
-      species = species,
-      soil_type = soil_type,
-      include_interaction = include_interaction
-    )
-    write_sem_csv_bundle(cached_result, export_stem = export_stem)
-    return(cached_result)
+    cache_has_error <- !is.null(cached_result$error) && nzchar(cached_result$error)
+
+    if (cache_has_error) {
+      message("Cached SEM result contained an error. Re-running: ", cache_path)
+    } else {
+      cached_result <- augment_sem_result_for_exports(
+        result = cached_result,
+        resp_var = resp_var,
+        species = species,
+        soil_type = soil_type,
+        include_interaction = include_interaction
+      )
+      write_sem_csv_bundle(cached_result, export_stem = export_stem)
+      return(cached_result)
+    }
   }
 
   # 1) Load analysis-ready data in your project’s canonical way
@@ -1235,11 +1245,18 @@ run_sem_for_trait <- function(type = "tree",
   mod_resp <- mods$mod_resp
 
   # 4) Combine into piecewise SEM
-  sem_mod <- piecewiseSEM::psem(
-    mod_swc,
-    mod_resp,
-    data = df_sem_ready
-  )
+  sem_note <- NULL
+  sem_mod <- if (requireNamespace("piecewiseSEM", quietly = TRUE)) {
+    piecewiseSEM::psem(
+      mod_swc,
+      mod_resp,
+      data = df_sem_ready
+    )
+  } else {
+    sem_note <- "Package 'piecewiseSEM' unavailable; SEM path coefficients were computed from the fitted submodels, but SEM R² summaries are omitted."
+    message(sem_note)
+    NULL
+  }
 
   # 5) Extract effects
   effects_main <- extract_sem_effects_with_se(
@@ -1327,6 +1344,7 @@ run_sem_for_trait <- function(type = "tree",
     phase_sem_exploratory = !identical(phase_window, "all"),
     n_rows_phase = nrow(df_sem_ready),
     include_soil_treatment = include_soil_treatment,
+    note        = sem_note,
     plot        = p
   )
 

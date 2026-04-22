@@ -79,7 +79,7 @@ Soil water content (SWC) is measured manually at irregular intervals in the ALIN
 1. **GAM Imputation** — a treatment-agnostic generalised additive model that produces daily SWC estimates from meteorological, precipitation, and soil-water-potential predictors, ensuring imputed values carry no treatment information.
 2. **SEM Sensitivity Comparison** — systematic re-fitting of all trait-level SEMs using the GAM-imputed SWC in place of the measured values, to assess whether the choice of SWC source materially changes structural conclusions.
 
-Current render scenario: `r scenario_label`. Scenario-local SWC exports are written under `r file.path(analysis_data_root, "swc_interpolation")`.
+Current render scenario: `r scenario_label`. Scenario-local SWC exports are written under `r alinv_project_relative_path(file.path(analysis_data_root, "swc_interpolation"))`.
 
 ## Methods
 

@@ -638,7 +638,7 @@ The phenology timeseries above is descriptive: it shows the mean day of year (DO
 
 To answer the more direct biological question, “which treatment makes trees reach a given stage earlier or later?”, we additionally fit transition-timing models using the DOY of reaching stages 2, 3, and 4 as the response. In these models, lower DOY means earlier stage attainment. The summary panel below therefore shows treatment effects directly in days, with negative values indicating earlier stage transition under the named treatment and positive values indicating later transition. The “Average” column is a pooled estimate across stages 2-4.
 
-Scenario-local caches and CSV exports for these transition-timing models are written under `r file.path(analysis_data_root, "model-phenology-transition")`.
+Scenario-local caches and CSV exports for these transition-timing models are written under `r alinv_project_relative_path(file.path(analysis_data_root, "model-phenology-transition"))`.
 
 ```{r phenology-transition-summary, fig.width=13.5, fig.height=6.8}
 phenology_transition_results <- purrr::map(

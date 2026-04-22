@@ -313,36 +313,93 @@ plot_phenology_transition_effects <- function(effects_df) {
     ) %>%
     dplyr::arrange(.data$plot_order)
 
-  ggplot(effects_plot, aes(x = .data$estimate, y = .data$treatment_label, color = .data$treatment_label)) +
-    geom_vline(xintercept = 0, linetype = 2, color = "grey50", linewidth = 0.5) +
-    geom_segment(
-      aes(
-        x = .data$lower,
-        xend = .data$upper,
-        y = .data$treatment_label,
-        yend = .data$treatment_label
-      ),
-      linewidth = 0.85,
-      alpha = 0.8
+  if (!requireNamespace("patchwork", quietly = TRUE)) {
+    warning("Package 'patchwork' not available; using a single faceted phenology transition plot.")
+    return(
+      ggplot(effects_plot, aes(x = .data$estimate, y = .data$treatment_label, color = .data$treatment_label)) +
+        geom_vline(xintercept = 0, linetype = 2, color = "grey50", linewidth = 0.5) +
+        geom_segment(
+          aes(
+            x = .data$lower,
+            xend = .data$upper,
+            y = .data$treatment_label,
+            yend = .data$treatment_label
+          ),
+          linewidth = 0.85,
+          alpha = 0.8
+        ) +
+        geom_point(size = 2.4) +
+        facet_grid(
+          species ~ stage_label,
+          labeller = ggplot2::labeller(
+            species = c(fagus = "Fagus", quercus = "Quercus")
+          )
+        ) +
+        scale_color_brewer(palette = "Dark2", drop = FALSE) +
+        labs(
+          title = "Phenology transition timing by treatment",
+          subtitle = "Response = DOY of reaching each stage. Negative values mean the named treatment reaches the stage earlier; positive values mean later.",
+          x = "Shift in transition DOY under treatment (days)",
+          y = NULL
+        ) +
+        theme_classic(base_size = 11) +
+        theme(
+          legend.position = "none",
+          strip.background = ggplot2::element_rect(fill = "black", color = "black"),
+          strip.text = ggplot2::element_text(color = "white", face = "bold")
+        )
+    )
+  }
+
+  x_limits <- range(c(effects_plot$lower, effects_plot$upper, 0), na.rm = TRUE)
+  x_pad <- diff(x_limits) * 0.08
+  if (!is.finite(x_pad) || x_pad <= 0) {
+    x_pad <- 0.5
+  }
+  x_limits <- c(x_limits[[1]] - x_pad, x_limits[[2]] + x_pad)
+
+  species_labels <- c(fagus = "Fagus", quercus = "Quercus")
+
+  build_species_panel <- function(species_key) {
+    ggplot(
+      dplyr::filter(effects_plot, .data$species == species_key),
+      aes(x = .data$estimate, y = .data$treatment_label, color = .data$treatment_label)
     ) +
-    geom_point(size = 2.4) +
-    facet_grid(
-      species ~ stage_label,
-      labeller = ggplot2::labeller(
-        species = c(fagus = "Fagus", quercus = "Quercus")
+      geom_vline(xintercept = 0, linetype = 2, color = "grey50", linewidth = 0.5) +
+      geom_segment(
+        aes(
+          x = .data$lower,
+          xend = .data$upper,
+          y = .data$treatment_label,
+          yend = .data$treatment_label
+        ),
+        linewidth = 0.85,
+        alpha = 0.8
+      ) +
+      geom_point(size = 2.4) +
+      facet_wrap(~stage_label, nrow = 1) +
+      scale_color_brewer(palette = "Dark2", drop = FALSE) +
+      coord_cartesian(xlim = x_limits) +
+      labs(
+        title = species_labels[[species_key]] %||% species_key,
+        x = "Shift in transition DOY under treatment (days)",
+        y = NULL
+      ) +
+      theme_classic(base_size = 11) +
+      theme(
+        legend.position = "none",
+        plot.title = ggplot2::element_text(face = "bold", hjust = 0),
+        strip.background = ggplot2::element_rect(fill = "black", color = "black"),
+        strip.text = ggplot2::element_text(color = "white", face = "bold")
       )
-    ) +
-    scale_color_brewer(palette = "Dark2", drop = FALSE) +
-    labs(
+  }
+
+  species_present <- levels(droplevels(effects_plot$species))
+  species_plots <- lapply(species_present, build_species_panel)
+
+  patchwork::wrap_plots(species_plots, ncol = 1) +
+    patchwork::plot_annotation(
       title = "Phenology transition timing by treatment",
-      subtitle = "Response = DOY of reaching each stage. Negative values mean the named treatment reaches the stage earlier; positive values mean later.",
-      x = "Shift in transition DOY under treatment (days)",
-      y = NULL
-    ) +
-    theme_classic(base_size = 11) +
-    theme(
-      legend.position = "none",
-      strip.background = ggplot2::element_rect(fill = "black", color = "black"),
-      strip.text = ggplot2::element_text(color = "white", face = "bold")
+      subtitle = "Response = DOY of reaching each stage. Negative values mean the named treatment reaches the stage earlier; positive values mean later."
     )
 }

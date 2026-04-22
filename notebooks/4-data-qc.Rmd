@@ -58,7 +58,7 @@ This QC notebook summarises the cleaned input data used for the current scenario
 - Scenario: `r scenario_label`
 - Soil filter: `r soil_type`
 - Soil modeled as treatment: `r include_soil_treatment`
-- Scenario output root: `r analysis_root`
+- Scenario output root: `r alinv_project_relative_path(analysis_root)`
 
 # Phenology Cleaning
 

@@ -80,12 +80,48 @@ if (!exists("remove_empty", mode = "function")) {
   wd
 }
 
+# Escape regex metacharacters in literal paths.
+.escape_regex <- function(x) {
+  gsub("([][{}()+*^$|\\\\?.])", "\\\\\\1", x)
+}
+
 # Resolve possibly relative paths against project root when needed.
 .resolve_path <- function(path) {
   if (is.null(path) || !nzchar(path)) return(path)
-  if (grepl("^(/|[A-Za-z]:[\\\\/])", path)) return(path)
-  if (dir.exists(path) || file.exists(path)) return(path)
-  file.path(.alinv_project_root(), path)
+  if (grepl("^(/|[A-Za-z]:[\\\\/])", path)) {
+    return(normalizePath(path, winslash = "/", mustWork = FALSE))
+  }
+
+  project_root <- .alinv_project_root()
+  project_path <- file.path(project_root, path)
+
+  if (dir.exists(project_path) || file.exists(project_path)) {
+    return(normalizePath(project_path, winslash = "/", mustWork = TRUE))
+  }
+
+  if (dir.exists(path) || file.exists(path)) {
+    return(normalizePath(path, winslash = "/", mustWork = TRUE))
+  }
+
+  normalizePath(project_path, winslash = "/", mustWork = FALSE)
+}
+
+alinv_project_relative_path <- function(path) {
+  if (is.null(path) || !nzchar(path)) return(path)
+
+  project_root <- normalizePath(.alinv_project_root(), winslash = "/", mustWork = TRUE)
+  path_abs <- normalizePath(.resolve_path(path), winslash = "/", mustWork = FALSE)
+
+  if (identical(path_abs, project_root)) {
+    return(".")
+  }
+
+  prefix <- paste0(project_root, "/")
+  if (!startsWith(path_abs, prefix)) {
+    return(path_abs)
+  }
+
+  sub(paste0("^", .escape_regex(prefix)), "", path_abs)
 }
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
