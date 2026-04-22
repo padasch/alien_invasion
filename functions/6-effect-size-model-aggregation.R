@@ -1,5 +1,29 @@
 library(patchwork)
 
+compute_global_effect_y_limits <- function(effects_df, pad = 0.05) {
+  if (is.null(effects_df) || !nrow(effects_df)) {
+    stop("effects_df is empty; cannot compute global y-limits.")
+  }
+
+  needed <- c("lower", "upper", "estimate")
+  missing <- setdiff(needed, names(effects_df))
+  if (length(missing)) {
+    stop("effects_df is missing required columns: ", paste(missing, collapse = ", "))
+  }
+
+  vals <- c(effects_df$lower, effects_df$upper, effects_df$estimate)
+  vals <- vals[is.finite(vals)]
+
+  if (!length(vals)) {
+    stop("No finite effect values available to compute y-limits.")
+  }
+
+  max_abs <- max(abs(vals), na.rm = TRUE)
+  max_abs <- max_abs * (1 + pad)
+
+  c(-max_abs, max_abs)
+}
+
 collect_all_effects <- function(
     var_grid      = get_data_var_grid(),
     species_vec   = c("fagus", "quercus"),
