@@ -261,6 +261,240 @@ extract_interaction_effect <- function(mod_swc, mod_resp) {
   dplyr::bind_rows(out)
 }
 
+build_sem_matrix_data <- function(effects_main,
+                                  effects_int = NULL,
+                                  resp_var,
+                                  species,
+                                  include_interaction,
+                                  swc_source = "measured",
+                                  p_sig = 0.05,
+                                  phase = NA_character_) {
+  required_cols <- c("factor", "a", "p_a", "b", "p_b", "c_direct", "p_c", "indirect", "p_ind", "total", "p_tot")
+  missing_cols <- setdiff(required_cols, names(effects_main))
+  if (length(missing_cols)) {
+    stop("effects_main is missing required columns: ", paste(missing_cols, collapse = ", "))
+  }
+
+  make_panel <- function(df, effect_class = "main") {
+    p_swc <- df %>%
+      dplyr::transmute(
+        treatment = factor,
+        response_var = "swc",
+        path_type = "treatment_to_swc",
+        estimate = a,
+        p_value = p_a,
+        effect_class = effect_class
+      )
+
+    p_dir <- df %>%
+      dplyr::transmute(
+        treatment = factor,
+        response_var = resp_var,
+        path_type = "direct",
+        estimate = c_direct,
+        p_value = p_c,
+        effect_class = effect_class
+      )
+
+    p_ind <- df %>%
+      dplyr::transmute(
+        treatment = factor,
+        response_var = resp_var,
+        path_type = "indirect",
+        estimate = indirect,
+        p_value = p_ind,
+        effect_class = effect_class
+      )
+
+    p_tot <- df %>%
+      dplyr::transmute(
+        treatment = factor,
+        response_var = resp_var,
+        path_type = "total",
+        estimate = total,
+        p_value = p_tot,
+        effect_class = effect_class
+      )
+
+    p_swc_target <- tibble::tibble(
+      treatment = "swc",
+      response_var = resp_var,
+      path_type = "swc_to_target",
+      estimate = df$b[[1]],
+      p_value = df$p_b[[1]],
+      effect_class = effect_class
+    )
+
+    dplyr::bind_rows(p_swc, p_dir, p_ind, p_tot, p_swc_target)
+  }
+
+  out <- make_panel(effects_main, effect_class = "main")
+
+  if (!is.null(effects_int) && nrow(effects_int) > 0L) {
+    out <- dplyr::bind_rows(out, make_panel(effects_int, effect_class = "interaction"))
+  }
+
+  out %>%
+    dplyr::mutate(
+      significant = !is.na(p_value) & p_value < p_sig,
+      estimate_sig = dplyr::if_else(significant, estimate, NA_real_),
+      species = species,
+      include_interaction = include_interaction,
+      swc_source = swc_source,
+      phase = phase
+    )
+}
+
+add_sem_phase <- function(df, phase_sel = "all") {
+  df2 <- df %>%
+    dplyr::mutate(
+      phase_window = dplyr::case_when(
+        lubridate::month(as.Date(date)) <= 6 ~ "until June",
+        lubridate::month(as.Date(date)) <= 8 ~ "July-August",
+        TRUE ~ "September-end"
+      )
+    )
+
+  if (!identical(phase_sel, "all")) {
+    df2 <- df2 %>% dplyr::filter(.data$phase_window == phase_sel)
+  }
+
+  df2
+}
+
+summarize_sem_matrix_significant_mean <- function(matrix_df) {
+  needed <- c("species", "include_interaction", "swc_source", "phase", "response_var", "treatment", "path_type", "estimate", "significant")
+  missing <- setdiff(needed, names(matrix_df))
+  if (length(missing)) {
+    stop("matrix_df is missing required columns: ", paste(missing, collapse = ", "))
+  }
+
+  matrix_df %>%
+    dplyr::filter(significant) %>%
+    dplyr::group_by(
+      species, include_interaction, swc_source, phase,
+      response_var, treatment, path_type
+    ) %>%
+    dplyr::summarise(
+      mean_estimate = mean(estimate, na.rm = TRUE),
+      n_significant = dplyr::n(),
+      .groups = "drop"
+    )
+}
+
+plot_overarching_sem_effect_matrices <- function(summary_df,
+                                                 target_path_type = c("direct", "indirect", "total"),
+                                                 title = NULL) {
+  target_path_type <- match.arg(target_path_type)
+
+  df_target <- summary_df %>%
+    dplyr::filter(path_type == target_path_type, treatment != "swc") %>%
+    dplyr::mutate(panel = paste0("Treatment -> target (", target_path_type, ")"))
+
+  df_swc <- summary_df %>%
+    dplyr::filter(path_type == "treatment_to_swc", treatment != "swc") %>%
+    dplyr::mutate(panel = "Treatment -> SWC")
+
+  df_swc_target <- summary_df %>%
+    dplyr::filter(path_type == "swc_to_target") %>%
+    dplyr::mutate(panel = "SWC -> target")
+
+  df_plot <- dplyr::bind_rows(df_target, df_swc, df_swc_target)
+  if (!nrow(df_plot)) {
+    stop("No rows available for overarching SEM matrix plotting.")
+  }
+
+  max_abs <- max(abs(df_plot$mean_estimate), na.rm = TRUE)
+  if (!is.finite(max_abs) || max_abs == 0) {
+    max_abs <- 1
+  }
+
+  df_plot <- df_plot %>%
+    dplyr::mutate(
+      panel = factor(panel, levels = c(
+        paste0("Treatment -> target (", target_path_type, ")"),
+        "Treatment -> SWC",
+        "SWC -> target"
+      )),
+      alpha_val = pmin(1, abs(mean_estimate) / max_abs)
+    )
+
+  ggplot(df_plot, aes(x = treatment, y = response_var)) +
+    geom_tile(aes(fill = mean_estimate, alpha = alpha_val), color = "grey90", linewidth = 0.2) +
+    scale_fill_gradient2(
+      low = "indianred3",
+      mid = "white",
+      high = "steelblue4",
+      midpoint = 0,
+      na.value = "white",
+      name = "Mean std. effect"
+    ) +
+    scale_alpha(range = c(0, 1), guide = "none") +
+    facet_wrap(~panel, ncol = 3, scales = "free_x") +
+    labs(x = NULL, y = NULL, title = title) +
+    theme_minimal(base_size = 11) +
+    theme(axis.text.x = element_text(angle = 35, hjust = 1), panel.grid = element_blank())
+}
+
+plot_sem_effect_matrices <- function(matrix_df,
+                                     target_path_type = c("direct", "indirect", "total"),
+                                     title = NULL) {
+  target_path_type <- match.arg(target_path_type)
+
+  df_target <- matrix_df %>%
+    dplyr::filter(path_type == target_path_type, treatment != "swc") %>%
+    dplyr::mutate(panel = paste0("Treatment -> target (", target_path_type, ")"))
+
+  df_swc <- matrix_df %>%
+    dplyr::filter(path_type == "treatment_to_swc", treatment != "swc") %>%
+    dplyr::mutate(panel = "Treatment -> SWC")
+
+  df_swc_target <- matrix_df %>%
+    dplyr::filter(path_type == "swc_to_target") %>%
+    dplyr::mutate(panel = "SWC -> target")
+
+  df_plot <- dplyr::bind_rows(df_target, df_swc, df_swc_target) %>%
+    dplyr::mutate(
+      panel = factor(panel, levels = c(
+        paste0("Treatment -> target (", target_path_type, ")"),
+        "Treatment -> SWC",
+        "SWC -> target"
+      )),
+      alpha_val = dplyr::if_else(
+        is.na(estimate_sig),
+        0,
+        pmin(1, abs(estimate_sig) / max(abs(estimate_sig), na.rm = TRUE))
+      )
+    )
+
+  if (!nrow(df_plot)) {
+    stop("No SEM matrix rows available for plotting.")
+  }
+
+  ggplot(df_plot, aes(x = treatment, y = response_var)) +
+    geom_tile(aes(fill = estimate_sig, alpha = alpha_val), color = "grey90", linewidth = 0.2) +
+    scale_fill_gradient2(
+      low = "indianred3",
+      mid = "white",
+      high = "steelblue4",
+      midpoint = 0,
+      na.value = "white",
+      name = "Std. effect"
+    ) +
+    scale_alpha(range = c(0, 1), guide = "none") +
+    facet_wrap(~panel, ncol = 3, scales = "free_x") +
+    labs(
+      x = NULL,
+      y = NULL,
+      title = title
+    ) +
+    theme_minimal(base_size = 11) +
+    theme(
+      axis.text.x = element_text(angle = 35, hjust = 1),
+      panel.grid = element_blank()
+    )
+}
+
 
 plot_sem_graph <- function(effects_main,
                            effects_int = NULL,
@@ -523,6 +757,7 @@ run_sem_for_trait <- function(type = "tree",
                               resp_var,
                               species,
                               soil_type = "both",
+                              phase_window = "all",
                               include_interaction = TRUE,
                               scale_all_numeric = TRUE,
                               do_rfe = FALSE,
@@ -542,6 +777,7 @@ run_sem_for_trait <- function(type = "tree",
   scale_tag <- if (isTRUE(scale_all_numeric)) "scaled" else "unscaled"
   rfe_tag <- if (isTRUE(do_rfe)) paste0("rfeAIC", aic_improve) else "noRFE"
   swc_tag <- if (swc_source == "measured") "swcMeas" else "swcImputed"
+  phase_tag <- gsub("[^a-zA-Z0-9]+", "", tolower(phase_window))
 
   file_name <- paste0(
     "sem-",
@@ -553,6 +789,7 @@ run_sem_for_trait <- function(type = "tree",
     int_tag, "-",
     scale_tag, "-",
     rfe_tag, "-",
+    phase_tag, "-",
     swc_tag,
     ".rds"
   )
@@ -570,11 +807,25 @@ run_sem_for_trait <- function(type = "tree",
     data_name    = data_name,
     resp_var     = resp_var,
     species_keep = species,
+    standardize_response = isTRUE(scale_all_numeric),
     add_covars   = FALSE, # SEM doesn’t use the extra temporal covars
     covars_fun   = NULL,
     soil_type    = soil_type,
     swc_source   = swc_source
   )
+
+  # optional exploratory SEM by seasonal phase
+  if (!identical(phase_window, "all")) {
+    df_pre <- df_pre %>%
+      dplyr::mutate(
+        phase_window = dplyr::case_when(
+          lubridate::month(as.Date(date)) <= 6 ~ "until June",
+          lubridate::month(as.Date(date)) <= 8 ~ "July-August",
+          TRUE ~ "September-end"
+        )
+      ) %>%
+      dplyr::filter(.data$phase_window == phase_window)
+  }
 
   # 2) Prepare specifically for SEM (generic y, scaling, etc.)
   df_sem_ready <- prepare_sem_data(
@@ -608,6 +859,34 @@ run_sem_for_trait <- function(type = "tree",
     NULL
   }
 
+  matrix_data <- build_sem_matrix_data(
+    effects_main = effects_main,
+    effects_int = effects_int,
+    resp_var = resp_var,
+    species = species,
+    include_interaction = include_interaction,
+    swc_source = swc_source,
+    phase = phase_window
+  )
+
+  matrix_overarching <- summarize_sem_matrix_significant_mean(matrix_data)
+
+  matrix_overarching_plots <- if (nrow(matrix_overarching)) {
+    list(
+      direct = plot_overarching_sem_effect_matrices(matrix_overarching, target_path_type = "direct", title = paste0("Overarching mean SEM matrix (direct): ", species, " - ", resp_var)),
+      indirect = plot_overarching_sem_effect_matrices(matrix_overarching, target_path_type = "indirect", title = paste0("Overarching mean SEM matrix (indirect): ", species, " - ", resp_var)),
+      total = plot_overarching_sem_effect_matrices(matrix_overarching, target_path_type = "total", title = paste0("Overarching mean SEM matrix (total): ", species, " - ", resp_var))
+    )
+  } else {
+    list()
+  }
+
+  matrix_plots <- list(
+    direct = plot_sem_effect_matrices(matrix_data, target_path_type = "direct", title = paste0("SEM matrix (direct): ", species, " - ", resp_var)),
+    indirect = plot_sem_effect_matrices(matrix_data, target_path_type = "indirect", title = paste0("SEM matrix (indirect): ", species, " - ", resp_var)),
+    total = plot_sem_effect_matrices(matrix_data, target_path_type = "total", title = paste0("SEM matrix (total): ", species, " - ", resp_var))
+  )
+
   # 6) Plot graph with full metadata (species, soil_type, resp_var)
   p <- plot_sem_graph(
     effects_main = effects_main,
@@ -626,6 +905,13 @@ run_sem_for_trait <- function(type = "tree",
     sem         = sem_mod,
     effects     = effects_main,
     effects_int = effects_int,
+    matrix_data = matrix_data,
+    matrix_plots = matrix_plots,
+    matrix_overarching = matrix_overarching,
+    matrix_overarching_plots = matrix_overarching_plots,
+    phase_window = phase_window,
+    phase_sem_exploratory = !identical(phase_window, "all"),
+    n_rows_phase = nrow(df_sem_ready),
     plot        = p
   )
 
