@@ -54,15 +54,21 @@ make_temporal_sem_combo <- function(
     scale_all_numeric   = TRUE,
     do_rfe              = TRUE,
     aic_improve         = 2,
+    sem_phase_window    = "all",
     # temporal GLMM options
     add_covars          = FALSE,
     covars_fun          = NULL,
+    temporal_y_limits   = NULL,
     # SWC source
     swc_source          = "measured",
     # output
     outdir_root         = "./output",
     force_refit         = FALSE
 ) {
+  if (is.null(temporal_y_limits)) {
+    temporal_y_limits <- getOption("alinv.temporal_y_limits", NULL)
+  }
+
   # ------------------------------------------------------------
   # 0) Paths and cache file
   # ------------------------------------------------------------
@@ -77,6 +83,7 @@ make_temporal_sem_combo <- function(
     "_", species,
     "_soil-", soil_type,
     "_semInt-", ifelse(isTRUE(include_interaction), "yes", "no"),
+    "_phase-", gsub("[^a-zA-Z0-9]+", "", tolower(sem_phase_window)),
     "_swc-", swc_source
   )
   
@@ -163,6 +170,7 @@ make_temporal_sem_combo <- function(
         soil_type      = soil_type,
         add_covars     = add_covars,
         covars_fun     = covars_fun,
+        y_limits       = temporal_y_limits,
         swc_source     = swc_source
       ),
       error = function(e) {
@@ -187,6 +195,7 @@ make_temporal_sem_combo <- function(
         scale_all_numeric   = scale_all_numeric,
         do_rfe              = do_rfe,
         aic_improve         = aic_improve,
+        phase_window        = sem_phase_window,
         swc_source          = swc_source
       ),
       error = function(e) {
