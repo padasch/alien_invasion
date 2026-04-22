@@ -131,7 +131,8 @@ df <- read_excel(fp, sheet = "Tree Condition") %>%
   ) %>%
   mutate(
     tree_id = as.integer(ID_number),
-    condition = as.double(leafstate),
+    # Invert 1..4 so higher values indicate better condition (lower stress).
+    condition = 5 - as.double(leafstate),
     comment = as.character(comment)
   ) %>%
   select(tree_id, date, condition, comment) %>%
@@ -211,6 +212,13 @@ df <- read_excel(fp, sheet = "Growth_Measurements_D_H") %>%
   filter(!is.na(tree_id)) |> 
   group_by(tree_id) |>
   mutate(
+    phase = dplyr::case_when(
+      lubridate::month(date) <= 6 ~ "until June",
+      lubridate::month(date) <= 8 ~ "July-August",
+      TRUE ~ "September+"
+    ),
+    phase = factor(phase, levels = c("until June", "July-August", "September+")),
+
     # first measurements per tree (baseline)
     first_diameter = first(diameter),
     first_height   = first(height),
@@ -224,6 +232,33 @@ df <- read_excel(fp, sheet = "Growth_Measurements_D_H") %>%
     height_rel          = height   / first_height,
     diameter_inc_t0_rel = diameter_inc_t0 / first_diameter,
     height_inc_t0_rel   = height_inc_t0   / first_height,
+
+    # phase baselines: first measurement for phase 1,
+    # last measurement of prior phase for phases 2 and 3
+    phase_diameter_baseline = dplyr::case_when(
+      phase == "until June"  ~ first_diameter,
+      phase == "July-August" ~ dplyr::last(diameter[phase == "until June" & !is.na(diameter)], default = NA_real_),
+      phase == "September+"  ~ dplyr::last(diameter[phase == "July-August" & !is.na(diameter)], default = NA_real_),
+      TRUE ~ NA_real_
+    ),
+    phase_height_baseline = dplyr::case_when(
+      phase == "until June"  ~ first_height,
+      phase == "July-August" ~ dplyr::last(height[phase == "until June" & !is.na(height)], default = NA_real_),
+      phase == "September+"  ~ dplyr::last(height[phase == "July-August" & !is.na(height)], default = NA_real_),
+      TRUE ~ NA_real_
+    ),
+
+    # relative increment within phase, chained to prior phase end baseline
+    diameter_inc_phase_rel = dplyr::if_else(
+      !is.na(phase_diameter_baseline) & abs(phase_diameter_baseline) > .Machine$double.eps,
+      diameter / phase_diameter_baseline - 1,
+      NA_real_
+    ),
+    height_inc_phase_rel = dplyr::if_else(
+      !is.na(phase_height_baseline) & abs(phase_height_baseline) > .Machine$double.eps,
+      height / phase_height_baseline - 1,
+      NA_real_
+    ),
     
     # time between consecutive measurements [years]
     delta_t_years = as.numeric(date - dplyr::lag(date)) / 365.25,
