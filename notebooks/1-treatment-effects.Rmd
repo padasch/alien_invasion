@@ -16,6 +16,12 @@ execute:
   message: false
   echo: true
   results: hide
+params:
+  scenario_label: "both soils (with soil as treatment)"
+  soil_filter: "both"
+  include_soil_treatment: true
+  analysis_date: !r as.character(Sys.Date())
+  output_root: "output"
 ---
 
 ```{r setup, include=FALSE}
@@ -29,24 +35,38 @@ knitr::opts_chunk$set(
   fig.height = 6
 )
 
-# Resolve project root from notebook location (robust to knit working directory)
-input_file <- knitr::current_input()
-input_dir <- dirname(normalizePath(input_file, winslash = "/", mustWork = TRUE))
-proj_root <- normalizePath(file.path(input_dir, ".."), winslash = "/", mustWork = TRUE)
+# Resolve project root robustly from the notebook render context
+source_path_candidates <- c(
+  "functions/_source.R",
+  "../functions/_source.R",
+  "./functions/_source.R"
+)
+source_path <- source_path_candidates[file.exists(source_path_candidates)][1]
+if (is.na(source_path)) {
+  stop("Could not locate functions/_source.R for notebook setup.")
+}
+source(source_path)
+
+source_dir <- dirname(source_path)
+proj_root <- normalizePath(file.path(source_dir, ".."), winslash = "/", mustWork = TRUE)
 
 # Function libraries
-source(file.path(proj_root, "functions", "_source.R"))
-source(file.path(proj_root, "functions", "1-summary-figures.R"))
-source(file.path(proj_root, "functions", "2-biomass.R"))
-source(file.path(proj_root, "functions", "3-effect-size-factorial.R"))
-source(file.path(proj_root, "functions", "4-structural-equation-model.R"))
-source(file.path(proj_root, "functions", "6-effect-size-model-aggregation.R"))
-source(file.path(proj_root, "functions", "5-combining-glmm-sem.R"))
+source(file.path(source_dir, "1-summary-figures.R"))
+source(file.path(source_dir, "2-biomass.R"))
+source(file.path(source_dir, "3-effect-size-factorial.R"))
+source(file.path(source_dir, "4-structural-equation-model.R"))
+source(file.path(source_dir, "6-effect-size-model-aggregation.R"))
+source(file.path(source_dir, "5-combining-glmm-sem.R"))
 
 library(patchwork)
 
-# Global choices
-soil_type <- "both"        # "both", "inoc-beech", or "inoc-robinia"
+# Scenario context
+analysis_ctx <- alinv_init_notebook_context(if (exists("params")) params else NULL)
+scenario_label <- analysis_ctx$scenario_label
+soil_type <- analysis_ctx$soil_filter
+include_soil_treatment <- analysis_ctx$include_soil_treatment
+analysis_root <- analysis_ctx$analysis_root
+analysis_data_root <- analysis_ctx$analysis_data_root
 species_vec <- c("fagus", "quercus")
 
 # Global temporal effect y-axis limits (shared across all temporal GLMM figures)
@@ -54,7 +74,8 @@ tmp_eff_for_ylim <- tryCatch(
   collect_all_effects(
     var_grid    = get_data_var_grid() %>% dplyr::filter(type == "tree"),
     species_vec = species_vec,
-    soil_type   = soil_type
+    soil_type   = soil_type,
+    include_soil_treatment = include_soil_treatment
   ),
   error = function(e) tibble::tibble()
 )
@@ -69,6 +90,8 @@ if (nrow(tmp_eff_for_ylim) > 0) {
 # Introduction
 
 This notebook presents a comprehensive analysis of the ALINV (Alien Invasion) experiment, which investigates how drought, species mixing, *Robinia* presence, and legacy soil type affect tree physiology and growth. The experiment uses a full-factorial design with two target species — European beech (*Fagus sylvatica*) and sessile oak (*Quercus petraea*) — grown in mesocosm boxes under controlled treatment combinations.
+
+Current render scenario: `r scenario_label`. Soil filtering is set to `r soil_type`, and soil is `r if (include_soil_treatment) "included as an explicit treatment contrast." else "pooled across both soils and omitted as a treatment contrast."`
 
 **Contents:**
 
@@ -86,6 +109,8 @@ For each tree-level response variable, a linear mixed-effects model is fitted ac
 $$y_{ijk} = \mu + \alpha_t + (\alpha_t \times \text{Robinia})_{j} + (\alpha_t \times \text{Precipitation})_{j} + (\alpha_t \times \text{Culture})_{j} + (\alpha_t \times \text{Soiltype})_{j} + b_{\text{box}} + b_{\text{tree}} + \varepsilon_{ijk}$$
 
 where $\alpha_t$ is a date fixed effect and treatment effects are estimated per date via date×treatment interactions. Random intercepts are fitted for box ($b_{\text{box}}$) and tree ($b_{\text{tree}}$). Treatment contrasts at each date are extracted using estimated marginal means (`emmeans`, reverse pairwise).
+
+For this scenario, soil terms are `r if (include_soil_treatment) "included" else "omitted"` in the temporal GLMM.
 
 ### Piecewise Structural Equation Model (SEM)
 
@@ -105,6 +130,8 @@ Both are `lme4::lmer()` models. Treatment effects are decomposed into:
 
 All numeric predictors are centred and scaled before fitting.
 
+For this scenario, soil terms are `r if (include_soil_treatment) "included" else "omitted"` in the SEM.
+
 ### Biomass GLMM
 
 A single-timepoint linear mixed model for each biomass metric (shoot, root, root:shoot ratio), fitted on z-scored responses to produce standardised coefficients:
@@ -112,6 +139,8 @@ A single-timepoint linear mixed model for each biomass metric (shoot, root, root
 $$y_z = \beta_0 + \beta_1 \text{Precipitation} + \beta_2 \text{Culture} + \beta_3 \text{Robinia} + \beta_4 \text{Soiltype} + b_{\text{box}} + \varepsilon$$
 
 Coefficients are in standard deviation units of the response. 95% Wald confidence intervals are used to assess significance.
+
+For this scenario, soil terms are `r if (include_soil_treatment) "included" else "omitted"` in the biomass GLMM.
 
 ---
 
@@ -124,7 +153,8 @@ Aggregated temporal GLMM effect sizes across all tree response variables, groupe
 all_eff <- collect_all_effects(
   var_grid    = get_data_var_grid() %>% dplyr::filter(type == "tree"),
   species_vec = c("fagus", "quercus"),
-  soil_type   = "both"
+  soil_type   = soil_type,
+  include_soil_treatment = include_soil_treatment
 )
 
 if (nrow(all_eff) > 0) {

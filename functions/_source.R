@@ -8,12 +8,15 @@ if (requireNamespace("ggalluvial", quietly = TRUE)) {
 }
 library(readxl)
 library(lubridate)
-library(janitor)
-library(ggpubr)
-library(ggpattern)
 library(rlang)
 library(dplyr)
 library(conflicted)
+if (requireNamespace("ggpubr", quietly = TRUE)) {
+  library(ggpubr)
+}
+if (requireNamespace("ggpattern", quietly = TRUE)) {
+  library(ggpattern)
+}
 
 
 
@@ -24,6 +27,43 @@ conflicts_prefer(
   dplyr::filter,
   dplyr::mutate
 )
+
+if (!exists("clean_names", mode = "function")) {
+  clean_names <- function(data) {
+    out <- data
+    nm <- names(out)
+    nm <- gsub("([a-z0-9])([A-Z])", "\\1_\\2", nm)
+    nm <- tolower(nm)
+    nm <- gsub("[^a-z0-9]+", "_", nm)
+    nm <- gsub("^_+|_+$", "", nm)
+    nm <- make.unique(nm, sep = "_")
+    names(out) <- nm
+    out
+  }
+}
+
+if (!exists("remove_empty", mode = "function")) {
+  remove_empty <- function(data, which = c("rows", "cols")) {
+    which <- match.arg(which)
+    is_empty <- function(x) {
+      if (is.list(x)) {
+        lengths(x) == 0
+      } else if (is.character(x)) {
+        is.na(x) | trimws(x) == ""
+      } else {
+        is.na(x)
+      }
+    }
+
+    if (identical(which, "cols")) {
+      keep <- vapply(data, function(col) !all(is_empty(col)), logical(1))
+      data[, keep, drop = FALSE]
+    } else {
+      keep <- apply(data, 1, function(row) !all(is_empty(row)))
+      data[keep, , drop = FALSE]
+    }
+  }
+}
 
 # Path helpers -------------------------------------------------------------------------------
 
@@ -46,6 +86,237 @@ conflicts_prefer(
   if (grepl("^(/|[A-Za-z]:[\\\\/])", path)) return(path)
   if (dir.exists(path) || file.exists(path)) return(path)
   file.path(.alinv_project_root(), path)
+}
+
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
+ALINV_SOIL_LABELS <- c(
+  `inoc-beech` = "drier soil (beech soil)",
+  `inoc-robinia` = "wetter soil (robinia soil)",
+  inoc_beech = "drier soil (beech soil)",
+  inoc_robinia = "wetter soil (robinia soil)"
+)
+
+alinv_scenario_grid <- function() {
+  tibble::tribble(
+    ~scenario_label, ~soil_filter, ~include_soil_treatment,
+    "drier soil (beech soil)", "inoc-beech", FALSE,
+    "wetter soil (robinia soil)", "inoc-robinia", FALSE,
+    "both soils (with soil as treatment)", "both", TRUE,
+    "both soils (without soil as treatment)", "both", FALSE
+  )
+}
+
+alinv_get_analysis_context <- function() {
+  getOption("alinv.analysis_context", NULL)
+}
+
+alinv_resolve_soil_filter <- function(soil_filter = NULL) {
+  ctx <- alinv_get_analysis_context()
+  soil_filter %||% ctx$soil_filter %||% "both"
+}
+
+alinv_resolve_include_soil_treatment <- function(include_soil_treatment = NULL,
+                                                 soil_filter = NULL) {
+  soil_filter <- alinv_resolve_soil_filter(soil_filter)
+  if (!identical(soil_filter, "both")) {
+    return(FALSE)
+  }
+
+  ctx <- alinv_get_analysis_context()
+  include_soil_treatment %||% ctx$include_soil_treatment %||% TRUE
+}
+
+alinv_should_show_soil_panels <- function(soil_filter = NULL,
+                                          include_soil_treatment = NULL) {
+  soil_filter <- alinv_resolve_soil_filter(soil_filter)
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_filter
+  )
+
+  identical(soil_filter, "both") && isTRUE(include_soil_treatment)
+}
+
+alinv_soil_mode_tag <- function(soil_filter = NULL,
+                                include_soil_treatment = NULL) {
+  soil_filter <- alinv_resolve_soil_filter(soil_filter)
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_filter
+  )
+
+  if (!identical(soil_filter, "both")) {
+    return(paste0("soil-", gsub("[^a-zA-Z0-9]+", "_", soil_filter)))
+  }
+
+  if (isTRUE(include_soil_treatment)) {
+    "soil-both_with_soil_treatment"
+  } else {
+    "soil-both_without_soil_treatment"
+  }
+}
+
+alinv_get_treatment_factors <- function(include_soil_treatment = NULL,
+                                        soil_filter = NULL) {
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_filter
+  )
+
+  base_factors <- c("robinia", "precipitation", "culture")
+  if (isTRUE(include_soil_treatment)) {
+    base_factors <- c(base_factors, "soiltype")
+  }
+  c(base_factors, "extreme_event")
+}
+
+alinv_set_analysis_context <- function(
+    scenario_label = NULL,
+    soil_filter = "both",
+    include_soil_treatment = NULL,
+    analysis_date = Sys.Date(),
+    output_root = "output",
+    create_dirs = TRUE
+) {
+  soil_filter <- alinv_resolve_soil_filter(soil_filter)
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_filter
+  )
+
+  scenario_label <- scenario_label %||% if (!identical(soil_filter, "both")) {
+    ALINV_SOIL_LABELS[[soil_filter]]
+  } else if (isTRUE(include_soil_treatment)) {
+    "both soils (with soil as treatment)"
+  } else {
+    "both soils (without soil as treatment)"
+  }
+
+  analysis_date <- as.character(as.Date(analysis_date))
+  output_root <- .resolve_path(output_root)
+  analysis_root <- file.path(output_root, analysis_date, scenario_label)
+  analysis_data_root <- file.path(analysis_root, "data")
+  notebooks_root <- file.path(analysis_root, "notebooks")
+
+  ctx <- list(
+    scenario_label = scenario_label,
+    soil_filter = soil_filter,
+    include_soil_treatment = include_soil_treatment,
+    analysis_date = analysis_date,
+    output_root = output_root,
+    analysis_root = analysis_root,
+    analysis_data_root = analysis_data_root,
+    notebooks_root = notebooks_root
+  )
+
+  options(alinv.analysis_context = ctx)
+
+  if (isTRUE(create_dirs)) {
+    dir.create(analysis_root, recursive = TRUE, showWarnings = FALSE)
+    dir.create(analysis_data_root, recursive = TRUE, showWarnings = FALSE)
+    dir.create(notebooks_root, recursive = TRUE, showWarnings = FALSE)
+  }
+
+  ctx
+}
+
+alinv_init_notebook_context <- function(params = NULL,
+                                        output_root = "output") {
+  params <- params %||% list()
+
+  alinv_set_analysis_context(
+    scenario_label = params$scenario_label %||% NULL,
+    soil_filter = params$soil_filter %||% "both",
+    include_soil_treatment = params$include_soil_treatment %||% NULL,
+    analysis_date = params$analysis_date %||% Sys.Date(),
+    output_root = params$output_root %||% output_root
+  )
+}
+
+alinv_analysis_path <- function(..., create_dir = FALSE) {
+  ctx <- alinv_get_analysis_context()
+  if (is.null(ctx)) {
+    ctx <- alinv_set_analysis_context(create_dirs = FALSE)
+  }
+
+  path <- file.path(ctx$analysis_root, ...)
+  if (isTRUE(create_dir)) {
+    dir.create(path, recursive = TRUE, showWarnings = FALSE)
+  }
+  path
+}
+
+alinv_data_path <- function(..., create_dir = FALSE) {
+  ctx <- alinv_get_analysis_context()
+  if (is.null(ctx)) {
+    ctx <- alinv_set_analysis_context(create_dirs = FALSE)
+  }
+
+  path <- file.path(ctx$analysis_data_root, ...)
+  if (isTRUE(create_dir)) {
+    dir.create(path, recursive = TRUE, showWarnings = FALSE)
+  }
+  path
+}
+
+alinv_cache_path <- function(subdir, ..., create_dir = TRUE) {
+  dir_path <- alinv_data_path(subdir, create_dir = create_dir)
+  file.path(dir_path, ...)
+}
+
+alinv_notebook_path <- function(..., create_dir = FALSE) {
+  ctx <- alinv_get_analysis_context()
+  if (is.null(ctx)) {
+    ctx <- alinv_set_analysis_context(create_dirs = FALSE)
+  }
+
+  path <- file.path(ctx$notebooks_root, ...)
+  if (isTRUE(create_dir)) {
+    dir.create(path, recursive = TRUE, showWarnings = FALSE)
+  }
+  path
+}
+
+alinv_filter_by_soil <- function(df,
+                                 soil_filter = NULL,
+                                 soil_col = "soiltype") {
+  soil_filter <- alinv_resolve_soil_filter(soil_filter)
+  if (!soil_col %in% names(df)) {
+    return(df)
+  }
+
+  if (!identical(soil_filter, "both")) {
+    df <- df %>% dplyr::filter(.data[[soil_col]] == soil_filter)
+  }
+
+  df
+}
+
+alinv_relevel_soiltype <- function(x) {
+  factor(x, levels = c("inoc-robinia", "inoc-beech"))
+}
+
+alinv_apply_soil_context <- function(df,
+                                     soil_filter = NULL,
+                                     include_soil_treatment = NULL,
+                                     soil_col = "soiltype") {
+  soil_filter <- alinv_resolve_soil_filter(soil_filter)
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_filter
+  )
+
+  df <- alinv_filter_by_soil(df, soil_filter = soil_filter, soil_col = soil_col)
+
+  if (soil_col %in% names(df)) {
+    df[[soil_col]] <- alinv_relevel_soiltype(df[[soil_col]])
+    if (!isTRUE(include_soil_treatment) && identical(soil_filter, "both")) {
+      df[[soil_col]] <- droplevels(df[[soil_col]])
+    }
+  }
+
+  df
 }
 
 # Build a corrected site-level daily precipitation series from MeteoSwiss 10-min
@@ -293,7 +564,7 @@ get_data <- function(type = c("tree", "box"), data_name, with_meta = TRUE, path 
   }
   
   # Attach SWC data (measured or imputed)
-  if (type == "tree") {
+  if (type == "tree" && "date" %in% names(df)) {
     if (swc_source == "measured") {
       # Use closest measured SWC within 7-day window (original behavior)
       df_swc <- get_data("box", "soilwater", swc_source = "measured")
@@ -342,16 +613,26 @@ get_data <- function(type = c("tree", "box"), data_name, with_meta = TRUE, path 
         ) %>%
         ungroup()
     } else if (swc_source == "imputed_gam") {
+      swc_candidates <- unique(c(
+        file.path(path, "box_soilwater_daily_gam_agnostic.csv"),
+        alinv_data_path("swc_interpolation", "box_soilwater_daily_gam_agnostic.csv"),
+        .resolve_path("data/interim/box_soilwater_daily_gam_agnostic.csv")
+      ))
+      swc_file <- swc_candidates[file.exists(swc_candidates)][1]
+
       # Use imputed daily SWC (exact date match on measurement date)
       df_swc_daily <- tryCatch(
-        read_csv(file.path(path, "box_soilwater_daily_gam_agnostic.csv"), show_col_types = FALSE),
+        read_csv(swc_file, show_col_types = FALSE),
         error = function(e) {
-          warning("Could not load imputed SWC; falling back to measured SWC. Error: ", 
-                  conditionMessage(e), call. = FALSE)
+          warning(
+            "Could not load imputed SWC; falling back to measured SWC. Error: ",
+            conditionMessage(e),
+            call. = FALSE
+          )
           NULL
         }
       )
-      
+
       if (is.null(df_swc_daily)) {
         # Fallback to measured SWC if imputed is not available
         return(get_data(type = type, data_name = data_name, with_meta = with_meta, 

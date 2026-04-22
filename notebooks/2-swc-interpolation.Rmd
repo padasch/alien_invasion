@@ -16,6 +16,12 @@ execute:
   message: false
   echo: true
   results: hide
+params:
+  scenario_label: "both soils (with soil as treatment)"
+  soil_filter: "both"
+  include_soil_treatment: true
+  analysis_date: !r as.character(Sys.Date())
+  output_root: "output"
 ---
 
 ```{r setup, include=FALSE}
@@ -29,25 +35,40 @@ knitr::opts_chunk$set(
   fig.height = 6
 )
 
-# Resolve project root from notebook location (robust to knit working directory)
-input_file <- knitr::current_input()
-input_dir <- dirname(normalizePath(input_file, winslash = "/", mustWork = TRUE))
-proj_root <- normalizePath(file.path(input_dir, ".."), winslash = "/", mustWork = TRUE)
+# Resolve project root robustly from the notebook render context
+source_path_candidates <- c(
+  "functions/_source.R",
+  "../functions/_source.R",
+  "./functions/_source.R"
+)
+source_path <- source_path_candidates[file.exists(source_path_candidates)][1]
+if (is.na(source_path)) {
+  stop("Could not locate functions/_source.R for notebook setup.")
+}
+source(source_path)
+
+source_dir <- dirname(source_path)
+proj_root <- normalizePath(file.path(source_dir, ".."), winslash = "/", mustWork = TRUE)
 
 # Function libraries
-source(file.path(proj_root, "functions", "_source.R"))
-source(file.path(proj_root, "functions", "1-summary-figures.R"))
-source(file.path(proj_root, "functions", "3-effect-size-factorial.R"))
-source(file.path(proj_root, "functions", "4-structural-equation-model.R"))
-source(file.path(proj_root, "functions", "5-combining-glmm-sem.R"))
+source(file.path(source_dir, "1-summary-figures.R"))
+source(file.path(source_dir, "3-effect-size-factorial.R"))
+source(file.path(source_dir, "4-structural-equation-model.R"))
+source(file.path(source_dir, "5-combining-glmm-sem.R"))
 
 library(tidyverse)
 library(mgcv)
 library(lubridate)
 library(patchwork)
 
-# Global choices
-soil_type <- "both"
+# Scenario context
+analysis_ctx <- alinv_init_notebook_context(if (exists("params")) params else NULL)
+scenario_label <- analysis_ctx$scenario_label
+soil_type <- analysis_ctx$soil_filter
+include_soil_treatment <- analysis_ctx$include_soil_treatment
+analysis_root <- analysis_ctx$analysis_root
+analysis_data_root <- analysis_ctx$analysis_data_root
+swc_output_dir <- alinv_data_path("swc_interpolation", create_dir = TRUE)
 species_vec <- c("fagus", "quercus")
 ```
 
@@ -57,6 +78,8 @@ Soil water content (SWC) is measured manually at irregular intervals in the ALIN
 
 1. **GAM Imputation** — a treatment-agnostic generalised additive model that produces daily SWC estimates from meteorological, precipitation, and soil-water-potential predictors, ensuring imputed values carry no treatment information.
 2. **SEM Sensitivity Comparison** — systematic re-fitting of all trait-level SEMs using the GAM-imputed SWC in place of the measured values, to assess whether the choice of SWC source materially changes structural conclusions.
+
+Current render scenario: `r scenario_label`. Scenario-local SWC exports are written under `r file.path(analysis_data_root, "swc_interpolation")`.
 
 ## Methods
 
@@ -120,7 +143,7 @@ swp_site_daily <- soil_raw %>%
 
 ```{r gam-precip-daily}
 precip_daily <- get_site_precipitation_daily(
-  export_path = "data/interim/site_precipitation_daily.csv"
+  export_path = file.path(swc_output_dir, "site_precipitation_daily.csv")
 )
 ```
 
@@ -248,7 +271,7 @@ gam_out %>%
 ## Export Imputed SWC
 
 ```{r gam-export}
-readr::write_csv(gam_out, .resolve_path("data/interim/box_soilwater_daily_gam_agnostic.csv"))
+readr::write_csv(gam_out, file.path(swc_output_dir, "box_soilwater_daily_gam_agnostic.csv"))
 ```
 
 ---

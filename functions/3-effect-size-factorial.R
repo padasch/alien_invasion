@@ -57,7 +57,7 @@ emmeans::emm_options(lmer.df = "asymptotic")  # quiet, fast CIs
       robinia = factor(robinia, levels = c("without-robinia", "with-robinia")),
       precipitation = factor(precipitation, levels = c("control", "drought")),
       culture = factor(culture, levels = c("mono", "mixed")),
-      soiltype = factor(soiltype, levels = c("inoc-beech", "inoc-robinia")),
+      soiltype = alinv_relevel_soiltype(soiltype),
       extreme_event = factor(extreme_event, levels = c("no", "yes")),
       species = factor(species)
     ) %>%
@@ -89,13 +89,18 @@ prepare_df_generic <- function(
     data_name = c("chlorophyll", "condition", "growth", "quantum_yield", "senescence", "phenology"),
     resp_var = NULL,                 # override mapping if you want a specific column
     species_keep = NULL,             # e.g., c("fagus","quercus") or "fagus"
-  standardize_response = TRUE,
+    standardize_response = TRUE,
     add_covars = FALSE,
     covars_fun = NULL,                # function returning covariates (boxlabel+date)
     soil_type = "both",
+    include_soil_treatment = NULL,
     swc_source = "measured"          # "measured" or "imputed_gam"
 ) {
   data_name <- match.arg(data_name)
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_type
+  )
   
   # Pull 
   df_raw <- get_data(type = type, data_name = data_name, swc_source = swc_source)
@@ -105,10 +110,11 @@ prepare_df_generic <- function(
     df_raw <- dplyr::filter(df_raw, species %in% species_keep)
   }
   
-  # Early soil type filter
-  if (soil_type != "both") {
-    df_raw <- dplyr::filter(df_raw, soiltype == soil_type)
-  }
+  df_raw <- alinv_apply_soil_context(
+    df_raw,
+    soil_filter = soil_type,
+    include_soil_treatment = include_soil_treatment
+  )
   
   default_resp <- .default_resp_map[[data_name]]
   if (is.null(resp_var)) {
@@ -162,10 +168,19 @@ prepare_df_generic <- function(
 # ---------------------- MODEL (UNCHANGED) ----------------------
 
 # Per-date GLMM with date main effect and interactions (same as before)
-fit_glmm_per_date <- function(df, include_covars = FALSE) {
+fit_glmm_per_date <- function(df,
+                              include_covars = FALSE,
+                              include_soil_treatment = NULL) {
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = if ("soiltype" %in% names(df) && dplyr::n_distinct(df$soiltype, na.rm = TRUE) > 1) "both" else "single"
+  )
+
   # start with all candidate terms
-  # rhs_terms <- c("date", "date:robinia", "date:precipitation", "date:culture", "date:soiltype", "extreme_event")
-  rhs_terms <- c("date", "date:robinia", "date:precipitation", "date:culture", "date:soiltype")
+  rhs_terms <- c("date", "date:robinia", "date:precipitation", "date:culture")
+  if (isTRUE(include_soil_treatment)) {
+    rhs_terms <- c(rhs_terms, "date:soiltype")
+  }
   
   # mapping from interaction terms to the underlying factor to check
   term_factor_map <- c(
@@ -246,9 +261,16 @@ extract_per_date_contrasts_any <- function(fit, factor_name) {
 }
 
 # Combine contrasts for the three factors that have >=2 levels in the subset
-compute_combined_effects <- function(fit, df, factors = c("robinia", "precipitation", "culture", "soiltype", "extreme_event")) {
+compute_combined_effects <- function(fit, df, factors = NULL) {
+  if (is.null(factors)) {
+    factors <- alinv_get_treatment_factors(
+      include_soil_treatment = "soiltype" %in% names(df) &&
+        dplyr::n_distinct(df$soiltype, na.rm = TRUE) > 1
+    )
+  }
   out <- list()
   for (fac in factors) {
+    if (!fac %in% names(df)) next
     if (length(levels(df[[fac]])) < 2) next
     eff <- tryCatch(extract_per_date_contrasts_any(fit, fac), error = function(e) tibble())
     if (nrow(eff)) {
@@ -266,7 +288,7 @@ plot_combined_effects <- function(effects_df, title, ylab = "Effect size (baseli
     robinia = "Robinia (without − with)",
     precipitation = "Drought (control − drought)",
     culture = "Culture (mono − mixed)",
-    soiltype = "Soil Type (normal - robinia inoc)",
+    soiltype = "Soil (wetter robinia soil − drier beech soil)",
     extreme_event = "Extreme Event (no - yes)"
   )
   
@@ -329,6 +351,7 @@ make_effect_figure_generic <- function(
     resp_var = NULL,                 # set if data_name has multiple options
     target_species = "fagus",
     soil_type = "both",
+    include_soil_treatment = NULL,
     add_covars = FALSE,
     covars_fun = NULL,
     y_limits = NULL,
@@ -336,20 +359,23 @@ make_effect_figure_generic <- function(
     force_run = FALSE                # NEW: overwrite existing results for today
 ) {
   data_name <- match.arg(data_name)
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_type
+  )
   
   # --------------------------------------------------
   # 0) Build cache path and filename
   # --------------------------------------------------
-  today_str <- format(Sys.Date(), "%Y-%m-%d")
-  
-  out_dir <- file.path("output", today_str, "model-factorial-effect")
-  if (!dir.exists(out_dir)) {
-    dir.create(out_dir, recursive = TRUE)
-  }
+  out_dir <- alinv_data_path("model-factorial-effect", create_dir = TRUE)
   
   resp_tag <- if (!is.null(resp_var)) resp_var else "default"
   covar_tag <- if (isTRUE(add_covars)) "withCovars" else "noCovars"
   swc_tag <- if (swc_source == "measured") "swcMeas" else "swcImputed"
+  soil_mode_tag <- alinv_soil_mode_tag(
+    soil_filter = soil_type,
+    include_soil_treatment = include_soil_treatment
+  )
   
   file_name <- paste0(
     "effect-",
@@ -357,7 +383,7 @@ make_effect_figure_generic <- function(
     data_name, "-",
     resp_tag, "-",
     target_species, "-",
-    soil_type, "-",
+    soil_mode_tag, "-",
     covar_tag, "-",
     swc_tag,
     ".rds"
@@ -384,18 +410,31 @@ make_effect_figure_generic <- function(
     add_covars   = add_covars,
     covars_fun   = covars_fun,
     soil_type    = soil_type,
+    include_soil_treatment = include_soil_treatment,
     swc_source   = swc_source
   )
   
-  fit <- fit_glmm_per_date(dfm, include_covars = add_covars)
-  eff <- compute_combined_effects(fit, dfm)
+  fit <- fit_glmm_per_date(
+    dfm,
+    include_covars = add_covars,
+    include_soil_treatment = include_soil_treatment
+  )
+  eff <- compute_combined_effects(
+    fit,
+    dfm,
+    factors = alinv_get_treatment_factors(
+      include_soil_treatment = include_soil_treatment,
+      soil_filter = soil_type
+    )
+  )
   if (nrow(eff)) {
     eff <- eff %>%
       mutate(
         scale_mode = "z_response",
         swc_source = swc_source,
         species = target_species,
-        include_interaction = FALSE
+        include_interaction = FALSE,
+        include_soil_treatment = include_soil_treatment
       )
   }
   

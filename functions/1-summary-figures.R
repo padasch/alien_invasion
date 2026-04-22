@@ -6,7 +6,7 @@ PLOT_STYLE <- list(
     culture       = c("mono","mixed"),
     robinia       = c("without-robinia","with-robinia"),
     species       = c("fagus","quercus","robinia"),
-    soiltype      = c("inoc_beech","inoc_robinia")
+    soiltype      = c("inoc_robinia","inoc_beech")
   ),
   colors = list(
     precipitation = c(control = "#4F6674", drought = "indianred")
@@ -103,10 +103,10 @@ scale_culture_alpha <- function(name = "Culture") {
 
 # -------- soiltype display labels --------
 SOILTYPE_LABELS <- c(
-  inoc_beech   = "Beech Soil (was drier)",
-  inoc_robinia = "Robinia Soil (was wetter)",
-  `inoc-beech`   = "Beech Soil (was drier)",
-  `inoc-robinia` = "Robinia Soil (was wetter)"
+  inoc_beech   = "drier soil (beech soil)",
+  inoc_robinia = "wetter soil (robinia soil)",
+  `inoc-beech`   = "drier soil (beech soil)",
+  `inoc-robinia` = "wetter soil (robinia soil)"
 )
 
 # -------- common facets --------
@@ -120,16 +120,26 @@ facet_tree <- function() {
     )
   )
 }
-facet_soil <- function() {
-  facet_grid(
-    rows = vars(soiltype),
-    cols = vars(robinia),
-    labeller = labeller(
-      robinia  = c(`without-robinia`="without robinia",
-                   `with-robinia`   ="with robinia"),
-      soiltype = SOILTYPE_LABELS
+facet_soil <- function(show_soiltype = TRUE) {
+  if (isTRUE(show_soiltype)) {
+    facet_grid(
+      rows = vars(soiltype),
+      cols = vars(robinia),
+      labeller = labeller(
+        robinia  = c(`without-robinia`="without robinia",
+                     `with-robinia`   ="with robinia"),
+        soiltype = SOILTYPE_LABELS
+      )
     )
-  )
+  } else {
+    facet_grid(
+      . ~ robinia,
+      labeller = labeller(
+        robinia = c(`without-robinia`="without robinia",
+                    `with-robinia`   ="with robinia")
+      )
+    )
+  }
 }
 
 # -------- mean ± SE summarizer for time-series --------
@@ -173,12 +183,15 @@ ci_layers <- function(style = c("band","errorbar")) {
 build_timeseries <- function(df_in, y, facet = c("tree","soil"),
                              style = "band",
                              ylab = NULL, title = NULL,
-                             x_date_fmt = "%m/%y") {
+                             x_date_fmt = "%m/%y",
+                             show_soiltype = TRUE) {
   facet <- match.arg(facet)
   keys  <- if (facet == "tree")
     c("species","robinia","precipitation","culture")
-  else
+  else if (isTRUE(show_soiltype))
     c("soiltype","robinia","precipitation","culture")
+  else
+    c("robinia","precipitation","culture")
   
   df_sum <- summarize_ts(df_in, {{y}}, keys)
   
@@ -190,7 +203,7 @@ build_timeseries <- function(df_in, y, facet = c("tree","soil"),
         group = interaction(precipitation, culture))
   ) +
     ci_layers(style) +
-    { if (facet == "tree") facet_tree() else facet_soil() } +
+    { if (facet == "tree") facet_tree() else facet_soil(show_soiltype = show_soiltype) } +
     scale_precip_color() +
     scale_precip_fill() +
     scale_culture_linetype() +
@@ -206,7 +219,8 @@ build_timeseries <- function(df_in, y, facet = c("tree","soil"),
 # y     : unquoted y column to plot
 # facet : "tree" or "soil"
 build_boxplot <- function(df_in, y, facet = c("tree","soil"),
-                          ylab = NULL, title = NULL) {
+                          ylab = NULL, title = NULL,
+                          show_soiltype = TRUE) {
   facet <- match.arg(facet)
   dodge_w <- 0.575
   
@@ -227,7 +241,7 @@ build_boxplot <- function(df_in, y, facet = c("tree","soil"),
       position = position_jitterdodge(jitter.width = 0.12, dodge.width = dodge_w, seed = 1),
       size = 1.2, show.legend = FALSE
     ) +
-    { if (facet == "tree") facet_tree() else facet_soil() } +
+    { if (facet == "tree") facet_tree() else facet_soil(show_soiltype = show_soiltype) } +
     scale_precip_fill() +
     scale_precip_color() +
     scale_culture_alpha() +
@@ -257,16 +271,42 @@ y_limits_from_sum <- function(df_sum) {
 
 add_drought_bars_background <- function(p, df_sum, show = FALSE) {
   if (!isTRUE(show)) return(p)
+  if (!"date" %in% names(df_sum) || !nrow(df_sum)) return(p)
+
+  date_range <- range(df_sum$date, na.rm = TRUE)
+  if (any(!is.finite(as.numeric(date_range)))) return(p)
+
+  visible_periods <- purrr::keep(DROUGHT_PERIODS, function(win) {
+    win_start <- as.Date(win[[1]])
+    win_end <- as.Date(win[[2]])
+    win_start <= date_range[2] && win_end >= date_range[1]
+  })
+
+  if (!length(visible_periods)) {
+    return(p)
+  }
+
   yl <- y_limits_from_sum(df_sum)
   ybar <- yl[1]
-  # put bars FIRST (background)
-  p <- p + annotate("segment",
-                    x = as.Date(DROUGHT_PERIODS[[1]][1]), xend = as.Date(DROUGHT_PERIODS[[1]][2]),
-                    y = ybar, yend = ybar, size = 2.5, color = "orange", lineend = "round", alpha = 0.9) +
-    annotate("segment",
-             x = as.Date(DROUGHT_PERIODS[[2]][1]), xend = as.Date(DROUGHT_PERIODS[[2]][2]),
-             y = ybar, yend = ybar, size = 2.5, color = "orange", lineend = "round", alpha = 0.9)
-  # extend lower bound by 1 to include the bar
+
+  for (win in visible_periods) {
+    win_start <- max(as.Date(win[[1]]), date_range[1])
+    win_end <- min(as.Date(win[[2]]), date_range[2])
+    if (win_start > win_end) next
+
+    p <- p + annotate(
+      "segment",
+      x = win_start,
+      xend = win_end,
+      y = ybar,
+      yend = ybar,
+      size = 2.5,
+      color = "orange",
+      lineend = "round",
+      alpha = 0.9
+    )
+  }
+
   p + coord_cartesian(ylim = c(yl[1] - 0, yl[2]))
 }
 
@@ -274,8 +314,7 @@ save_plot <- function(p, stub, soiltype = "both",
                       dir_root = "output", subdir = "timeseries",
                       device = c("pdf","png"), width = 8.5, height = 6, dpi = 300) {
   device <- match.arg(device)
-  today  <- format(Sys.Date(), "%d-%m-%Y")
-  dirout <- file.path(dir_root, today, subdir, paste0("soil_", gsub("-","_", soiltype)))
+  dirout <- alinv_data_path("figure_exports", subdir, paste0("soil_", gsub("-","_", soiltype)), create_dir = TRUE)
   if (!dir.exists(dirout)) dir.create(dirout, recursive = TRUE, showWarnings = FALSE)
   fpath <- file.path(dirout, paste0(stub, ".", device))
   if (device == "pdf") ggsave(fpath, p, width = width, height = height, device = cairo_pdf)
@@ -465,23 +504,40 @@ plot_ts_condition <- function(filter_soiltype = c("both", "inoc-beech", "inoc-ro
 plot_ts_swc <- function(filter_soiltype = c("both","inoc-beech","inoc-robinia"),
                         style = "band",
                         drought_bars = FALSE,
+                        include_soil_treatment = NULL,
                         save_fig = FALSE, device = "pdf") {
   filter_soiltype <- match.arg(filter_soiltype)
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = filter_soiltype
+  )
+  show_soiltype <- alinv_should_show_soil_panels(
+    soil_filter = filter_soiltype,
+    include_soil_treatment = include_soil_treatment
+  )
   
   # load + optional soil filter
   df <- get_data("box","soilwater")
-  if (filter_soiltype != "both") {
-    df <- dplyr::filter(df, soiltype == filter_soiltype)
-  }
+  df <- alinv_apply_soil_context(
+    df,
+    soil_filter = filter_soiltype,
+    include_soil_treatment = include_soil_treatment
+  )
   df <- df %>%
     dplyr::filter(!is.na(swc)) %>%
     normalize_factors_soil()
   
   # summarize for SE/drought bars
-  df_sum <- summarize_ts(df, swc, keys = c("soiltype","robinia","precipitation","culture"))
+  swc_keys <- if (isTRUE(show_soiltype)) {
+    c("soiltype","robinia","precipitation","culture")
+  } else {
+    c("robinia","precipitation","culture")
+  }
+  df_sum <- summarize_ts(df, swc, keys = swc_keys)
   
   # build plot
   p <- build_timeseries(df, swc, facet = "soil", style = style,
+                        show_soiltype = show_soiltype,
                         ylab = "Soil water content (%)",
                         title = paste0("Soil water content over time",
                                        if (filter_soiltype != "both") paste0(" (soiltype = ", filter_soiltype, ")")))
@@ -500,15 +556,26 @@ plot_ts_swc <- function(filter_soiltype = c("both","inoc-beech","inoc-robinia"),
 plot_ts_resp <- function(filter_soiltype = c("both","inoc-beech","inoc-robinia"),
                          style = "band",
                          drought_bars = FALSE,
+                         include_soil_treatment = NULL,
                          save_fig = FALSE, device = "pdf") {
   
   filter_soiltype <- match.arg(filter_soiltype)
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = filter_soiltype
+  )
+  show_soiltype <- alinv_should_show_soil_panels(
+    soil_filter = filter_soiltype,
+    include_soil_treatment = include_soil_treatment
+  )
 
   # load + optional soil filter
   df <- get_data("box","respiration")
-  if (filter_soiltype != "both") {
-    df <- dplyr::filter(df, soiltype == filter_soiltype)
-  }
+  df <- alinv_apply_soil_context(
+    df,
+    soil_filter = filter_soiltype,
+    include_soil_treatment = include_soil_treatment
+  )
   df <- df %>%
     dplyr::filter(!is.na(co2)) %>%
     normalize_factors_soil()
@@ -519,10 +586,16 @@ plot_ts_resp <- function(filter_soiltype = c("both","inoc-beech","inoc-robinia")
   }
   
   # summarize for SE/drought bars
-  df_sum <- summarize_ts(df, co2, keys = c("soiltype","robinia","precipitation","culture"))
+  resp_keys <- if (isTRUE(show_soiltype)) {
+    c("soiltype","robinia","precipitation","culture")
+  } else {
+    c("robinia","precipitation","culture")
+  }
+  df_sum <- summarize_ts(df, co2, keys = resp_keys)
   
   # build plot
   p <- build_timeseries(df, co2, facet = "soil", style = style,
+                        show_soiltype = show_soiltype,
                         ylab = expression(CO[2]~flux~(µmol~m^-2~s^-1)),
                         title = paste0("Soil respiration over time",
                                        if (filter_soiltype != "both") paste0(" (soiltype = ", filter_soiltype, ")")))
@@ -626,9 +699,18 @@ wrangle_soil_data <- function() {
 # show: "both" = raw + smoothed, "raw" = raw trajectories only, "smooth" = smoothed trends only
 plot_soil_mp <- function(df_soil, 
                          filter_soiltype = c("both","inoc-beech","inoc-robinia"),
-                         show = c("both", "raw", "smooth")) {
+                         show = c("both", "raw", "smooth"),
+                         include_soil_treatment = NULL) {
   filter_soiltype <- match.arg(filter_soiltype)
   show <- match.arg(show)
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = filter_soiltype
+  )
+  show_soiltype <- alinv_should_show_soil_panels(
+    soil_filter = filter_soiltype,
+    include_soil_treatment = include_soil_treatment
+  )
 
   df_plot <- df_soil %>%
     dplyr::filter(!is.na(.data$soil_mp), .data$soil_mp < 0) %>%
@@ -640,9 +722,15 @@ plot_soil_mp <- function(df_soil,
       culture = factor(.data$culture, levels = c("mono", "mixed"))
     )
 
-  if (filter_soiltype != "both") {
-    df_plot <- dplyr::filter(df_plot, .data$soiltype == gsub("-", "_", filter_soiltype))
-  }
+  df_plot <- df_plot %>%
+    dplyr::mutate(soiltype = gsub("-", "_", .data$soiltype)) %>%
+    {
+      if (filter_soiltype != "both") {
+        dplyr::filter(., .data$soiltype == gsub("-", "_", filter_soiltype))
+      } else {
+        .
+      }
+    }
 
   if (!nrow(df_plot)) {
     message("No soil water potential rows available for soil type: ", filter_soiltype)
@@ -665,8 +753,13 @@ plot_soil_mp <- function(df_soil,
   )
   
   # Aggregate to one line per treatment group (mean across boxes per date)
+  group_cols <- c("date", "precipitation", "culture", "robinia")
+  if (isTRUE(show_soiltype)) {
+    group_cols <- c(group_cols, "soiltype")
+  }
+
   df_agg <- df_plot %>%
-    dplyr::group_by(.data$date, .data$precipitation, .data$culture, .data$soiltype, .data$robinia) %>%
+    dplyr::group_by(dplyr::across(dplyr::all_of(group_cols))) %>%
     dplyr::summarise(soil_mp_log = mean(.data$soil_mp_log, na.rm = TRUE), .groups = "drop")
 
   # Add layers based on show parameter
@@ -697,8 +790,17 @@ plot_soil_mp <- function(df_soil,
   }
   
   p <- p +
-    ggplot2::facet_grid(rows = ggplot2::vars(.data$soiltype), cols = ggplot2::vars(.data$robinia),
-                        labeller = ggplot2::labeller(soiltype = SOILTYPE_LABELS)) +
+    {
+      if (isTRUE(show_soiltype)) {
+        ggplot2::facet_grid(
+          rows = ggplot2::vars(.data$soiltype),
+          cols = ggplot2::vars(.data$robinia),
+          labeller = ggplot2::labeller(soiltype = SOILTYPE_LABELS)
+        )
+      } else {
+        ggplot2::facet_grid(. ~ .data$robinia)
+      }
+    } +
     scale_precip_color() +
     scale_culture_linetype() +
     ggplot2::scale_y_continuous(
@@ -736,13 +838,19 @@ plot_soil_mp <- function(df_soil,
 # Wrapper: wrangle and plot soil water potential data
 plot_ts_soil_mp <- function(filter_soiltype = c("both","inoc-beech","inoc-robinia"),
                             show = c("both", "raw", "smooth"),
+                            include_soil_treatment = NULL,
                             save_fig = FALSE,
                             device = "pdf") {
   filter_soiltype <- match.arg(filter_soiltype)
   show <- match.arg(show)
 
   df_soil <- wrangle_soil_data()
-  p <- plot_soil_mp(df_soil, filter_soiltype = filter_soiltype, show = show)
+  p <- plot_soil_mp(
+    df_soil,
+    filter_soiltype = filter_soiltype,
+    show = show,
+    include_soil_treatment = include_soil_treatment
+  )
 
   if (!is.null(p) && save_fig) {
     save_plot(
@@ -766,46 +874,17 @@ plot_ts_phenology <- function(style = c("errorbar", "band"),
   style <- match.arg(style)
   filter_soiltype <- match.arg(filter_soiltype)
   
-  df_raw <- get_data("tree", "phenology")
-
-  if (filter_soiltype != "both") {
-    df_raw <- dplyr::filter(df_raw, soiltype == filter_soiltype)
-  }
-
-  has_wide_doy <- any(grepl("^doy_", names(df_raw)))
-  has_long_cols <- all(c("stage", "doy") %in% names(df_raw))
-
-  if (has_wide_doy) {
-    # Legacy wide format: doy_s1 ... doy_s4
-    df <- df_raw %>%
-      dplyr::select(species, robinia, precipitation, culture, soiltype, dplyr::starts_with("doy_")) %>%
-      tidyr::pivot_longer(dplyr::starts_with("doy_"), names_to = "stage", values_to = "doy") %>%
-      dplyr::filter(!is.na(doy)) %>%
-      dplyr::mutate(
-        stage = factor(stage,
-                       c("doy_s1","doy_s2","doy_s3","doy_s4"),
-                       c("Stage 1","Stage 2","Stage 3","Stage 4"))
-      ) %>%
-      normalize_factors_tree()
-  } else if (has_long_cols) {
-    # Current long format: one row per tree/date with numeric stage and doy
-    df <- df_raw %>%
-      dplyr::select(species, robinia, precipitation, culture, soiltype, stage, doy) %>%
-      dplyr::filter(!is.na(doy), !is.na(stage)) %>%
-      dplyr::mutate(
-        stage_num = suppressWarnings(as.integer(as.character(stage))),
-        stage_num = dplyr::if_else(is.na(stage_num), as.integer(as.factor(stage)), stage_num),
-        stage = factor(stage_num,
-                       levels = sort(unique(stage_num)),
-                       labels = paste("Stage", sort(unique(stage_num))))
-      ) %>%
-      normalize_factors_tree()
-  } else {
-    stop(
-      "Phenology data has unsupported structure. Expected either doy_s* columns or long columns {stage, doy}.",
-      call. = FALSE
-    )
-  }
+  df <- get_data("tree", "phenology_transitions") %>%
+    alinv_filter_by_soil(soil_filter = filter_soiltype) %>%
+    dplyr::filter(!is.na(.data$doy), !is.na(.data$stage_date), !is.na(.data$stage)) %>%
+    dplyr::mutate(
+      stage_num = as.integer(.data$stage),
+      stage = factor(.data$stage_num,
+                     levels = 1:4,
+                     labels = paste("Stage", 1:4)),
+      date = as.Date(.data$stage_date)
+    ) %>%
+    normalize_factors_tree()
   
   # Mean ± SE per stage × treatment
   df_sum <- df %>%
@@ -821,65 +900,57 @@ plot_ts_phenology <- function(style = c("errorbar", "band"),
       stage_num = as.numeric(stage),
       stage_lab = levels(stage)[stage_num]
     )
-  
-  if (style == "band") {
-    p <- ggplot(
-      df_sum,
-      aes(x = stage_num, y = mean,
-          color = precipitation, fill = precipitation,
-          linetype = culture,
-          group = interaction(precipitation, culture))
+
+  seg_alpha <- if (style == "band") 0.28 else 0.6
+  seg_size <- if (style == "band") 3 else 0.9
+
+  p <- ggplot(
+    df_sum,
+    aes(
+      x = mean,
+      y = stage_num,
+      color = precipitation,
+      linetype = culture,
+      group = interaction(precipitation, culture)
+    )
+  ) +
+    geom_segment(
+      aes(
+        x = mean - se,
+        xend = mean + se,
+        y = stage_num,
+        yend = stage_num
+      ),
+      alpha = seg_alpha,
+      linewidth = seg_size
     ) +
-      geom_ribbon(aes(ymin = mean - se, ymax = mean + se),
-                  alpha = PLOT_STYLE$sizes$ribbon_alpha, color = NA) +
-      geom_line(size = PLOT_STYLE$sizes$line) +
-      geom_point(size = PLOT_STYLE$sizes$point) +
-      facet_tree() +
-      scale_precip_color() +
-      scale_precip_fill() +
-      scale_culture_linetype() +
-      scale_x_continuous(breaks = unique(df_sum$stage_num),
-                         labels = unique(df_sum$stage_lab)) +
-      labs(
-        x = "Phenological stage",
-        y = "Mean DOY (± SE)",
-        title = paste0("Phenology progression (mean ± SE bands)",
-                       if (filter_soiltype!="both") paste0(" — soiltype: ", filter_soiltype))
-      ) +
-      theme_common()
-  } else { # "errorbar"
-    p <- ggplot(
-      df_sum,
-      aes(x = stage, y = mean,
-          color = precipitation,
-          linetype = culture,
-          group = interaction(precipitation, culture))
+    geom_line(size = PLOT_STYLE$sizes$line) +
+    geom_point(size = PLOT_STYLE$sizes$point) +
+    facet_tree() +
+    scale_precip_color() +
+    scale_culture_linetype() +
+    scale_y_continuous(
+      breaks = 1:4,
+      labels = paste("Stage", 1:4),
+      limits = c(0.8, 4.2)
     ) +
-      geom_line(size = PLOT_STYLE$sizes$line) +
-      geom_errorbar(aes(ymin = mean - se, ymax = mean + se),
-                    width = 0.1, alpha = 0.6) +
-      geom_point(size = PLOT_STYLE$sizes$point) +
-      facet_tree() +
-      scale_precip_color() +
-      scale_culture_linetype() +
-      labs(
-        x = "Phenological stage",
-        y = "Mean DOY (± SE)",
-        title = paste0("Phenology progression (mean ± SE errorbars)",
-                       if (filter_soiltype!="both") paste0(" — soiltype: ", filter_soiltype))
-      ) +
-      theme_common()
-  }
-  
-  yl <- get_ylim("phenology_doy")
-  data_yl <- range(df_sum$mean + c(-1, 1) * df_sum$se, na.rm = TRUE)
-  data_yl <- c(data_yl[1] - 2, data_yl[2] + 3)
-  if (!is.null(yl)) {
-    yl_final <- c(min(yl[1], data_yl[1]), max(yl[2], data_yl[2]))
+    labs(
+      x = "Mean DOY (± SE)",
+      y = "Phenological stage",
+      title = paste0("Phenology progression (mean ± SE)",
+                     if (filter_soiltype!="both") paste0(" — soiltype: ", filter_soiltype))
+    ) +
+    theme_common()
+
+  x_lim <- get_ylim("phenology_doy")
+  data_x <- range(df_sum$mean + c(-1, 1) * df_sum$se, na.rm = TRUE)
+  data_x <- c(data_x[1] - 2, data_x[2] + 3)
+  if (!is.null(x_lim)) {
+    x_final <- c(min(x_lim[1], data_x[1]), max(x_lim[2], data_x[2]))
   } else {
-    yl_final <- data_yl
+    x_final <- data_x
   }
-  p <- p + coord_cartesian(ylim = yl_final)
+  p <- p + coord_cartesian(xlim = x_final, ylim = c(0.8, 4.2))
   
   if (save_fig) save_plot(
     p,
@@ -1101,8 +1172,20 @@ boxplot_growth_increment_on <- function(target_date,
 # 3) Soil C/N & isotopes (box-level)
 #    - facets 4 variables; color/fill by precipitation (consistent legend)
 # -----------------------------------------------------------------------
-boxplot_soil_cn_isotopes <- function(save_fig = FALSE, device = "pdf") {
+boxplot_soil_cn_isotopes <- function(filter_soiltype = NULL,
+                                     include_soil_treatment = NULL,
+                                     save_fig = FALSE, device = "pdf") {
+  filter_soiltype <- alinv_resolve_soil_filter(filter_soiltype)
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = filter_soiltype
+  )
+
   df <- get_data("box", "cn_isotopes") |>
+    alinv_apply_soil_context(
+      soil_filter = filter_soiltype,
+      include_soil_treatment = include_soil_treatment
+    ) |>
     normalize_factors_soil()
   
   # Long form for facetting variables
@@ -1124,7 +1207,12 @@ boxplot_soil_cn_isotopes <- function(save_fig = FALSE, device = "pdf") {
   # Build baseline (soil facets) then facet variables on top
   p <- build_boxplot(
     df_long, value, facet = "soil",
-    ylab = NULL, title = "Soil C/N and isotopes by soil type and precipitation"
+    ylab = NULL,
+    title = "Soil C/N and isotopes by treatment",
+    show_soiltype = alinv_should_show_soil_panels(
+      soil_filter = filter_soiltype,
+      include_soil_treatment = include_soil_treatment
+    )
   ) +
     facet_wrap(~ variable, scales = "free_y",
                labeller = labeller(variable = var_labels), nrow = 2)

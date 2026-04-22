@@ -49,6 +49,7 @@ make_temporal_sem_combo <- function(
     resp_var,
     species,
     soil_type           = "both",
+    include_soil_treatment = NULL,
     # SEM options
     include_interaction = TRUE,
     scale_all_numeric   = TRUE,
@@ -65,6 +66,11 @@ make_temporal_sem_combo <- function(
     outdir_root         = "./output",
     force_refit         = FALSE
 ) {
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_type
+  )
+
   if (is.null(temporal_y_limits)) {
     temporal_y_limits <- getOption("alinv.temporal_y_limits", NULL)
   }
@@ -72,16 +78,19 @@ make_temporal_sem_combo <- function(
   # ------------------------------------------------------------
   # 0) Paths and cache file
   # ------------------------------------------------------------
-  today  <- format(Sys.Date(), "%Y-%m-%d")
-  outdir <- file.path(outdir_root, today, "temporal_factor+sem")
+  outdir <- alinv_data_path("temporal_factor+sem", create_dir = TRUE)
   dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
+  soil_mode_tag <- alinv_soil_mode_tag(
+    soil_filter = soil_type,
+    include_soil_treatment = include_soil_treatment
+  )
   
   base_name <- paste0(
     "temporal_sem_",
     type, "_", data_name,
     if (!is.null(resp_var) && nzchar(resp_var)) paste0("_", resp_var) else "",
     "_", species,
-    "_soil-", soil_type,
+    "_", soil_mode_tag,
     "_semInt-", ifelse(isTRUE(include_interaction), "yes", "no"),
     "_phase-", gsub("[^a-zA-Z0-9]+", "", tolower(sem_phase_window)),
     "_swc-", swc_source
@@ -90,22 +99,6 @@ make_temporal_sem_combo <- function(
   png_path <- file.path(outdir, paste0(base_name, ".png"))
   rds_path <- file.path(outdir, paste0(base_name, ".rds"))
 
-  # Search existing caches across dated output folders.
-  cache_candidates <- list.files(
-    path = outdir_root,
-    pattern = "\\.rds$",
-    recursive = TRUE,
-    full.names = TRUE
-  )
-  cache_candidates <- cache_candidates[basename(cache_candidates) == paste0(base_name, ".rds")]
-  cache_candidates <- cache_candidates[grepl("temporal_factor\\+sem", cache_candidates)]
-
-  latest_cache <- NA_character_
-  if (length(cache_candidates)) {
-    mt <- file.info(cache_candidates)$mtime
-    latest_cache <- cache_candidates[which.max(mt)]
-  }
-  
   # ------------------------------------------------------------
   # 1) Load cached models if available, otherwise run them
   # ------------------------------------------------------------
@@ -120,32 +113,6 @@ make_temporal_sem_combo <- function(
       res_temporal <- cache$temporal
       res_sem      <- cache$sem
       cache_used   <- rds_path
-    }
-  } else if (!isTRUE(force_refit) && !is.na(latest_cache) && file.exists(latest_cache)) {
-    cache <- tryCatch(readRDS(latest_cache), error = function(e) NULL)
-    if (is.null(cache)) {
-      warning("Failed to read cache file: ", latest_cache, ". Re-fitting models.")
-      res_temporal <- NULL
-      res_sem      <- NULL
-      cache_used   <- NA_character_
-    } else {
-      res_temporal <- cache$temporal
-      res_sem      <- cache$sem
-      cache_used   <- latest_cache
-
-      cache_age_days <- as.numeric(difftime(Sys.time(), file.info(latest_cache)$mtime, units = "days"))
-      warning(
-        sprintf(
-          paste0(
-            "Using cached temporal+SEM models from '%s' (%.1f days old). ",
-            "To update models, rerun with: make_temporal_sem_combo(..., force_refit = TRUE) ",
-            "or run_temporal_sem_over_grid(..., force_refit = TRUE)."
-          ),
-          latest_cache,
-          cache_age_days
-        ),
-        call. = FALSE
-      )
     }
   } else {
     res_temporal <- NULL
@@ -168,6 +135,7 @@ make_temporal_sem_combo <- function(
         resp_var       = resp_var,
         target_species = species,
         soil_type      = soil_type,
+        include_soil_treatment = include_soil_treatment,
         add_covars     = add_covars,
         covars_fun     = covars_fun,
         y_limits       = temporal_y_limits,
@@ -191,6 +159,7 @@ make_temporal_sem_combo <- function(
         resp_var            = resp_var,
         species             = species,
         soil_type           = soil_type,
+        include_soil_treatment = include_soil_treatment,
         include_interaction = include_interaction,
         scale_all_numeric   = scale_all_numeric,
         do_rfe              = do_rfe,
@@ -324,11 +293,17 @@ make_temporal_sem_combo <- function(
 run_temporal_sem_over_grid <- function(
     species_vec = c("fagus", "quercus"),
     soil_type   = "both",
+    include_soil_treatment = NULL,
     swc_source  = "measured",
     parallel    = FALSE,
     workers     = max(1L, parallel::detectCores() - 1L),
     ...
 ) {
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_type
+  )
+
   var_grid <- get_data_var_grid() %>%
     dplyr::filter(.data$type == "tree")  # box vars usually don't go into SEM
   
@@ -352,6 +327,7 @@ run_temporal_sem_over_grid <- function(
         resp_var  = resp_var,
         species   = species,
         soil_type = soil_type,
+        include_soil_treatment = include_soil_treatment,
         swc_source = swc_source,
         ...
       ),

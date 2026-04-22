@@ -28,9 +28,15 @@ collect_all_effects <- function(
     var_grid      = get_data_var_grid(),
     species_vec   = c("fagus", "quercus"),
     soil_type     = "both",
+    include_soil_treatment = NULL,
     add_covars    = FALSE,
     covars_fun    = NULL
 ) {
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_type
+  )
+
   # needs: dplyr, purrr, tibble loaded
   purrr::pmap_dfr(
     var_grid,
@@ -45,6 +51,7 @@ collect_all_effects <- function(
               resp_var       = resp_var,
               target_species = sp,
               soil_type      = soil_type,
+              include_soil_treatment = include_soil_treatment,
               add_covars     = add_covars,
               covars_fun     = covars_fun
             ),

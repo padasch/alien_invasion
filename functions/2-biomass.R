@@ -36,17 +36,33 @@ wrangle_tree_biomass <- function(fp, sheet = "Biomass") {
     arrange(species, soiltype, robinia, precipitation, culture, tree_id)
 }
 
-plot_tree_biomass_treatments <- function(df_biomass, species_keep = "fagus") {
+plot_tree_biomass_treatments <- function(df_biomass,
+                                         species_keep = "fagus",
+                                         soil_type = NULL,
+                                         include_soil_treatment = NULL) {
   stopifnot(all(c("root_biomass", "shoot_biomass", "root_shoot_biomass") %in% names(df_biomass)))
+  soil_type <- alinv_resolve_soil_filter(soil_type)
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_type
+  )
+  show_soil_panels <- alinv_should_show_soil_panels(
+    soil_filter = soil_type,
+    include_soil_treatment = include_soil_treatment
+  )
 
   df_base <- df_biomass %>%
     filter(species == species_keep) %>%
     filter(!is.na(precipitation), !is.na(soiltype), !is.na(culture), !is.na(robinia)) %>%
+    alinv_apply_soil_context(
+      soil_filter = soil_type,
+      include_soil_treatment = include_soil_treatment
+    ) %>%
     mutate(
       precipitation = factor(precipitation, levels = c("control", "drought")),
       culture = factor(culture, levels = c("mono", "mixed")),
       robinia = factor(robinia, levels = c("without-robinia", "with-robinia")),
-      soiltype = factor(soiltype, levels = c("inoc-beech", "inoc-robinia"))
+      soiltype = alinv_relevel_soiltype(soiltype)
     )
 
   robinia_labels <- c(
@@ -55,8 +71,8 @@ plot_tree_biomass_treatments <- function(df_biomass, species_keep = "fagus") {
   )
 
   soiltype_labels <- c(
-    `inoc-beech` = "Beech Soil (was drier)",
-    `inoc-robinia` = "Robinia Soil (was wetter)"
+    `inoc-beech` = "drier soil (beech soil)",
+    `inoc-robinia` = "wetter soil (robinia soil)"
   )
 
   metric_info <- list(
@@ -85,13 +101,22 @@ plot_tree_biomass_treatments <- function(df_biomass, species_keep = "fagus") {
         position = ggplot2::position_jitterdodge(jitter.width = 0.12, dodge.width = 0.75),
         size = 1.6, stroke = 0
       ) +
-      ggplot2::facet_grid(
-        soiltype ~ robinia,
-        labeller = ggplot2::labeller(
-          robinia = robinia_labels,
-          soiltype = soiltype_labels
-        )
-      ) +
+      {
+        if (isTRUE(show_soil_panels)) {
+          ggplot2::facet_grid(
+            soiltype ~ robinia,
+            labeller = ggplot2::labeller(
+              robinia = robinia_labels,
+              soiltype = soiltype_labels
+            )
+          )
+        } else {
+          ggplot2::facet_grid(
+            . ~ robinia,
+            labeller = ggplot2::labeller(robinia = robinia_labels)
+          )
+        }
+      } +
       ggplot2::scale_fill_manual(values = c(control = "grey50", drought = "indianred"), drop = FALSE) +
       ggplot2::scale_color_manual(values = c(control = "grey50", drought = "indianred"), drop = FALSE) +
       ggplot2::scale_alpha_manual(values = c(mono = 0.55, mixed = 0.9), guide = "none") +
@@ -117,31 +142,59 @@ plot_tree_biomass_treatments <- function(df_biomass, species_keep = "fagus") {
   combined
 }
 
-plot_tree_biomass_treatments_all_species <- function(df_biomass, species_vec = c("fagus", "quercus")) {
+plot_tree_biomass_treatments_all_species <- function(df_biomass,
+                                                     species_vec = c("fagus", "quercus"),
+                                                     soil_type = NULL,
+                                                     include_soil_treatment = NULL) {
   species_vec <- unique(species_vec)
   setNames(
-    lapply(species_vec, function(sp) plot_tree_biomass_treatments(df_biomass, species_keep = sp)),
+    lapply(species_vec, function(sp) {
+      plot_tree_biomass_treatments(
+        df_biomass,
+        species_keep = sp,
+        soil_type = soil_type,
+        include_soil_treatment = include_soil_treatment
+      )
+    }),
     species_vec
   )
 }
 
-fit_biomass_glmm <- function(df_biomass, species_keep = "fagus", metric = "root_biomass") {
+fit_biomass_glmm <- function(df_biomass,
+                             species_keep = "fagus",
+                             metric = "root_biomass",
+                             soil_type = NULL,
+                             include_soil_treatment = NULL) {
+  soil_type <- alinv_resolve_soil_filter(soil_type)
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_type
+  )
+
   df_m <- df_biomass %>%
     filter(species == species_keep, !is.na(.data[[metric]])) %>%
+    alinv_apply_soil_context(
+      soil_filter = soil_type,
+      include_soil_treatment = include_soil_treatment
+    ) %>%
     mutate(
       precipitation = factor(precipitation, levels = c("control", "drought")),
       culture       = factor(culture,       levels = c("mono", "mixed")),
       robinia       = factor(robinia,       levels = c("without-robinia", "with-robinia")),
-      soiltype_f    = factor(soiltype,      levels = c("inoc-beech", "inoc-robinia"))
+      soiltype_f    = alinv_relevel_soiltype(soiltype)
     ) %>%
     rename(y = !!metric) %>%
     mutate(y_z = as.numeric(scale(y)))
 
-  mod <- lme4::lmer(
-    y_z ~ precipitation + culture + robinia + soiltype_f + (1 | boxlabel),
-    data = df_m,
-    REML = TRUE
+  rhs_terms <- c("precipitation", "culture", "robinia")
+  if (isTRUE(include_soil_treatment)) {
+    rhs_terms <- c(rhs_terms, "soiltype_f")
+  }
+  fml <- as.formula(
+    paste("y_z ~", paste(rhs_terms, collapse = " + "), "+ (1 | boxlabel)")
   )
+
+  mod <- lme4::lmer(fml, data = df_m, REML = TRUE)
 
   list(model = mod, data = df_m, metric = metric, species = species_keep)
 }
@@ -173,7 +226,7 @@ extract_biomass_effects <- function(fit_obj) {
     "precipitationdrought"  = "Precipitation: Control \u2192 Drought",
     "culturemixed"          = "Culture: Mono \u2192 Mixed",
     "robiniawith-robinia"   = "Robinia: Without \u2192 With",
-    "soiltype_finoc-robinia" = "Soil: Beech Soil \u2192 Robinia Soil"
+    "soiltype_finoc-beech" = "Soil: wetter soil (robinia soil) \u2192 drier soil (beech soil)"
   )
   ifelse(terms %in% names(lookup), lookup[terms], terms)
 }
@@ -236,8 +289,18 @@ plot_biomass_effects <- function(df_effects) {
 }
 
 run_biomass_glmm_species <- function(df_biomass, species_keep = "fagus",
-                                     metrics = c("shoot_biomass", "root_biomass", "root_shoot_biomass")) {
-  fits <- lapply(metrics, function(m) fit_biomass_glmm(df_biomass, species_keep, m))
+                                     metrics = c("shoot_biomass", "root_biomass", "root_shoot_biomass"),
+                                     soil_type = NULL,
+                                     include_soil_treatment = NULL) {
+  fits <- lapply(metrics, function(m) {
+    fit_biomass_glmm(
+      df_biomass,
+      species_keep = species_keep,
+      metric = m,
+      soil_type = soil_type,
+      include_soil_treatment = include_soil_treatment
+    )
+  })
   effects <- do.call(rbind, lapply(fits, extract_biomass_effects))
   perf    <- do.call(rbind, lapply(fits, extract_model_performance))
   p <- plot_biomass_effects(effects)
