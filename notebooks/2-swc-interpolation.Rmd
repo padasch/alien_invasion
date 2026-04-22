@@ -418,16 +418,23 @@ metrics_plot_df <- swc_metrics_wide %>%
     interaction_label = if_else(include_interaction, "With interaction", "No interaction")
   )
 
-ggplot(metrics_plot_df, aes(x = measured, y = imputed_gam, color = species)) +
-  geom_abline(slope = 1, intercept = 0, linetype = 2, color = "grey40") +
-  geom_point(size = 2.2, alpha = 0.9) +
-  geom_text(aes(label = section), size = 2.8, check_overlap = TRUE, vjust = -0.6, show.legend = FALSE) +
-  facet_grid(interaction_label ~ metric) +
-  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
-  labs(title = "SEM performance by SWC source",
-       subtitle = "Points above 1:1 line indicate higher metric with imputed SWC",
-       x = "Measured SWC", y = "Imputed SWC", color = "Species") +
-  theme_linedraw(base_size = 11) + theme(legend.position = "bottom")
+if (!nrow(metrics_plot_df)) {
+  ggplot() +
+    theme_void() +
+    ggtitle("SEM performance by SWC source") +
+    labs(subtitle = "No measured-vs-imputed SEM metric pairs were available for this scenario.")
+} else {
+  ggplot(metrics_plot_df, aes(x = measured, y = imputed_gam, color = species)) +
+    geom_abline(slope = 1, intercept = 0, linetype = 2, color = "grey40") +
+    geom_point(size = 2.2, alpha = 0.9) +
+    geom_text(aes(label = section), size = 2.8, check_overlap = TRUE, vjust = -0.6, show.legend = FALSE) +
+    facet_grid(interaction_label ~ metric) +
+    coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
+    labs(title = "SEM performance by SWC source",
+         subtitle = "Points above 1:1 line indicate higher metric with imputed SWC",
+         x = "Measured SWC", y = "Imputed SWC", color = "Species") +
+    theme_linedraw(base_size = 11) + theme(legend.position = "bottom")
+}
 ```
 
 ## Factor Influence: Measured vs Imputed SWC
@@ -448,6 +455,15 @@ summarise_importance <- function(df, species_keep = NULL) {
 }
 
 plot_importance_panel <- function(df_imp, title_txt) {
+  if (is.null(df_imp) || !nrow(df_imp)) {
+    return(
+      ggplot() +
+        theme_void() +
+        ggtitle(title_txt) +
+        labs(subtitle = "No SEM path summaries were available for this scenario.")
+    )
+  }
+
   ggplot(df_imp, aes(x = reorder(factor, mean_abs), y = mean_abs, fill = swc_source)) +
     geom_col(position = position_dodge(width = 0.8), width = 0.72) +
     geom_errorbar(aes(ymin = pmax(0, mean_abs - se_abs), ymax = mean_abs + se_abs),

@@ -968,20 +968,11 @@ The revised SEM matrix workflow (treatments x target variables, separate direct/
 
 - `notebooks/3-sem-aggregation.Rmd`
 
-## Exploratory Phase-Specific SEM (Growth-Derived Targets)
+Phase-specific SEMs were removed from this notebook because the per-phase subsets do not contain enough data for stable fitting. The scenario-local SEM outputs now focus on the full-data fits, with cached `.rds` results and paired CSV exports written under `data/model-sem/`.
 
-Phase windows: until June, July-August, September-end.
+## Additional Growth-Derived Targets: Temporal + SEM
 
-```{r sem-safe-helper, include=FALSE}
-safe_run_sem <- function(...) {
-  tryCatch(run_sem_for_trait(...), error = function(e) {
-    message("Skipping SEM fit: ", conditionMessage(e))
-    NULL
-  })
-}
-```
-
-```{r sem-phase-growth-derived, fig.width=14, fig.height=5}
+```{r growth-derived-temporal-sem, fig.width=9.5, fig.height=5.8}
 growth_targets <- c(
   "height_inc_t0_rel",
   "diameter_inc_t0_rel",
@@ -989,39 +980,6 @@ growth_targets <- c(
   "diameter_inc_phase_rel"
 )
 
-phase_windows <- c("until June", "July-August", "September-end")
-
-for (sp in species_vec) {
-  for (ph in phase_windows) {
-    cat("\n\n### Species:", sp, "| phase:", ph, "\n")
-    for (rv in growth_targets) {
-      sem_phase <- safe_run_sem(
-        type = "tree",
-        data_name = "growth",
-        resp_var = rv,
-        species = sp,
-        soil_type = soil_type,
-        include_interaction = FALSE,
-        phase_window = ph,
-        scale_all_numeric = TRUE,
-        swc_source = "measured",
-        force_run = FALSE
-      )
-
-      if (is.null(sem_phase)) next
-
-      cat("\n", rv, "| n:", sem_phase$n_rows_phase, "\n")
-      print(sem_phase$matrix_plots$direct)
-      print(sem_phase$matrix_plots$indirect)
-      print(sem_phase$matrix_plots$total)
-    }
-  }
-}
-```
-
-## Additional Growth-Derived Targets: Temporal + SEM
-
-```{r growth-derived-temporal-sem, fig.width=9.5, fig.height=5.8}
 safe_run_combo <- function(...) {
   tryCatch(make_temporal_sem_combo(...), error = function(e) {
     message("Skipping temporal+SEM combo: ", conditionMessage(e))

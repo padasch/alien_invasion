@@ -154,6 +154,25 @@ sem_all_species <- purrr::map_dfr(
   ~ collect_sem_matrix_data(species = .x, include_interaction = include_interaction)
 )
 
+if (!nrow(sem_all_species)) {
+  sem_all_species <- tibble::tibble(
+    treatment = character(),
+    response_var = character(),
+    path_type = character(),
+    estimate = double(),
+    p_value = double(),
+    effect_class = character(),
+    significant = logical(),
+    estimate_sig = double(),
+    species = character(),
+    include_interaction = logical(),
+    swc_source = character(),
+    phase = character(),
+    data_name = character(),
+    resp_var_raw = character()
+  )
+}
+
 shared_heatmap_limit <- compute_shared_sem_heatmap_limit(sem_all_species)
 
 purrr::walk(

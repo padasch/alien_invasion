@@ -636,6 +636,15 @@ write_sem_heatmap_csvs <- function(matrix_df,
   dir.create(export_dir, recursive = TRUE, showWarnings = FALSE)
   specs <- sem_heatmap_specs()
 
+  if (is.null(matrix_df) || !"species" %in% names(matrix_df) || !nrow(matrix_df)) {
+    purrr::walk(seq_len(nrow(specs)), function(i) {
+      spec <- specs[i, ]
+      out_file <- file.path(export_dir, paste0(species, "-", spec$file_stub, ".csv"))
+      readr::write_csv(tibble::tibble(row = character()), out_file)
+    })
+    return(invisible(NULL))
+  }
+
   purrr::walk(seq_len(nrow(specs)), function(i) {
     spec <- specs[i, ]
     panel_df <- prepare_sem_heatmap_panel(
