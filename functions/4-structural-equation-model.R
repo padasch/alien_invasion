@@ -552,7 +552,7 @@ prepare_sem_heatmap_panel <- function(matrix_df,
   treat_labels <- treat_labels %||% sem_heatmap_treatment_labels()
 
   df_panel <- matrix_df %>%
-    dplyr::filter(.data$path_type == path_type)
+    dplyr::filter(.data$path_type == .env$path_type)
 
   if (!nrow(df_panel)) {
     return(tibble::tibble())
@@ -684,23 +684,11 @@ plot_sem_heatmap_panel <- function(panel_df,
     tibble::tibble()
   }
 
-  ggplot(
+  p <- ggplot(
     panel_df,
     aes(x = .data$col_label, y = .data$row_label, fill = .data$value)
   ) +
     geom_tile(color = "grey90", linewidth = 0.2) +
-    geom_text(
-      data = label_df,
-      mapping = aes(
-        x = .data$col_label,
-        y = .data$row_label,
-        label = .data$value_label,
-        color = .data$value_color
-      ),
-      inherit.aes = FALSE,
-      size = value_text_size,
-      fontface = "bold"
-    ) +
     scale_fill_gradient2(
       low = "indianred3",
       mid = "white",
@@ -721,6 +709,24 @@ plot_sem_heatmap_panel <- function(panel_df,
       axis.text.x = element_text(angle = 35, hjust = 1),
       panel.grid = element_blank()
     )
+
+  if (nrow(label_df)) {
+    p <- p +
+      geom_text(
+        data = label_df,
+        mapping = aes(
+          x = .data$col_label,
+          y = .data$row_label,
+          label = .data$value_label,
+          color = .data$value_color
+        ),
+        inherit.aes = FALSE,
+        size = value_text_size,
+        fontface = "bold"
+      )
+  }
+
+  p
 }
 
 
