@@ -14,31 +14,6 @@ args <- commandArgs(trailingOnly = TRUE)
 proj_root <- .alinv_project_root()
 output_root <- file.path(proj_root, "output")
 
-resolve_latest_date_dir <- function(output_root, requested_date = NULL) {
-  if (!is.null(requested_date) && nzchar(requested_date)) {
-    date_dir <- file.path(output_root, requested_date)
-    if (!dir.exists(date_dir)) {
-      stop("Requested output date folder does not exist: ", date_dir, call. = FALSE)
-    }
-    return(date_dir)
-  }
-
-  date_dirs <- list.dirs(output_root, full.names = TRUE, recursive = FALSE)
-  date_tbl <- tibble(
-    path = date_dirs,
-    label = basename(date_dirs),
-    date = suppressWarnings(as.Date(basename(date_dirs)))
-  ) %>%
-    filter(!is.na(.data$date)) %>%
-    arrange(desc(.data$date))
-
-  if (!nrow(date_tbl)) {
-    stop("No dated output folders found under ", output_root, call. = FALSE)
-  }
-
-  date_tbl$path[[1]]
-}
-
 read_heatmap_csv <- function(path) {
   df <- readr::read_csv(path, show_col_types = FALSE)
   row_col <- names(df)[[1]]
@@ -69,7 +44,10 @@ compute_limit_from_csvs <- function(csv_files) {
 }
 
 heatmap_specs <- sem_heatmap_specs()
-latest_date_dir <- resolve_latest_date_dir(output_root, requested_date = args[[1]] %||% NULL)
+latest_date_dir <- alinv_resolve_output_date_dir(
+  output_root = output_root,
+  requested_date = args[[1]] %||% NULL
+)
 scenario_dirs <- list.dirs(latest_date_dir, recursive = FALSE, full.names = TRUE)
 
 if (!length(scenario_dirs)) {

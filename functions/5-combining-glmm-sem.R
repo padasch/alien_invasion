@@ -72,7 +72,7 @@ make_temporal_sem_combo <- function(
   )
 
   if (is.null(temporal_y_limits)) {
-    temporal_y_limits <- getOption("alinv.temporal_y_limits", NULL)
+    temporal_y_limits <- getOption("alinv.temporal_y_limits", alinv_temporal_effect_y_limits())
   }
 
   # ------------------------------------------------------------
@@ -189,6 +189,74 @@ make_temporal_sem_combo <- function(
       warning(paste(warn_parts, collapse = " | "), call. = FALSE)
     }
   }
+
+  temporal_cache_path <- temporal_effect_cache_path(
+    type = type,
+    data_name = data_name,
+    resp_var = resp_var,
+    target_species = species,
+    soil_type = soil_type,
+    include_soil_treatment = include_soil_treatment,
+    add_covars = add_covars,
+    swc_source = swc_source
+  )
+  write_temporal_effect_csv_bundle(
+    result = res_temporal,
+    export_stem = tools::file_path_sans_ext(temporal_cache_path),
+    meta = temporal_effect_plot_meta(
+      type = type,
+      data_name = data_name,
+      resp_var = resp_var,
+      target_species = species,
+      soil_type = soil_type,
+      include_soil_treatment = include_soil_treatment,
+      add_covars = add_covars,
+      swc_source = swc_source,
+      y_limits = temporal_y_limits
+    )
+  )
+
+  sem_cache_file <- sem_cache_path(
+    type = type,
+    data_name = data_name,
+    resp_var = resp_var,
+    species = species,
+    soil_type = soil_type,
+    include_soil_treatment = include_soil_treatment,
+    phase_window = sem_phase_window,
+    include_interaction = include_interaction,
+    scale_all_numeric = scale_all_numeric,
+    do_rfe = do_rfe,
+    aic_improve = aic_improve,
+    swc_source = swc_source
+  )
+  res_sem <- augment_sem_result_for_exports(
+    result = res_sem,
+    resp_var = resp_var,
+    species = species,
+    soil_type = soil_type,
+    include_interaction = include_interaction
+  )
+  write_sem_csv_bundle(
+    result = res_sem,
+    export_stem = tools::file_path_sans_ext(sem_cache_file)
+  )
+
+  res_temporal$plot <- plot_temporal_effects_from_csv(
+    effects_df = res_temporal$effects %||% tibble::tibble(),
+    meta_df = temporal_effect_plot_meta(
+      type = type,
+      data_name = data_name,
+      resp_var = resp_var,
+      target_species = species,
+      soil_type = soil_type,
+      include_soil_treatment = include_soil_treatment,
+      add_covars = add_covars,
+      swc_source = swc_source,
+      y_limits = temporal_y_limits
+    ),
+    y_limits = temporal_y_limits
+  )
   
   # ------------------------------------------------------------
   # 2) Extract plots and sanity checks

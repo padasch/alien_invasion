@@ -1,9 +1,5 @@
 # Packages
-library(lme4)
-library(piecewiseSEM)
 library(dplyr)
-library(emmeans)
-library(multcomp)
 
 prepare_sem_data <- function(df_prepared,
                              scale_all_numeric = TRUE) {
@@ -110,8 +106,8 @@ fit_sem_models <- function(df_sem_ready,
 extract_sem_effects_with_se <- function(mod_swc,
                                         mod_resp,
                                         factors = c("robinia", "precipitation", "culture", "soiltype", "extreme_event")) {
-  beta_swc <- fixef(mod_swc)
-  beta_resp <- fixef(mod_resp)
+  beta_swc <- lme4::fixef(mod_swc)
+  beta_resp <- lme4::fixef(mod_resp)
   vcov_swc <- as.matrix(vcov(mod_swc))
   vcov_resp <- as.matrix(vcov(mod_resp))
 
@@ -182,8 +178,8 @@ extract_sem_effects_with_se <- function(mod_swc,
 extract_interaction_effect <- function(mod_swc,
                                        mod_resp,
                                        treat_factors = c("robinia", "precipitation", "culture", "soiltype", "extreme_event")) {
-  beta_swc <- fixef(mod_swc)
-  beta_resp <- fixef(mod_resp)
+  beta_swc <- lme4::fixef(mod_swc)
+  beta_resp <- lme4::fixef(mod_resp)
   vcov_swc <- as.matrix(vcov(mod_swc))
   vcov_resp <- as.matrix(vcov(mod_resp))
 
@@ -692,25 +688,34 @@ plot_sem_heatmap_panel <- function(panel_df,
 }
 
 
-plot_sem_graph <- function(effects_main,
-                           effects_int = NULL,
-                           sem_mod,
-                           resp_var,
-                           species,
-                           soil_type,
-                           include_interaction = TRUE,
-                           modeled_factors = NULL) {
-  r2_tbl <- piecewiseSEM::rsquared(sem_mod)
-  r2_swc_marg <- r2_tbl$Marginal[r2_tbl$Response == "swc"]
-  r2_swc_cond <- r2_tbl$Conditional[r2_tbl$Response == "swc"]
-  r2_resp_marg <- r2_tbl$Marginal[r2_tbl$Response == "y"]
-  r2_resp_cond <- r2_tbl$Conditional[r2_tbl$Response == "y"]
+build_sem_graph_components <- function(effects_main,
+                                       effects_int = NULL,
+                                       sem_mod,
+                                       resp_var,
+                                       species,
+                                       soil_type,
+                                       include_interaction = TRUE,
+                                       modeled_factors = NULL,
+                                       p_sig = 0.1) {
+  if (!is.null(sem_mod) && requireNamespace("piecewiseSEM", quietly = TRUE)) {
+    r2_tbl <- piecewiseSEM::rsquared(sem_mod)
+    r2_swc_marg <- r2_tbl$Marginal[r2_tbl$Response == "swc"]
+    r2_swc_cond <- r2_tbl$Conditional[r2_tbl$Response == "swc"]
+    r2_resp_marg <- r2_tbl$Marginal[r2_tbl$Response == "y"]
+    r2_resp_cond <- r2_tbl$Conditional[r2_tbl$Response == "y"]
 
-  r2_label <- sprintf(
-    "SWC:    R²(marg) = %.2f, R²(cond) = %.2f\n%s: R²(marg) = %.2f, R²(cond) = %.2f",
-    r2_swc_marg, r2_swc_cond,
-    resp_var, r2_resp_marg, r2_resp_cond
-  )
+    r2_label <- sprintf(
+      "SWC:    R²(marg) = %.2f, R²(cond) = %.2f\n%s: R²(marg) = %.2f, R²(cond) = %.2f",
+      r2_swc_marg, r2_swc_cond,
+      resp_var, r2_resp_marg, r2_resp_cond
+    )
+  } else {
+    r2_swc_marg <- NA_real_
+    r2_swc_cond <- NA_real_
+    r2_resp_marg <- NA_real_
+    r2_resp_cond <- NA_real_
+    r2_label <- ""
+  }
 
   resp_node <- resp_var
 
@@ -857,7 +862,6 @@ plot_sem_graph <- function(effects_main,
     )
 
   # Keep only significant edges
-  p_sig <- 0.1
   edges <- edges %>%
     dplyr::filter(!is.na(p) & p < p_sig)
 
@@ -892,13 +896,51 @@ plot_sem_graph <- function(effects_main,
     ")"
   )
 
-  max_x <- max(nodes$x) + 0.5
-  max_y <- max(nodes$y) + 0.7
-  min_y <- min(nodes$y) - 0.7
+  metrics <- tibble::tibble(
+    resp_var = resp_var,
+    species = species,
+    soil_filter = soil_type,
+    include_interaction = isTRUE(include_interaction),
+    p_sig = p_sig,
+    r2_swc_marg = r2_swc_marg,
+    r2_swc_cond = r2_swc_cond,
+    r2_resp_marg = r2_resp_marg,
+    r2_resp_cond = r2_resp_cond,
+    r2_label = r2_label,
+    title = title_txt
+  )
+
+  list(
+    nodes = nodes,
+    edges = edges_plot,
+    metrics = metrics
+  )
+}
+
+plot_sem_graph_components <- function(nodes_df,
+                                      edges_df,
+                                      metrics_df = NULL) {
+  metric_value <- function(col, default = NA) {
+    if (is.null(metrics_df) || !nrow(metrics_df) || !col %in% names(metrics_df)) {
+      return(default)
+    }
+    metrics_df[[col]][[1]]
+  }
+
+  title_txt <- metric_value("title", "SEM graph")
+  r2_label <- metric_value("r2_label", "")
+
+  if (is.null(nodes_df) || !nrow(nodes_df)) {
+    return(ggplot() + theme_void() + ggtitle(title_txt))
+  }
+
+  max_x <- max(nodes_df$x) + 0.5
+  max_y <- max(nodes_df$y) + 0.7
+  min_y <- min(nodes_df$y) - 0.7
 
   ggplot() +
     geom_segment(
-      data = edges_plot,
+      data = edges_df,
       aes(
         x = x_from, y = y_from,
         xend = x_end, yend = y_end,
@@ -906,17 +948,17 @@ plot_sem_graph <- function(effects_main,
         colour = col_dir,
         alpha = alpha
       ),
-      arrow = arrow(length = unit(0.5, "cm"), type = "open"),
+      arrow = grid::arrow(length = grid::unit(0.5, "cm"), type = "open"),
       lineend = "round"
     ) +
     geom_label(
-      data = nodes,
+      data = nodes_df,
       aes(x = x, y = y, label = node),
       size = 3.5,
       label.size = 0.3,
-      label.r = unit(0.15, "lines"),
+      label.r = grid::unit(0.15, "lines"),
       fill = "white",
-      label.padding = unit(0.15, "lines")
+      label.padding = grid::unit(0.15, "lines")
     ) +
     annotate(
       "text",
@@ -949,27 +991,50 @@ plot_sem_graph <- function(effects_main,
     )
 }
 
-run_sem_for_trait <- function(type = "tree",
-                              data_name,
-                              resp_var,
-                              species,
-                              soil_type = "both",
-                              include_soil_treatment = NULL,
-                              phase_window = "all",
-                              include_interaction = TRUE,
-                              scale_all_numeric = TRUE,
-                              do_rfe = FALSE,
-                              aic_improve = 2,
-                              swc_source = "measured",
-                              force_run = FALSE) {
+plot_sem_graph <- function(effects_main,
+                           effects_int = NULL,
+                           sem_mod,
+                           resp_var,
+                           species,
+                           soil_type,
+                           include_interaction = TRUE,
+                           modeled_factors = NULL) {
+  graph_bits <- build_sem_graph_components(
+    effects_main = effects_main,
+    effects_int = effects_int,
+    sem_mod = sem_mod,
+    resp_var = resp_var,
+    species = species,
+    soil_type = soil_type,
+    include_interaction = include_interaction,
+    modeled_factors = modeled_factors
+  )
+
+  plot_sem_graph_components(
+    nodes_df = graph_bits$nodes,
+    edges_df = graph_bits$edges,
+    metrics_df = graph_bits$metrics
+  )
+}
+
+sem_cache_path <- function(type = "tree",
+                           data_name,
+                           resp_var,
+                           species,
+                           soil_type = "both",
+                           include_soil_treatment = NULL,
+                           phase_window = "all",
+                           include_interaction = TRUE,
+                           scale_all_numeric = TRUE,
+                           do_rfe = FALSE,
+                           aic_improve = 2,
+                           swc_source = "measured") {
   include_soil_treatment <- alinv_resolve_include_soil_treatment(
     include_soil_treatment = include_soil_treatment,
     soil_filter = soil_type
   )
 
-  # --- 0) caching: save / load SEM run for today ---
   out_dir <- alinv_data_path("model-sem", create_dir = TRUE)
-
   resp_tag <- if (!is.null(resp_var)) resp_var else "default"
   int_tag <- if (isTRUE(include_interaction)) "int" else "noInt"
   scale_tag <- if (isTRUE(scale_all_numeric)) "scaled" else "unscaled"
@@ -996,11 +1061,123 @@ run_sem_for_trait <- function(type = "tree",
     ".rds"
   )
 
-  cache_path <- file.path(out_dir, file_name)
+  file.path(out_dir, file_name)
+}
+
+augment_sem_result_for_exports <- function(result,
+                                           resp_var,
+                                           species,
+                                           soil_type,
+                                           include_interaction = TRUE,
+                                           modeled_factors = NULL) {
+  if (is.null(result)) {
+    return(result)
+  }
+
+  modeled_factors <- modeled_factors %||% result$modeled_factors
+  if (is.null(modeled_factors) && !is.null(result$effects) && nrow(result$effects)) {
+    modeled_factors <- unique(as.character(result$effects$factor))
+  }
+
+  if (is.null(result$sem) || is.null(result$effects) || !nrow(result$effects)) {
+    result$modeled_factors <- modeled_factors
+    result$graph_nodes <- tibble::tibble()
+    result$graph_edges <- tibble::tibble()
+    result$graph_metrics <- tibble::tibble(
+      resp_var = resp_var,
+      species = species,
+      soil_filter = soil_type,
+      include_interaction = isTRUE(include_interaction),
+      p_sig = 0.1,
+      r2_swc_marg = NA_real_,
+      r2_swc_cond = NA_real_,
+      r2_resp_marg = NA_real_,
+      r2_resp_cond = NA_real_,
+      r2_label = "",
+      title = paste0("SEM: ", resp_var, " (species: ", species, ", soil: ", soil_type, ")")
+    )
+    return(result)
+  }
+
+  graph_bits <- build_sem_graph_components(
+    effects_main = result$effects %||% tibble::tibble(),
+    effects_int = result$effects_int %||% tibble::tibble(),
+    sem_mod = result$sem,
+    resp_var = resp_var,
+    species = species,
+    soil_type = soil_type,
+    include_interaction = include_interaction,
+    modeled_factors = modeled_factors
+  )
+
+  result$modeled_factors <- modeled_factors
+  result$graph_nodes <- graph_bits$nodes
+  result$graph_edges <- graph_bits$edges
+  result$graph_metrics <- graph_bits$metrics
+  result
+}
+
+write_sem_csv_bundle <- function(result,
+                                 export_stem) {
+  result <- result %||% list()
+
+  readr::write_csv(result$data %||% tibble::tibble(), paste0(export_stem, "-data.csv"))
+  readr::write_csv(result$effects %||% tibble::tibble(), paste0(export_stem, "-effects_main.csv"))
+  readr::write_csv(result$effects_int %||% tibble::tibble(), paste0(export_stem, "-effects_interactions.csv"))
+  readr::write_csv(result$matrix_data %||% tibble::tibble(), paste0(export_stem, "-matrix_data.csv"))
+  readr::write_csv(result$matrix_overarching %||% tibble::tibble(), paste0(export_stem, "-matrix_overarching.csv"))
+  readr::write_csv(result$graph_nodes %||% tibble::tibble(), paste0(export_stem, "-graph_nodes.csv"))
+  readr::write_csv(result$graph_edges %||% tibble::tibble(), paste0(export_stem, "-graph_edges.csv"))
+  readr::write_csv(result$graph_metrics %||% tibble::tibble(), paste0(export_stem, "-graph_metrics.csv"))
+}
+
+run_sem_for_trait <- function(type = "tree",
+                              data_name,
+                              resp_var,
+                              species,
+                              soil_type = "both",
+                              include_soil_treatment = NULL,
+                              phase_window = "all",
+                              include_interaction = TRUE,
+                              scale_all_numeric = TRUE,
+                              do_rfe = FALSE,
+                              aic_improve = 2,
+                              swc_source = "measured",
+                              force_run = FALSE) {
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_type
+  )
+
+  # --- 0) caching: save / load SEM run for today ---
+  cache_path <- sem_cache_path(
+    type = type,
+    data_name = data_name,
+    resp_var = resp_var,
+    species = species,
+    soil_type = soil_type,
+    include_soil_treatment = include_soil_treatment,
+    phase_window = phase_window,
+    include_interaction = include_interaction,
+    scale_all_numeric = scale_all_numeric,
+    do_rfe = do_rfe,
+    aic_improve = aic_improve,
+    swc_source = swc_source
+  )
+  export_stem <- tools::file_path_sans_ext(cache_path)
 
   if (file.exists(cache_path) && !force_run) {
     message("Loading cached SEM results from: ", cache_path)
-    return(readRDS(cache_path))
+    cached_result <- readRDS(cache_path)
+    cached_result <- augment_sem_result_for_exports(
+      result = cached_result,
+      resp_var = resp_var,
+      species = species,
+      soil_type = soil_type,
+      include_interaction = include_interaction
+    )
+    write_sem_csv_bundle(cached_result, export_stem = export_stem)
+    return(cached_result)
   }
 
   # 1) Load analysis-ready data in your project’s canonical way
@@ -1111,6 +1288,17 @@ run_sem_for_trait <- function(type = "tree",
     modeled_factors = mods$used_factors
   )
 
+  graph_bits <- build_sem_graph_components(
+    effects_main = effects_main,
+    effects_int = effects_int,
+    sem_mod = sem_mod,
+    resp_var = resp_var,
+    species = species,
+    soil_type = soil_type,
+    include_interaction = include_interaction,
+    modeled_factors = mods$used_factors
+  )
+
   result <- list(
     data        = df_sem_ready,
     mod_swc     = mod_swc,
@@ -1122,6 +1310,10 @@ run_sem_for_trait <- function(type = "tree",
     matrix_plots = matrix_plots,
     matrix_overarching = matrix_overarching,
     matrix_overarching_plots = matrix_overarching_plots,
+    modeled_factors = mods$used_factors,
+    graph_nodes = graph_bits$nodes,
+    graph_edges = graph_bits$edges,
+    graph_metrics = graph_bits$metrics,
     phase_window = phase_window,
     phase_sem_exploratory = !identical(phase_window, "all"),
     n_rows_phase = nrow(df_sem_ready),
@@ -1130,6 +1322,7 @@ run_sem_for_trait <- function(type = "tree",
   )
 
   saveRDS(result, cache_path)
+  write_sem_csv_bundle(result, export_stem = export_stem)
   message("Saved SEM results to: ", cache_path)
 
   result

@@ -90,6 +90,10 @@ if (!exists("remove_empty", mode = "function")) {
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
+alinv_temporal_effect_y_limits <- function() {
+  c(-2, 2)
+}
+
 ALINV_SOIL_LABELS <- c(
   `inoc-beech` = "drier soil (beech soil)",
   `inoc-robinia` = "wetter soil (robinia soil)",
@@ -258,6 +262,34 @@ alinv_data_path <- function(..., create_dir = FALSE) {
     dir.create(path, recursive = TRUE, showWarnings = FALSE)
   }
   path
+}
+
+alinv_resolve_output_date_dir <- function(output_root = "output",
+                                          requested_date = NULL) {
+  output_root <- .resolve_path(output_root)
+
+  if (!is.null(requested_date) && nzchar(requested_date)) {
+    date_dir <- file.path(output_root, requested_date)
+    if (!dir.exists(date_dir)) {
+      stop("Requested output date folder does not exist: ", date_dir, call. = FALSE)
+    }
+    return(date_dir)
+  }
+
+  date_dirs <- list.dirs(output_root, full.names = TRUE, recursive = FALSE)
+  date_tbl <- tibble(
+    path = date_dirs,
+    label = basename(date_dirs),
+    date = suppressWarnings(as.Date(basename(date_dirs)))
+  ) %>%
+    filter(!is.na(.data$date)) %>%
+    arrange(desc(.data$date))
+
+  if (!nrow(date_tbl)) {
+    stop("No dated output folders found under ", output_root, call. = FALSE)
+  }
+
+  date_tbl$path[[1]]
 }
 
 alinv_cache_path <- function(subdir, ..., create_dir = TRUE) {

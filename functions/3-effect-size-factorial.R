@@ -10,11 +10,11 @@ suppressPackageStartupMessages({
   library(tidyr)
   library(ggplot2)
   library(lme4)
-  library(lmerTest)
-  library(emmeans)
   library(lubridate)
 })
-emmeans::emm_options(lmer.df = "asymptotic")  # quiet, fast CIs
+if (requireNamespace("emmeans", quietly = TRUE)) {
+  emmeans::emm_options(lmer.df = "asymptotic")  # quiet, fast CIs
+}
 
 # ---------------------- CONFIG / MAPPING ------------------------
 
@@ -228,6 +228,10 @@ fit_glmm_per_date <- function(df,
 # Robust per-date contrasts for ANY categorical factor; use revpairwise so
 # effect = baseline − treatment (matches your interpretation)
 extract_per_date_contrasts_any <- function(fit, factor_name) {
+  if (!requireNamespace("emmeans", quietly = TRUE)) {
+    stop("Package 'emmeans' is required to extract temporal contrasts.", call. = FALSE)
+  }
+
   emm <- emmeans::emmeans(fit, specs = as.formula(paste("~", factor_name, "| date")), type = "link")
   ct <- emmeans::contrast(emm, method = "revpairwise", by = "date", adjust = "none")
   sm <- suppressMessages(suppressWarnings(summary(ct, infer = TRUE)))
@@ -344,6 +348,112 @@ plot_combined_effects <- function(effects_df, title, ylab = "Effect size (baseli
 
 # ---------------------- ORCHESTRATORS --------------------------
 
+temporal_effect_cache_path <- function(type = "tree",
+                                       data_name,
+                                       resp_var = NULL,
+                                       target_species,
+                                       soil_type = "both",
+                                       include_soil_treatment = NULL,
+                                       add_covars = FALSE,
+                                       swc_source = "measured") {
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_type
+  )
+
+  out_dir <- alinv_data_path("model-factorial-effect", create_dir = TRUE)
+  resp_tag <- if (!is.null(resp_var)) resp_var else "default"
+  covar_tag <- if (isTRUE(add_covars)) "withCovars" else "noCovars"
+  swc_tag <- if (swc_source == "measured") "swcMeas" else "swcImputed"
+  soil_mode_tag <- alinv_soil_mode_tag(
+    soil_filter = soil_type,
+    include_soil_treatment = include_soil_treatment
+  )
+
+  file_name <- paste0(
+    "effect-",
+    type, "-",
+    data_name, "-",
+    resp_tag, "-",
+    target_species, "-",
+    soil_mode_tag, "-",
+    covar_tag, "-",
+    swc_tag,
+    ".rds"
+  )
+
+  file.path(out_dir, file_name)
+}
+
+temporal_effect_plot_meta <- function(type = "tree",
+                                      data_name,
+                                      resp_var = NULL,
+                                      target_species,
+                                      soil_type = "both",
+                                      include_soil_treatment = NULL,
+                                      add_covars = FALSE,
+                                      swc_source = "measured",
+                                      title = NULL,
+                                      y_limits = alinv_temporal_effect_y_limits()) {
+  tibble::tibble(
+    type = type,
+    data_name = data_name,
+    resp_var = resp_var %||% "default",
+    species = target_species,
+    soil_filter = soil_type,
+    include_soil_treatment = isTRUE(include_soil_treatment),
+    add_covars = isTRUE(add_covars),
+    swc_source = swc_source,
+    title = title %||% paste0(
+      "Time-varying treatment effects on ", target_species,
+      " (soil: ", soil_type, ", data: ",
+      data_name, if (!is.null(resp_var)) paste0(", ", resp_var) else "", ")"
+    ),
+    y_axis_label = "Effect size (baseline - treatment)",
+    y_limit_lower = y_limits[[1]],
+    y_limit_upper = y_limits[[2]]
+  )
+}
+
+write_temporal_effect_csv_bundle <- function(result,
+                                             export_stem,
+                                             meta = NULL) {
+  effects_df <- result$effects %||% tibble::tibble()
+  data_model_df <- result$data_model %||% tibble::tibble()
+  meta_df <- meta %||% tibble::tibble()
+
+  readr::write_csv(effects_df, paste0(export_stem, "-effects.csv"))
+  readr::write_csv(data_model_df, paste0(export_stem, "-data_model.csv"))
+  readr::write_csv(meta_df, paste0(export_stem, "-meta.csv"))
+}
+
+plot_temporal_effects_from_csv <- function(effects_df,
+                                           meta_df = NULL,
+                                           y_limits = alinv_temporal_effect_y_limits(),
+                                           title = NULL) {
+  meta_value <- function(col, default = NULL) {
+    if (is.null(meta_df) || !nrow(meta_df) || !col %in% names(meta_df)) {
+      return(default)
+    }
+    meta_df[[col]][[1]]
+  }
+
+  if (is.null(effects_df) || !nrow(effects_df)) {
+    return(
+      ggplot() +
+        theme_void() +
+        ggtitle(title %||% meta_value("title", "No temporal GLMM effect data"))
+    )
+  }
+
+  plot_combined_effects(
+    effects_df = effects_df,
+    title = title %||% meta_value("title", "Temporal GLMM effects"),
+    ylab = meta_value("y_axis_label", "Effect size (baseline - treatment)"),
+    y_limits = y_limits
+  )
+}
+
 # Make one figure for a target species and a given data_name/resp_var
 make_effect_figure_generic <- function(
     type = "tree",
@@ -367,36 +477,46 @@ make_effect_figure_generic <- function(
   # --------------------------------------------------
   # 0) Build cache path and filename
   # --------------------------------------------------
-  out_dir <- alinv_data_path("model-factorial-effect", create_dir = TRUE)
-  
-  resp_tag <- if (!is.null(resp_var)) resp_var else "default"
-  covar_tag <- if (isTRUE(add_covars)) "withCovars" else "noCovars"
-  swc_tag <- if (swc_source == "measured") "swcMeas" else "swcImputed"
-  soil_mode_tag <- alinv_soil_mode_tag(
-    soil_filter = soil_type,
-    include_soil_treatment = include_soil_treatment
+  cache_path <- temporal_effect_cache_path(
+    type = type,
+    data_name = data_name,
+    resp_var = resp_var,
+    target_species = target_species,
+    soil_type = soil_type,
+    include_soil_treatment = include_soil_treatment,
+    add_covars = add_covars,
+    swc_source = swc_source
   )
-  
-  file_name <- paste0(
-    "effect-",
-    type, "-",
-    data_name, "-",
-    resp_tag, "-",
-    target_species, "-",
-    soil_mode_tag, "-",
-    covar_tag, "-",
-    swc_tag,
-    ".rds"
-  )
-  
-  cache_path <- file.path(out_dir, file_name)
+  export_stem <- tools::file_path_sans_ext(cache_path)
   
   # --------------------------------------------------
   # 1) Load from cache if available and not forcing rerun
   # --------------------------------------------------
   if (file.exists(cache_path) && !force_run) {
     message("Loading cached results from: ", cache_path)
-    return(readRDS(cache_path))
+    cached_result <- readRDS(cache_path)
+    cached_meta <- temporal_effect_plot_meta(
+      type = type,
+      data_name = data_name,
+      resp_var = resp_var,
+      target_species = target_species,
+      soil_type = soil_type,
+      include_soil_treatment = include_soil_treatment,
+      add_covars = add_covars,
+      swc_source = swc_source,
+      y_limits = alinv_temporal_effect_y_limits()
+    )
+    cached_result$plot <- plot_temporal_effects_from_csv(
+      effects_df = cached_result$effects %||% tibble::tibble(),
+      meta_df = cached_meta,
+      y_limits = y_limits %||% alinv_temporal_effect_y_limits()
+    )
+    write_temporal_effect_csv_bundle(
+      result = cached_result,
+      export_stem = export_stem,
+      meta = cached_meta
+    )
+    return(cached_result)
   }
   
   # --------------------------------------------------
@@ -444,7 +564,7 @@ make_effect_figure_generic <- function(
     data_name, if (!is.null(resp_var)) paste0(", ", resp_var) else "", ")"
   )
   p <- if (nrow(eff)) {
-    plot_combined_effects(eff, ttl, y_limits = y_limits)
+    plot_combined_effects(eff, ttl, y_limits = y_limits %||% alinv_temporal_effect_y_limits())
   } else {
     NULL
   }
@@ -455,6 +575,22 @@ make_effect_figure_generic <- function(
   # 3) Save to cache
   # --------------------------------------------------
   saveRDS(result, cache_path)
+  write_temporal_effect_csv_bundle(
+    result = result,
+    export_stem = export_stem,
+    meta = temporal_effect_plot_meta(
+      type = type,
+      data_name = data_name,
+      resp_var = resp_var,
+      target_species = target_species,
+      soil_type = soil_type,
+      include_soil_treatment = include_soil_treatment,
+      add_covars = add_covars,
+      swc_source = swc_source,
+      title = ttl,
+      y_limits = y_limits %||% alinv_temporal_effect_y_limits()
+    )
+  )
   message("Saved results to: ", cache_path)
   
   result

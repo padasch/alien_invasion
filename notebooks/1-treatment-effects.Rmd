@@ -69,22 +69,7 @@ analysis_root <- analysis_ctx$analysis_root
 analysis_data_root <- analysis_ctx$analysis_data_root
 species_vec <- c("fagus", "quercus")
 
-# Global temporal effect y-axis limits (shared across all temporal GLMM figures)
-tmp_eff_for_ylim <- tryCatch(
-  collect_all_effects(
-    var_grid    = get_data_var_grid() %>% dplyr::filter(type == "tree"),
-    species_vec = species_vec,
-    soil_type   = soil_type,
-    include_soil_treatment = include_soil_treatment
-  ),
-  error = function(e) tibble::tibble()
-)
-
-if (nrow(tmp_eff_for_ylim) > 0) {
-  options(alinv.temporal_y_limits = compute_global_effect_y_limits(tmp_eff_for_ylim))
-} else {
-  options(alinv.temporal_y_limits = NULL)
-}
+options(alinv.temporal_y_limits = alinv_temporal_effect_y_limits())
 ```
 
 # Introduction
