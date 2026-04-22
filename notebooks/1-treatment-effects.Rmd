@@ -57,6 +57,7 @@ source(file.path(source_dir, "3-effect-size-factorial.R"))
 source(file.path(source_dir, "4-structural-equation-model.R"))
 source(file.path(source_dir, "6-effect-size-model-aggregation.R"))
 source(file.path(source_dir, "5-combining-glmm-sem.R"))
+source(file.path(source_dir, "7-phenology-transition-models.R"))
 
 library(patchwork)
 
@@ -633,7 +634,33 @@ plot_ts_phenology(style = "band",
                   save_fig = FALSE, device = "pdf")
 ```
 
-### Analysis Beech (Fagus)
+The phenology timeseries above is descriptive: it shows the mean day of year (DOY) at which each treatment group reaches stages 1-4. The uncertainty bars show `mean ± SE` for the transition timing at each stage.
+
+To answer the more direct biological question, “which treatment makes trees reach a given stage earlier or later?”, we additionally fit transition-timing models using the DOY of reaching stages 2, 3, and 4 as the response. In these models, lower DOY means earlier stage attainment. The summary panel below therefore shows treatment effects directly in days, with negative values indicating earlier stage transition under the named treatment and positive values indicating later transition. The “Average” column is a pooled estimate across stages 2-4.
+
+Scenario-local caches and CSV exports for these transition-timing models are written under `r file.path(analysis_data_root, "model-phenology-transition")`.
+
+```{r phenology-transition-summary, fig.width=13.5, fig.height=6.8}
+phenology_transition_results <- purrr::map(
+  c("fagus", "quercus"),
+  ~ run_phenology_transition_analysis(
+    species_keep = .x,
+    soil_type = soil_type,
+    include_soil_treatment = include_soil_treatment,
+    force_run = FALSE
+  )
+)
+
+phenology_transition_effects <- dplyr::bind_rows(
+  purrr::map(phenology_transition_results, "effects")
+)
+
+print(plot_phenology_transition_effects(phenology_transition_effects))
+```
+
+The temporal GLMM and SEM below keep the original progression-model view, where the response is the current phenological stage observed at a given date. Higher predicted stage values therefore mean more advanced leaf development at that point in time.
+
+### Analysis Beech (Fagus): Progression Model (`stage` as response)
 
 #### Effect Size Over Time
 
@@ -669,7 +696,7 @@ res_phenology_fagus_int <- make_temporal_sem_combo(
 print(res_phenology_fagus_int$sem$plot)
 ```
 
-### Analysis Oak (Quercus)
+### Analysis Oak (Quercus): Progression Model (`stage` as response)
 
 #### Effect Size Over Time
 

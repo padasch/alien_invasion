@@ -901,8 +901,9 @@ plot_ts_phenology <- function(style = c("errorbar", "band"),
       stage_lab = levels(stage)[stage_num]
     )
 
-  seg_alpha <- if (style == "band") 0.28 else 0.6
-  seg_size <- if (style == "band") 3 else 0.9
+  err_alpha <- if (style == "band") 0.45 else 0.75
+  err_size <- if (style == "band") 0.85 else 1.0
+  cap_half_height <- if (style == "band") 0.055 else 0.075
 
   p <- ggplot(
     df_sum,
@@ -921,8 +922,31 @@ plot_ts_phenology <- function(style = c("errorbar", "band"),
         y = stage_num,
         yend = stage_num
       ),
-      alpha = seg_alpha,
-      linewidth = seg_size
+      alpha = err_alpha,
+      linewidth = err_size,
+      lineend = "round"
+    ) +
+    geom_segment(
+      aes(
+        x = mean - se,
+        xend = mean - se,
+        y = stage_num - cap_half_height,
+        yend = stage_num + cap_half_height
+      ),
+      alpha = err_alpha,
+      linewidth = err_size,
+      lineend = "round"
+    ) +
+    geom_segment(
+      aes(
+        x = mean + se,
+        xend = mean + se,
+        y = stage_num - cap_half_height,
+        yend = stage_num + cap_half_height
+      ),
+      alpha = err_alpha,
+      linewidth = err_size,
+      lineend = "round"
     ) +
     geom_line(size = PLOT_STYLE$sizes$line) +
     geom_point(size = PLOT_STYLE$sizes$point) +
