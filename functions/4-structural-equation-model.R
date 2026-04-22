@@ -24,7 +24,7 @@ prepare_sem_data <- function(df_prepared,
       extreme_event = factor(extreme_event, levels = c("no", "yes")),
       precipitation = factor(precipitation, levels = c("control", "drought")),
       culture = factor(culture, levels = c("mono", "mixed")),
-      soiltype = factor(soiltype, levels = c("inoc-beech", "inoc-robinia")),
+      soiltype = alinv_relevel_soiltype(soiltype),
 
       # time components (raw + centered)
       doy = as.numeric(format(date, "%j")),
@@ -107,7 +107,9 @@ fit_sem_models <- function(df_sem_ready,
   )
 }
 
-extract_sem_effects_with_se <- function(mod_swc, mod_resp) {
+extract_sem_effects_with_se <- function(mod_swc,
+                                        mod_resp,
+                                        factors = c("robinia", "precipitation", "culture", "soiltype", "extreme_event")) {
   beta_swc <- fixef(mod_swc)
   beta_resp <- fixef(mod_resp)
   vcov_swc <- as.matrix(vcov(mod_swc))
@@ -131,8 +133,6 @@ extract_sem_effects_with_se <- function(mod_swc, mod_resp) {
     p <- 2 * pnorm(-abs(est / se))
     list(est = est, se = se, p = p)
   }
-
-  factors <- c("robinia", "precipitation", "culture", "soiltype", "extreme_event")
 
   out <- lapply(factors, function(fac) {
     a_info <- get_coef_var(beta_swc, vcov_swc, fac)
@@ -179,7 +179,9 @@ extract_sem_effects_with_se <- function(mod_swc, mod_resp) {
   dplyr::bind_rows(out)
 }
 
-extract_interaction_effect <- function(mod_swc, mod_resp) {
+extract_interaction_effect <- function(mod_swc,
+                                       mod_resp,
+                                       treat_factors = c("robinia", "precipitation", "culture", "soiltype", "extreme_event")) {
   beta_swc <- fixef(mod_swc)
   beta_resp <- fixef(mod_resp)
   vcov_swc <- as.matrix(vcov(mod_swc))
@@ -190,10 +192,18 @@ extract_interaction_effect <- function(mod_swc, mod_resp) {
   var_b <- vcov_resp["swc", "swc"]
   se_b <- sqrt(var_b)
 
-  # treatment factors we allow to interact
-  treat_factors <- c("robinia", "precipitation", "culture", "soiltype", "extreme_event")
-
   out <- list()
+
+  if (length(treat_factors) < 2) {
+    return(tibble::tibble(
+      factor   = character(),
+      a        = double(), se_a   = double(), p_a   = double(),
+      b        = double(), se_b   = double(), p_b   = double(),
+      c_direct = double(), se_c   = double(), p_c   = double(),
+      indirect = double(), se_ind = double(), p_ind = double(),
+      total    = double(), se_tot = double(), p_tot = double()
+    ))
+  }
 
   for (pair in combn(treat_factors, 2, simplify = FALSE)) {
     f1 <- pair[1]
@@ -495,6 +505,192 @@ plot_sem_effect_matrices <- function(matrix_df,
     )
 }
 
+sem_heatmap_specs <- function() {
+  tibble::tribble(
+    ~path_type, ~file_stub, ~panel_title,
+    "direct", "direct-effect_of_treatment_on_target", "Direct effect of treatment on target",
+    "indirect", "indirect-effect_of_treatment_on_target", "Indirect effect of treatment on target",
+    "total", "total-effect_of_treatment_on_target", "Total effect of treatment on target",
+    "treatment_to_swc", "effect_of_treatment_on_swc", "Effect of treatment on SWC",
+    "swc_to_target", "effect_of_swc_on_target", "Effect of SWC on target"
+  )
+}
+
+sem_heatmap_treatment_labels <- function() {
+  c(
+    robinia = "Robinia: without -> with",
+    precipitation = "Precipitation: control -> drought",
+    culture = "Culture: mono -> mixed",
+    soiltype = "Soil: wetter soil (robinia soil) -> drier soil (beech soil)",
+    extreme_event = "Extreme event: no -> yes",
+    swc = "SWC"
+  )
+}
+
+compute_shared_sem_heatmap_limit <- function(matrix_df) {
+  vals <- matrix_df$estimate_sig
+  vals <- vals[is.finite(vals)]
+
+  if (!length(vals)) {
+    vals <- matrix_df$estimate
+    vals <- vals[is.finite(vals)]
+  }
+
+  if (!length(vals)) {
+    return(1)
+  }
+
+  max_abs <- max(abs(vals), na.rm = TRUE)
+  if (!is.finite(max_abs) || max_abs <= 0) {
+    1
+  } else {
+    max_abs
+  }
+}
+
+prepare_sem_heatmap_panel <- function(matrix_df,
+                                      path_type,
+                                      resp_labels = NULL,
+                                      treat_labels = sem_heatmap_treatment_labels()) {
+  resp_labels <- resp_labels %||% c()
+  treat_labels <- treat_labels %||% sem_heatmap_treatment_labels()
+
+  df_panel <- matrix_df %>%
+    dplyr::filter(.data$path_type == path_type)
+
+  if (!nrow(df_panel)) {
+    return(tibble::tibble())
+  }
+
+  if (identical(path_type, "treatment_to_swc")) {
+    df_panel <- df_panel %>%
+      dplyr::filter(.data$treatment != "swc") %>%
+      dplyr::mutate(
+        row_label = dplyr::recode(.data$treatment, !!!treat_labels),
+        col_label = "SWC"
+      )
+    row_order <- unname(treat_labels[names(treat_labels) %in% unique(df_panel$treatment)])
+    row_order <- row_order[!is.na(row_order)]
+    col_order <- "SWC"
+  } else if (identical(path_type, "swc_to_target")) {
+    df_panel <- df_panel %>%
+      dplyr::mutate(
+        row_label = "SWC",
+        col_label = dplyr::recode(.data$response_var, !!!resp_labels, .default = .data$response_var)
+      )
+    row_order <- "SWC"
+    resp_levels <- unique(df_panel$response_var)
+    col_order <- unname(c(resp_labels[resp_levels], stats::setNames(resp_levels, resp_levels)))
+    col_order <- col_order[!is.na(col_order) & !duplicated(col_order)]
+  } else {
+    df_panel <- df_panel %>%
+      dplyr::filter(.data$treatment != "swc") %>%
+      dplyr::mutate(
+        row_label = dplyr::recode(.data$treatment, !!!treat_labels),
+        col_label = dplyr::recode(.data$response_var, !!!resp_labels, .default = .data$response_var)
+      )
+    row_order <- unname(treat_labels[names(treat_labels) %in% unique(df_panel$treatment)])
+    row_order <- row_order[!is.na(row_order)]
+    resp_levels <- unique(df_panel$response_var)
+    col_order <- unname(c(resp_labels[resp_levels], stats::setNames(resp_levels, resp_levels)))
+    col_order <- col_order[!is.na(col_order) & !duplicated(col_order)]
+  }
+
+  df_panel %>%
+    dplyr::transmute(
+      row_label = .data$row_label,
+      col_label = .data$col_label,
+      value = .data$estimate_sig,
+      value_raw = .data$estimate
+    ) %>%
+    dplyr::mutate(
+      row_label = factor(.data$row_label, levels = row_order),
+      col_label = factor(.data$col_label, levels = col_order)
+    ) %>%
+    dplyr::arrange(.data$row_label, .data$col_label)
+}
+
+sem_heatmap_panel_to_wide <- function(panel_df) {
+  if (!nrow(panel_df)) {
+    return(tibble::tibble(row_label = character()))
+  }
+
+  row_order <- levels(panel_df$row_label)
+  col_order <- levels(panel_df$col_label)
+
+  tidyr::expand_grid(
+    row_label = factor(row_order, levels = row_order),
+    col_label = factor(col_order, levels = col_order)
+  ) %>%
+    dplyr::left_join(panel_df, by = c("row_label", "col_label")) %>%
+    dplyr::select(.data$row_label, .data$col_label, .data$value) %>%
+    dplyr::mutate(
+      row_label = as.character(.data$row_label),
+      col_label = as.character(.data$col_label)
+    ) %>%
+    tidyr::pivot_wider(names_from = .data$col_label, values_from = .data$value) %>%
+    dplyr::rename(row = .data$row_label)
+}
+
+write_sem_heatmap_csvs <- function(matrix_df,
+                                   species,
+                                   export_dir,
+                                   resp_labels = NULL,
+                                   treat_labels = sem_heatmap_treatment_labels()) {
+  dir.create(export_dir, recursive = TRUE, showWarnings = FALSE)
+  specs <- sem_heatmap_specs()
+
+  purrr::walk(seq_len(nrow(specs)), function(i) {
+    spec <- specs[i, ]
+    panel_df <- prepare_sem_heatmap_panel(
+      matrix_df = matrix_df %>% dplyr::filter(.data$species == species),
+      path_type = spec$path_type,
+      resp_labels = resp_labels,
+      treat_labels = treat_labels
+    )
+    wide_df <- sem_heatmap_panel_to_wide(panel_df)
+    out_file <- file.path(export_dir, paste0(species, "-", spec$file_stub, ".csv"))
+    readr::write_csv(wide_df, out_file)
+  })
+}
+
+plot_sem_heatmap_panel <- function(panel_df,
+                                   limit,
+                                   title = NULL) {
+  if (!nrow(panel_df)) {
+    return(
+      ggplot() +
+        theme_void() +
+        ggtitle(title %||% "No SEM heatmap data")
+    )
+  }
+
+  ggplot(
+    panel_df,
+    aes(x = .data$col_label, y = .data$row_label, fill = .data$value)
+  ) +
+    geom_tile(color = "grey90", linewidth = 0.2) +
+    scale_fill_gradient2(
+      low = "indianred3",
+      mid = "white",
+      high = "steelblue4",
+      midpoint = 0,
+      limits = c(-limit, limit),
+      na.value = "white",
+      name = "Std. effect"
+    ) +
+    labs(
+      x = NULL,
+      y = NULL,
+      title = title
+    ) +
+    theme_minimal(base_size = 11) +
+    theme(
+      axis.text.x = element_text(angle = 35, hjust = 1),
+      panel.grid = element_blank()
+    )
+}
+
 
 plot_sem_graph <- function(effects_main,
                            effects_int = NULL,
@@ -502,7 +698,8 @@ plot_sem_graph <- function(effects_main,
                            resp_var,
                            species,
                            soil_type,
-                           include_interaction = TRUE) {
+                           include_interaction = TRUE,
+                           modeled_factors = NULL) {
   r2_tbl <- piecewiseSEM::rsquared(sem_mod)
   r2_swc_marg <- r2_tbl$Marginal[r2_tbl$Response == "swc"]
   r2_swc_cond <- r2_tbl$Conditional[r2_tbl$Response == "swc"]
@@ -519,7 +716,10 @@ plot_sem_graph <- function(effects_main,
 
   # automatic node layout
   # fixed order of main predictors on the left
-  main_nodes_order <- c("extreme_event", "robinia", "precipitation", "soiltype", "culture")
+  modeled_factors <- modeled_factors %||% c(
+    "extreme_event", "robinia", "precipitation", "soiltype", "culture"
+  )
+  main_nodes_order <- modeled_factors
 
   nodes_main <- tibble::tibble(
     node = main_nodes_order,
@@ -665,10 +865,7 @@ plot_sem_graph <- function(effects_main,
   used_nodes <- unique(c(edges$from, edges$to))
 
   # Main nodes we always keep (even if they have no sig edges)
-  main_nodes_order <- c(
-    "extreme_event", "robinia", "precipitation",
-    "soiltype", "culture", "swc", resp_node
-  )
+  main_nodes_order <- c(modeled_factors, "swc", resp_node)
 
   # Keep:
   # - all main nodes
@@ -757,6 +954,7 @@ run_sem_for_trait <- function(type = "tree",
                               resp_var,
                               species,
                               soil_type = "both",
+                              include_soil_treatment = NULL,
                               phase_window = "all",
                               include_interaction = TRUE,
                               scale_all_numeric = TRUE,
@@ -764,13 +962,13 @@ run_sem_for_trait <- function(type = "tree",
                               aic_improve = 2,
                               swc_source = "measured",
                               force_run = FALSE) {
-  # --- 0) caching: save / load SEM run for today ---
-  today_str <- format(Sys.Date(), "%Y-%m-%d")
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_type
+  )
 
-  out_dir <- file.path("output", today_str, "model-sem")
-  if (!dir.exists(out_dir)) {
-    dir.create(out_dir, recursive = TRUE)
-  }
+  # --- 0) caching: save / load SEM run for today ---
+  out_dir <- alinv_data_path("model-sem", create_dir = TRUE)
 
   resp_tag <- if (!is.null(resp_var)) resp_var else "default"
   int_tag <- if (isTRUE(include_interaction)) "int" else "noInt"
@@ -778,6 +976,10 @@ run_sem_for_trait <- function(type = "tree",
   rfe_tag <- if (isTRUE(do_rfe)) paste0("rfeAIC", aic_improve) else "noRFE"
   swc_tag <- if (swc_source == "measured") "swcMeas" else "swcImputed"
   phase_tag <- gsub("[^a-zA-Z0-9]+", "", tolower(phase_window))
+  soil_mode_tag <- alinv_soil_mode_tag(
+    soil_filter = soil_type,
+    include_soil_treatment = include_soil_treatment
+  )
 
   file_name <- paste0(
     "sem-",
@@ -785,7 +987,7 @@ run_sem_for_trait <- function(type = "tree",
     data_name, "-",
     resp_tag, "-",
     species, "-",
-    soil_type, "-",
+    soil_mode_tag, "-",
     int_tag, "-",
     scale_tag, "-",
     rfe_tag, "-",
@@ -811,6 +1013,7 @@ run_sem_for_trait <- function(type = "tree",
     add_covars   = FALSE, # SEM doesn’t use the extra temporal covars
     covars_fun   = NULL,
     soil_type    = soil_type,
+    include_soil_treatment = include_soil_treatment,
     swc_source   = swc_source
   )
 
@@ -837,6 +1040,7 @@ run_sem_for_trait <- function(type = "tree",
   mods <- fit_sem_models(
     df_sem_ready        = df_sem_ready,
     include_interaction = include_interaction,
+    include_soil_treatment = include_soil_treatment,
     do_rfe              = do_rfe,
     aic_improve         = aic_improve
   )
@@ -852,9 +1056,17 @@ run_sem_for_trait <- function(type = "tree",
   )
 
   # 5) Extract effects
-  effects_main <- extract_sem_effects_with_se(mod_swc, mod_resp)
+  effects_main <- extract_sem_effects_with_se(
+    mod_swc,
+    mod_resp,
+    factors = mods$used_factors
+  )
   effects_int <- if (include_interaction) {
-    extract_interaction_effect(mod_swc, mod_resp)
+    extract_interaction_effect(
+      mod_swc,
+      mod_resp,
+      treat_factors = mods$used_factors
+    )
   } else {
     NULL
   }
@@ -895,7 +1107,8 @@ run_sem_for_trait <- function(type = "tree",
     resp_var = resp_var,
     species = species,
     soil_type = soil_type,
-    include_interaction = include_interaction
+    include_interaction = include_interaction,
+    modeled_factors = mods$used_factors
   )
 
   result <- list(
@@ -912,6 +1125,7 @@ run_sem_for_trait <- function(type = "tree",
     phase_window = phase_window,
     phase_sem_exploratory = !identical(phase_window, "all"),
     n_rows_phase = nrow(df_sem_ready),
+    include_soil_treatment = include_soil_treatment,
     plot        = p
   )
 
@@ -922,15 +1136,25 @@ run_sem_for_trait <- function(type = "tree",
 }
 # ....................................................------------------------
 
-build_sem_terms <- function(df, include_interaction = TRUE) {
+build_sem_terms <- function(df,
+                            include_interaction = TRUE,
+                            include_soil_treatment = NULL) {
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = if ("soiltype" %in% names(df) &&
+      dplyr::n_distinct(df$soiltype, na.rm = TRUE) > 1) "both" else "single"
+  )
+
   # all potential treatment factors
   treat_factors_all <- c(
     "precipitation",
     "robinia",
-    "soiltype",
     "culture",
     "extreme_event"
   )
+  if (isTRUE(include_soil_treatment)) {
+    treat_factors_all <- c("precipitation", "robinia", "soiltype", "culture", "extreme_event")
+  }
 
   # keep only those that:
   #  - exist in df
@@ -1082,11 +1306,16 @@ backward_select_lmer_terms <- function(
 fit_sem_models <- function(
   df_sem_ready,
   include_interaction = TRUE,
+  include_soil_treatment = NULL,
   do_rfe = FALSE,
   aic_improve = 2
 ) {
   # build full set of main and interaction terms
-  terms_list <- build_sem_terms(df_sem_ready, include_interaction = include_interaction)
+  terms_list <- build_sem_terms(
+    df_sem_ready,
+    include_interaction = include_interaction,
+    include_soil_treatment = include_soil_treatment
+  )
 
   if (isTRUE(do_rfe)) {
     # SWC equation: swc ~ terms_swc + (1|boxlabel)
@@ -1140,7 +1369,8 @@ fit_sem_models <- function(
     fml_swc = fml_swc,
     fml_resp = fml_resp,
     rhs_swc_terms = rhs_swc_terms,
-    rhs_resp_terms = rhs_resp_terms
+    rhs_resp_terms = rhs_resp_terms,
+    used_factors = terms_list$used_factors
   )
 }
 

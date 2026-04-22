@@ -4,6 +4,12 @@ output:
   html_document:
     toc: true
     toc_depth: 2
+params:
+  scenario_label: "both soils (with soil as treatment)"
+  soil_filter: "both"
+  include_soil_treatment: true
+  analysis_date: !r as.character(Sys.Date())
+  output_root: "output"
 ---
 
 ```{r setup, include=FALSE}
@@ -34,11 +40,26 @@ source(file.path(source_dir, "4-structural-equation-model.R"))
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(patchwork)
+
+analysis_ctx <- alinv_init_notebook_context(if (exists("params")) params else NULL)
+scenario_label <- analysis_ctx$scenario_label
+soil_type <- analysis_ctx$soil_filter
+include_soil_treatment <- analysis_ctx$include_soil_treatment
+analysis_root <- analysis_ctx$analysis_root
+analysis_data_root <- analysis_ctx$analysis_data_root
+heatmap_export_dir <- alinv_data_path("structural_equation_models", "heatmap_data", create_dir = TRUE)
 ```
 
 # Overview
 
-This notebook focuses only on SEM aggregation outputs.
+This notebook focuses only on the aggregated SEM heatmaps across tree response variables.
+
+Current render scenario: `r scenario_label`. Soil filtering is set to `r soil_type`, and soil is `r if (include_soil_treatment) "included as an explicit treatment contrast." else "pooled across both soils and omitted as a treatment contrast."`
+
+Phase-wise SEM panels were removed because per-phase subsets do not contain enough data for stable SEM fitting.
+
+The underlying heatmap matrices are exported as CSV files under `r heatmap_export_dir`. These CSVs can be replotted later with `scripts/6-plot-sem-heatmaps-from-csv.R`.
 
 Interpretation of effects in the mediation SEM:
 
@@ -49,11 +70,8 @@ Interpretation of effects in the mediation SEM:
 Important clarification: the treatment -> SWC path alone is not the full indirect effect. It is one component (path a) used to compute the indirect effect together with path b.
 
 ```{r config}
-soil_type <- "both"
 species_vec <- c("fagus", "quercus")
 include_interaction <- FALSE
-p_sig <- 0.05
-phase_windows <- c("until June", "July-August", "September-end", "all")
 
 resp_labels <- c(
   chl = "Chlorophyll",
@@ -67,16 +85,11 @@ resp_labels <- c(
   qy = "Quantum yield",
   percent_senesced = "Senescence (%)",
   chlavg = "Senescence chlorophyll",
-  doy = "Phenology (DOY)"
+  stage = "Phenology stage"
 )
 
-treat_labels <- c(
-  "robiniawith-robinia" = "Robinia: without -> with",
-  "precipitationdrought" = "Precipitation: control -> drought",
-  "culturemixed" = "Culture: mono -> mixed",
-  "soiltypeinoc-robinia" = "Soil: beech -> robinia",
-  "extreme_eventTRUE" = "Extreme event: no -> yes"
-)
+treat_labels <- sem_heatmap_treatment_labels()
+heatmap_specs <- sem_heatmap_specs()
 ```
 
 ```{r sem-collect}
@@ -102,6 +115,7 @@ collect_sem_matrix_data <- function(species, include_interaction = FALSE) {
       resp_var = g$resp_var,
       species = species,
       soil_type = soil_type,
+      include_soil_treatment = include_soil_treatment,
       include_interaction = include_interaction,
       phase_window = "all",
       scale_all_numeric = TRUE,
@@ -111,7 +125,6 @@ collect_sem_matrix_data <- function(species, include_interaction = FALSE) {
 
     if (is.null(sem_res)) next
 
-    # Backward compatibility: older cached SEM objects may not contain matrix_data.
     if (is.null(sem_res$matrix_data) && !is.null(sem_res$effects) && nrow(sem_res$effects)) {
       sem_res$matrix_data <- build_sem_matrix_data(
         effects_main = sem_res$effects,
@@ -121,22 +134,6 @@ collect_sem_matrix_data <- function(species, include_interaction = FALSE) {
         include_interaction = include_interaction,
         swc_source = "measured",
         phase = "all"
-      )
-    }
-
-    # If cached object is too old/incomplete, force a refresh once.
-    if (is.null(sem_res$matrix_data)) {
-      sem_res <- safe_run_sem(
-        type = g$type,
-        data_name = g$data,
-        resp_var = g$resp_var,
-        species = species,
-        soil_type = soil_type,
-        include_interaction = include_interaction,
-        phase_window = "all",
-        scale_all_numeric = TRUE,
-        swc_source = "measured",
-        force_run = TRUE
       )
     }
 
@@ -152,376 +149,64 @@ collect_sem_matrix_data <- function(species, include_interaction = FALSE) {
   dplyr::bind_rows(out)
 }
 
-collect_phase_sem_effects <- function(species, include_interaction = FALSE) {
-  tree_grid <- get_data_var_grid() %>%
-    dplyr::filter(type == "tree")
+sem_all_species <- purrr::map_dfr(
+  species_vec,
+  ~ collect_sem_matrix_data(species = .x, include_interaction = include_interaction)
+)
 
-  out <- list()
-  idx <- 1L
+shared_heatmap_limit <- compute_shared_sem_heatmap_limit(sem_all_species)
 
-  for (ph in phase_windows) {
-    for (k in seq_len(nrow(tree_grid))) {
-      g <- tree_grid[k, ]
-
-      sem_res <- safe_run_sem(
-        type = g$type,
-        data_name = g$data,
-        resp_var = g$resp_var,
-        species = species,
-        soil_type = soil_type,
-        include_interaction = include_interaction,
-        phase_window = ph,
-        scale_all_numeric = TRUE,
-        swc_source = "measured",
-        force_run = FALSE
-      )
-
-      if (is.null(sem_res) || is.null(sem_res$effects) || !nrow(sem_res$effects)) next
-
-      eff <- sem_res$effects
-
-      out[[idx]] <- eff %>%
-        dplyr::mutate(
-          phase = ph,
-          species = species,
-          data_name = g$data,
-          target = g$resp_var
-        )
-      idx <- idx + 1L
-    }
-  }
-
-  dplyr::bind_rows(out)
-}
-
-summarize_phase_sem_effects <- function(eff_df) {
-  if (!nrow(eff_df)) return(tibble::tibble())
-
-  a_paths <- eff_df %>%
-    dplyr::group_by(.data$species, .data$phase, .data$factor) %>%
-    dplyr::summarise(
-      estimate = mean(.data$a, na.rm = TRUE),
-      n_targets = dplyr::n_distinct(.data$target),
-      path_type = "treatment_to_swc",
-      .groups = "drop"
-    ) %>%
-    dplyr::rename(from = .data$factor)
-
-  c_paths <- eff_df %>%
-    dplyr::group_by(.data$species, .data$phase, .data$factor) %>%
-    dplyr::summarise(
-      estimate = mean(.data$c_direct, na.rm = TRUE),
-      n_targets = dplyr::n_distinct(.data$target),
-      path_type = "treatment_to_target",
-      .groups = "drop"
-    ) %>%
-    dplyr::rename(from = .data$factor)
-
-  b_paths <- eff_df %>%
-    dplyr::group_by(.data$species, .data$phase, .data$target) %>%
-    dplyr::summarise(b = dplyr::first(.data$b), .groups = "drop") %>%
-    dplyr::group_by(.data$species, .data$phase) %>%
-    dplyr::summarise(
-      estimate = mean(.data$b, na.rm = TRUE),
-      n_targets = dplyr::n(),
-      path_type = "swc_to_target",
-      .groups = "drop"
-    ) %>%
-    dplyr::mutate(from = "swc")
-
-  dplyr::bind_rows(a_paths, c_paths, b_paths)
-}
-
-plot_phase_sem_arrow <- function(sum_df, species_name, phase_name) {
-  df_phase <- sum_df %>%
-    dplyr::filter(.data$species == species_name, .data$phase == phase_name)
-
-  if (!nrow(df_phase)) {
-    return(ggplot() + theme_void() + ggtitle(paste("No phase SEM summary for", species_name, "-", phase_name)))
-  }
-
-  y_map <- c(
-    "extreme_eventTRUE" = 5,
-    "robiniawith-robinia" = 4,
-    "precipitationdrought" = 3,
-    "soiltypeinoc-robinia" = 2,
-    "culturemixed" = 1
+purrr::walk(
+  species_vec,
+  ~ write_sem_heatmap_csvs(
+    matrix_df = sem_all_species,
+    species = .x,
+    export_dir = heatmap_export_dir,
+    resp_labels = resp_labels,
+    treat_labels = treat_labels
   )
-
-  nodes <- tibble::tibble(
-    node = c(names(y_map), "swc", "target_mean"),
-    x = c(rep(0.8, length(y_map)), 3.3, 5.8),
-    y = c(unname(y_map), 3, 3)
-  )
-
-  edges <- df_phase %>%
-    dplyr::mutate(
-      to = dplyr::case_when(
-        .data$path_type == "treatment_to_swc" ~ "swc",
-        .data$path_type == "treatment_to_target" ~ "target_mean",
-        .data$path_type == "swc_to_target" ~ "target_mean",
-        TRUE ~ NA_character_
-      )
-    ) %>%
-    dplyr::filter(!is.na(.data$to)) %>%
-    dplyr::left_join(nodes, by = c("from" = "node")) %>%
-    dplyr::rename(x_from = .data$x, y_from = .data$y) %>%
-    dplyr::left_join(nodes, by = c("to" = "node")) %>%
-    dplyr::rename(x_to = .data$x, y_to = .data$y) %>%
-    dplyr::mutate(
-      col_dir = dplyr::if_else(.data$estimate >= 0, "positive", "negative"),
-      edge_size = scales::rescale(abs(.data$estimate), to = c(0.35, 2.2), from = range(abs(.data$estimate), na.rm = TRUE)),
-      lbl = sprintf("%.2f", .data$estimate)
-    )
-
-  ggplot() +
-    geom_segment(
-      data = edges,
-      aes(
-        x = .data$x_from,
-        y = .data$y_from,
-        xend = .data$x_to,
-        yend = .data$y_to,
-        size = .data$edge_size,
-        colour = .data$col_dir
-      ),
-      arrow = arrow(length = unit(0.24, "cm"), type = "open"),
-      lineend = "round",
-      alpha = 0.9
-    ) +
-    geom_text(
-      data = edges,
-      aes(
-        x = (.data$x_from + .data$x_to) / 2,
-        y = (.data$y_from + .data$y_to) / 2 + 0.14,
-        label = .data$lbl
-      ),
-      size = 3
-    ) +
-    geom_label(
-      data = nodes,
-      aes(
-        x = .data$x,
-        y = .data$y,
-        label = dplyr::recode(.data$node,
-          !!!treat_labels,
-          swc = "SWC",
-          target_mean = "Target (mean)",
-          .default = .data$node
-        )
-      ),
-      size = 3.1,
-      label.size = 0.22,
-      fill = "white",
-      label.padding = unit(0.12, "lines")
-    ) +
-    scale_colour_manual(values = c(positive = "steelblue4", negative = "indianred3"), name = "Direction") +
-    scale_size_identity() +
-    coord_cartesian(xlim = c(0.2, 6.6), ylim = c(0.3, 5.7), expand = FALSE) +
-    labs(
-      title = paste0(
-        species_name,
-        " - phase: ",
-        phase_name,
-        " (mean coefficients across targets)"
-      )
-    ) +
-    theme_minimal(base_size = 11) +
-    theme(
-      axis.text = element_blank(),
-      axis.title = element_blank(),
-      panel.grid = element_blank(),
-      legend.position = "bottom"
-    )
-}
+)
 ```
 
-# Phase-Wise Mean SEM Arrows
+# Heatmaps Per Species
 
-This section fits one SEM per target and per phase, then averages path coefficients across targets within each phase. The `all` phase panel is computed from SEM fits on all data per target (not by averaging phase subsets).
-
-```{r phase-wise-sem-arrows, fig.width=12, fig.height=6}
-for (sp in species_vec) {
-  cat("\n\n## Species:", sp, "\n")
-
-  phase_eff <- collect_phase_sem_effects(species = sp, include_interaction = include_interaction)
-
-  if (!nrow(phase_eff)) {
-    cat("No phase-wise SEM effects available for", sp, "\n")
-    next
-  }
-
-  phase_sum <- summarize_phase_sem_effects(phase_eff)
-
-  for (ph in phase_windows) {
-    print(plot_phase_sem_arrow(phase_sum, species_name = sp, phase_name = ph))
-  }
-}
-```
-
-```{r sem-plot-helpers}
-plot_treatment_target_matrix <- function(df_all, effect_type = c("direct", "indirect", "total"), species_name) {
-  effect_type <- match.arg(effect_type)
-
-  df_plot <- df_all %>%
-    dplyr::filter(
-      .data$species == species_name,
-      .data$effect_class == "main",
-      .data$path_type == effect_type,
-      .data$treatment != "swc"
-    ) %>%
-    dplyr::mutate(
-      target_label = dplyr::recode(.data$response_var, !!!resp_labels, .default = .data$response_var),
-      treatment_label = dplyr::recode(.data$treatment, !!!treat_labels, .default = .data$treatment),
-      est_sig = dplyr::if_else(!is.na(.data$p_value) & .data$p_value < p_sig, .data$estimate, NA_real_),
-      txt = dplyr::if_else(is.na(.data$est_sig), "", sprintf("%.2f", .data$est_sig))
-    )
-
-  if (!nrow(df_plot)) {
-    return(ggplot() + theme_void() + ggtitle(paste("No", effect_type, "effects available for", species_name)))
-  }
-
-  max_abs <- max(abs(df_plot$estimate), na.rm = TRUE)
-  if (!is.finite(max_abs) || max_abs == 0) max_abs <- 1
-
-  ggplot(df_plot, aes(x = target_label, y = treatment_label)) +
-    geom_tile(aes(fill = est_sig), color = "grey85", linewidth = 0.3) +
-    geom_text(aes(label = txt), size = 3) +
-    scale_fill_gradient2(
-      low = "indianred3",
-      mid = "white",
-      high = "steelblue4",
-      midpoint = 0,
-      limits = c(-max_abs, max_abs),
-      na.value = "white",
-      name = "Std. effect"
-    ) +
-    labs(
-      title = paste0(species_name, " - ", toupper(substr(effect_type, 1, 1)), substring(effect_type, 2), " effects"),
-      x = "Target variables",
-      y = "Treatment"
-    ) +
-    theme_minimal(base_size = 11) +
-    theme(
-      panel.grid = element_blank(),
-      axis.text.x = element_text(angle = 35, hjust = 1),
-      legend.position = "right"
-    )
-}
-
-plot_swc_target_panel <- function(df_all, species_name) {
-  df_plot <- df_all %>%
-    dplyr::filter(
-      .data$species == species_name,
-      .data$effect_class == "main",
-      .data$path_type == "swc_to_target"
-    ) %>%
-    dplyr::mutate(
-      target_label = dplyr::recode(.data$response_var, !!!resp_labels, .default = .data$response_var),
-      row_label = "SWC -> target",
-      est_sig = dplyr::if_else(!is.na(.data$p_value) & .data$p_value < p_sig, .data$estimate, NA_real_),
-      txt = dplyr::if_else(is.na(.data$est_sig), "", sprintf("%.2f", .data$est_sig))
-    )
-
-  if (!nrow(df_plot)) {
-    return(ggplot() + theme_void() + ggtitle(paste("No SWC -> target effects available for", species_name)))
-  }
-
-  max_abs <- max(abs(df_plot$estimate), na.rm = TRUE)
-  if (!is.finite(max_abs) || max_abs == 0) max_abs <- 1
-
-  ggplot(df_plot, aes(x = target_label, y = row_label)) +
-    geom_tile(aes(fill = est_sig), color = "grey85", linewidth = 0.3) +
-    geom_text(aes(label = txt), size = 3) +
-    scale_fill_gradient2(
-      low = "indianred3",
-      mid = "white",
-      high = "steelblue4",
-      midpoint = 0,
-      limits = c(-max_abs, max_abs),
-      na.value = "white",
-      name = "Std. effect"
-    ) +
-    labs(
-      title = paste0(species_name, " - SWC -> target"),
-      x = "Target variables",
-      y = NULL
-    ) +
-    theme_minimal(base_size = 11) +
-    theme(
-      panel.grid = element_blank(),
-      axis.text.x = element_text(angle = 35, hjust = 1),
-      legend.position = "right"
-    )
-}
-
-plot_treatment_swc_panel <- function(df_all, species_name) {
-  df_plot <- df_all %>%
-    dplyr::filter(
-      .data$species == species_name,
-      .data$effect_class == "main",
-      .data$path_type == "treatment_to_swc",
-      .data$treatment != "swc"
-    ) %>%
-    dplyr::distinct(.data$treatment, .keep_all = TRUE) %>%
-    dplyr::mutate(
-      treatment_label = dplyr::recode(.data$treatment, !!!treat_labels, .default = .data$treatment),
-      col_label = "SWC",
-      est_sig = dplyr::if_else(!is.na(.data$p_value) & .data$p_value < p_sig, .data$estimate, NA_real_),
-      txt = dplyr::if_else(is.na(.data$est_sig), "", sprintf("%.2f", .data$est_sig))
-    )
-
-  if (!nrow(df_plot)) {
-    return(ggplot() + theme_void() + ggtitle(paste("No treatment -> SWC effects available for", species_name)))
-  }
-
-  max_abs <- max(abs(df_plot$estimate), na.rm = TRUE)
-  if (!is.finite(max_abs) || max_abs == 0) max_abs <- 1
-
-  ggplot(df_plot, aes(x = col_label, y = treatment_label)) +
-    geom_tile(aes(fill = est_sig), color = "grey85", linewidth = 0.3) +
-    geom_text(aes(label = txt), size = 3) +
-    scale_fill_gradient2(
-      low = "indianred3",
-      mid = "white",
-      high = "steelblue4",
-      midpoint = 0,
-      limits = c(-max_abs, max_abs),
-      na.value = "white",
-      name = "Std. effect"
-    ) +
-    labs(
-      title = paste0(species_name, " - treatment -> SWC (path a)"),
-      x = NULL,
-      y = "Treatment"
-    ) +
-    theme_minimal(base_size = 11) +
-    theme(
-      panel.grid = element_blank(),
-      legend.position = "right"
-    )
-}
-```
-
-# Matrices Per Species
+Shared color-scale limit across all heatmaps in this scenario: `r round(shared_heatmap_limit, 3)`.
 
 ```{r sem-matrix-species-loop, fig.width=12, fig.height=6}
+plot_sem_heatmaps_for_species <- function(species_name) {
+  species_df <- sem_all_species %>%
+    dplyr::filter(.data$species == species_name, .data$effect_class == "main")
+
+  if (!nrow(species_df)) {
+    return(list(
+      ggplot() + theme_void() + ggtitle(paste("No SEM matrix data available for", species_name))
+    ))
+  }
+
+  purrr::map(seq_len(nrow(heatmap_specs)), function(i) {
+    spec <- heatmap_specs[i, ]
+    panel_df <- prepare_sem_heatmap_panel(
+      matrix_df = species_df,
+      path_type = spec$path_type,
+      resp_labels = resp_labels,
+      treat_labels = treat_labels
+    )
+
+    plot_sem_heatmap_panel(
+      panel_df = panel_df,
+      limit = shared_heatmap_limit,
+      title = paste(species_name, "-", spec$panel_title)
+    )
+  })
+}
+
 for (sp in species_vec) {
   cat("\n\n## Species:", sp, "\n")
 
-  sem_all <- collect_sem_matrix_data(species = sp, include_interaction = include_interaction)
-
-  if (!nrow(sem_all)) {
-    cat("No SEM matrix data available for", sp, "\n")
-    next
+  plot_list <- plot_sem_heatmaps_for_species(sp)
+  for (p in plot_list) {
+    print(p)
   }
-
-  print(plot_treatment_target_matrix(sem_all, effect_type = "direct", species_name = sp))
-  print(plot_treatment_target_matrix(sem_all, effect_type = "indirect", species_name = sp))
-  print(plot_treatment_target_matrix(sem_all, effect_type = "total", species_name = sp))
-
-  print(plot_treatment_swc_panel(sem_all, species_name = sp))
-  print(plot_swc_target_panel(sem_all, species_name = sp))
 }
 ```
 
