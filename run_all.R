@@ -19,12 +19,13 @@ output_root <- file.path(proj_root, "output")
 
 notebooks <- c(
   "notebooks/1-treatment-effects.Rmd",
-  "notebooks/2-swc-interpolation.Rmd",
+  # "notebooks/2-swc-interpolation.Rmd",
   "notebooks/3-sem-aggregation.Rmd",
-  "notebooks/4-data-qc.Rmd"
+  # "notebooks/4-data-qc.Rmd"
 )
 
-scenarios <- alinv_scenario_grid()
+# Slice (4): Run both soils without soil as treatment.
+scenarios <- alinv_scenario_grid() |> slice(4)
 
 for (i in seq_len(nrow(scenarios))) {
   scenario_i <- scenarios[i, ]
