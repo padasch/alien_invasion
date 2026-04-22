@@ -904,7 +904,9 @@ plot_ts_phenology(style = "band",
 
 The phenology timeseries above is descriptive: it shows the mean day of year (DOY) at which each treatment group reaches stages 1-4. The uncertainty bars show `mean ± SE` for the transition timing at each stage.
 
-To answer the more direct biological question, “which treatment makes trees reach a given stage earlier or later?”, we additionally fit transition-timing models using the DOY of reaching stages 2, 3, and 4 as the response. In these models, lower DOY means earlier stage attainment. The summary panel below therefore shows treatment effects directly in days, with negative values indicating earlier stage transition under the named treatment and positive values indicating later transition. The “Average” column is a pooled estimate across stages 2-4.
+To answer the more direct biological question, “which treatment makes trees reach a given stage earlier or later?”, we additionally fit transition-timing models using the DOY of reaching stages 2, 3, and 4 as the response. For each species and stage separately, this is a linear mixed model of the form `DOY ~ precipitation + robinia + culture (+ soiltype, when included) + (1 | boxlabel)`. The “Average” column comes from a pooled mixed model across stages 2-4, `DOY ~ stage + precipitation + robinia + culture (+ soiltype) + (1 | boxlabel) + (1 | tree_id)`, so that the mean timing difference among stages is accounted for while repeated stage transitions from the same tree are kept together.
+
+The plotted points are therefore estimated treatment shifts in transition date, in units of days, with 95% Wald confidence intervals from the fixed-effect coefficients. Lower DOY means earlier stage attainment, so negative values indicate that the named treatment advances the stage transition and positive values indicate that it delays it.
 
 Scenario-local caches and CSV exports for these transition-timing models are written under `r alinv_project_relative_path(file.path(analysis_data_root, "model-phenology-transition"))`.
 
