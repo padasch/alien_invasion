@@ -1,0 +1,214 @@
+---
+title: "ALINV - Data QC"
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    code_folding: hide
+    highlight: espresso
+    theme: journal
+params:
+  scenario_label: "both soils (with soil as treatment)"
+  soil_filter: "both"
+  include_soil_treatment: true
+  analysis_date: !r as.character(Sys.Date())
+  output_root: "output"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE
+)
+
+# Resolve project root robustly from the notebook render context
+source_path_candidates <- c(
+  "functions/_source.R",
+  "../functions/_source.R",
+  "./functions/_source.R"
+)
+source_path <- source_path_candidates[file.exists(source_path_candidates)][1]
+if (is.na(source_path)) {
+  stop("Could not locate functions/_source.R for notebook setup.")
+}
+source(source_path)
+
+source_dir <- dirname(source_path)
+proj_root <- normalizePath(file.path(source_dir, ".."), winslash = "/", mustWork = TRUE)
+
+library(dplyr)
+library(tidyr)
+library(knitr)
+
+analysis_ctx <- alinv_init_notebook_context(if (exists("params")) params else NULL)
+scenario_label <- analysis_ctx$scenario_label
+soil_type <- analysis_ctx$soil_filter
+include_soil_treatment <- analysis_ctx$include_soil_treatment
+analysis_root <- analysis_ctx$analysis_root
+analysis_data_root <- analysis_ctx$analysis_data_root
+```
+
+# Overview
+
+This QC notebook summarises the cleaned input data used for the current scenario render.
+
+- Scenario: `r scenario_label`
+- Soil filter: `r soil_type`
+- Soil modeled as treatment: `r include_soil_treatment`
+- Scenario output root: `r analysis_root`
+
+# Phenology Cleaning
+
+The phenology cleaner uses only the raw `Stage1`–`Stage4` dates from the workbook.
+
+- `DOY_S1`–`DOY_S4` are ignored as source data and recomputed from the cleaned stage dates.
+- Missing intermediate stages remain missing.
+- If an earlier stage was recorded later than a later stage, the later-stage earlier date is kept and the conflicting earlier-stage date is nulled.
+- The cleaned transition table is then used to rebuild the long phenology time series for the existing temporal models.
+
+```{r phenology-load}
+pheno_transitions <- get_data("tree", "phenology_transitions") %>%
+  alinv_apply_soil_context(
+    soil_filter = soil_type,
+    include_soil_treatment = include_soil_treatment
+  )
+
+pheno_long <- get_data("tree", "phenology") %>%
+  alinv_apply_soil_context(
+    soil_filter = soil_type,
+    include_soil_treatment = include_soil_treatment
+  )
+```
+
+## Cleaning Summary
+
+```{r phenology-qc-summary}
+pheno_summary <- pheno_transitions %>%
+  summarise(
+    stage_rows = n(),
+    retained_dates = sum(stage_date_source == "retained", na.rm = TRUE),
+    raw_missing_dates = sum(stage_date_source == "missing_raw", na.rm = TRUE),
+    stage_order_conflicts_nulled = sum(stage_order_conflict_nulled, na.rm = TRUE),
+    affected_tree_count = n_distinct(tree_id[stage_order_conflict_nulled])
+  )
+
+kable(pheno_summary, caption = "Phenology cleaning summary")
+```
+
+## Affected Tree IDs
+
+```{r phenology-qc-affected}
+affected_trees <- pheno_transitions %>%
+  filter(stage_order_conflict_nulled) %>%
+  distinct(tree_id, species, soiltype, robinia, precipitation, culture) %>%
+  arrange(species, tree_id)
+
+if (nrow(affected_trees)) {
+  kable(affected_trees, caption = "Trees with stage-order conflicts that were nulled during cleaning")
+} else {
+  cat("No stage-order conflicts were detected in this scenario subset.")
+}
+```
+
+## Stage-Level Details
+
+```{r phenology-qc-details}
+pheno_detail <- pheno_transitions %>%
+  filter(stage_order_conflict_nulled | stage_date_source == "missing_raw") %>%
+  select(tree_id, species, stage, stage_date_raw, stage_date, stage_date_source) %>%
+  arrange(species, tree_id, stage)
+
+if (nrow(pheno_detail)) {
+  kable(pheno_detail, caption = "Phenology rows that remained missing or were nulled during cleaning")
+} else {
+  cat("No missing or nulled phenology rows to report.")
+}
+```
+
+## Monotonicity Checks
+
+```{r phenology-qc-monotonic}
+transition_monotonic <- pheno_transitions %>%
+  filter(!is.na(stage_date)) %>%
+  arrange(tree_id, stage) %>%
+  group_by(tree_id) %>%
+  summarise(
+    is_monotonic = all(diff(stage_date) >= 0),
+    .groups = "drop"
+  )
+
+long_monotonic <- pheno_long %>%
+  arrange(tree_id, date) %>%
+  group_by(tree_id) %>%
+  summarise(
+    is_monotonic = all(diff(stage) >= 0),
+    .groups = "drop"
+  )
+
+mono_tbl <- tibble(
+  check = c("Transition-stage dates", "Long stage-over-time table"),
+  non_monotonic_trees = c(
+    sum(!transition_monotonic$is_monotonic, na.rm = TRUE),
+    sum(!long_monotonic$is_monotonic, na.rm = TRUE)
+  )
+)
+
+kable(mono_tbl, caption = "Phenology monotonicity checks")
+```
+
+# Dataset Counts
+
+## Tree and Box Counts
+
+```{r scenario-counts}
+tree_meta_scenario <- get_meta("tree") %>%
+  alinv_apply_soil_context(
+    soil_filter = soil_type,
+    include_soil_treatment = include_soil_treatment
+  )
+
+box_meta_scenario <- get_meta("box") %>%
+  alinv_apply_soil_context(
+    soil_filter = soil_type,
+    include_soil_treatment = include_soil_treatment
+  )
+
+tree_counts <- tree_meta_scenario %>%
+  count(species, soiltype, robinia, precipitation, culture, name = "n_trees") %>%
+  arrange(species, soiltype, robinia, precipitation, culture)
+
+box_counts <- box_meta_scenario %>%
+  count(soiltype, robinia, precipitation, culture, name = "n_boxes") %>%
+  arrange(soiltype, robinia, precipitation, culture)
+
+kable(tree_counts, caption = "Scenario-specific tree counts by treatment combination")
+kable(box_counts, caption = "Scenario-specific box counts by treatment combination")
+```
+
+## Measurement Row Counts
+
+```{r dataset-row-counts}
+dataset_row_counts <- tibble::tribble(
+  ~dataset, ~n_rows,
+  "tree_growth", nrow(get_data("tree", "growth") %>% alinv_filter_by_soil(soil_filter = soil_type)),
+  "tree_chlorophyll", nrow(get_data("tree", "chlorophyll") %>% alinv_filter_by_soil(soil_filter = soil_type)),
+  "tree_condition", nrow(get_data("tree", "condition") %>% alinv_filter_by_soil(soil_filter = soil_type)),
+  "tree_phenology", nrow(pheno_long),
+  "tree_phenology_transitions", nrow(pheno_transitions),
+  "tree_quantum_yield", nrow(get_data("tree", "quantum_yield") %>% alinv_filter_by_soil(soil_filter = soil_type)),
+  "tree_senescence", nrow(get_data("tree", "senescence") %>% alinv_filter_by_soil(soil_filter = soil_type)),
+  "box_soilwater", nrow(get_data("box", "soilwater") %>% alinv_filter_by_soil(soil_filter = soil_type)),
+  "box_respiration", nrow(get_data("box", "respiration") %>% alinv_filter_by_soil(soil_filter = soil_type))
+)
+
+kable(dataset_row_counts, caption = "Scenario-specific row counts for key datasets")
+```
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

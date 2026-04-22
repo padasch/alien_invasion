@@ -293,91 +293,115 @@ glimpse(df)
 
 
 ## Phenology ----
-build_phenology_timeseries <- function(df) {
-  # 0) Derive measurement dates from all stage columns
-  meas_dates <- df %>%
-    select(starts_with("stage")) %>%
-    mutate(across(everything(), as.Date)) %>%
-    unlist(use.names = FALSE)
-  
-  meas_dates <- meas_dates[!is.na(meas_dates)]
-  meas_dates <- sort(unique(as.Date(meas_dates)))
-  
-  # 1) Reshape stage1...stage4 to long format
-  df_long <- df %>%
-    filter(discard == 0) %>%                    # drop discarded trees if needed
-    pivot_longer(
-      cols      = starts_with("stage"),
-      names_to  = "stage_name",
-      values_to = "stage_date"
-    ) %>%
-    filter(!is.na(stage_date)) %>%              # keep only observed transitions
-    mutate(
-      stage_date = as.Date(stage_date),
-      stage      = parse_number(stage_name)     # stage1 -> 1, stage2 -> 2, ...
-    ) %>%
-    arrange(tree_id, stage_date) %>%
-    select(tree_id, stage, stage_date)
-  
-  # 2) Build time series per tree using a vectorized findInterval
-  trees <- df_long %>%
-    pull(tree_id) %>%
-    unique()
-  
-  res <- map_dfr(trees, function(id) {
-    stage_tree <- df_long %>%
-      filter(tree_id == id) %>%
-      arrange(stage_date)
-    
-    # If a tree has no stages at all (just in case)
-    if (nrow(stage_tree) == 0) {
-      return(
-        tibble(
-          tree_id = id,
-          date    = meas_dates,
-          stage   = NA_integer_
-        )
-      )
+clean_phenology_transitions <- function(df) {
+  stage_cols <- paste0("stage", 1:4)
+
+  df_stage <- df %>%
+    dplyr::filter(.data$discard == 0) %>%
+    dplyr::mutate(
+      tree_id = as.character(.data$tree_id),
+      dplyr::across(dplyr::all_of(stage_cols), as.Date)
+    )
+
+  purrr::map_dfr(seq_len(nrow(df_stage)), function(i) {
+    row_i <- df_stage[i, ]
+    raw_dates <- as.Date(unlist(row_i[stage_cols], use.names = FALSE))
+    clean_dates <- raw_dates
+    nulled_conflict <- rep(FALSE, length(raw_dates))
+
+    if (length(clean_dates) > 1) {
+      for (stage_idx in seq(length(clean_dates) - 1, 1)) {
+        later_dates <- clean_dates[(stage_idx + 1):length(clean_dates)]
+        later_dates <- later_dates[!is.na(later_dates)]
+
+        if (!length(later_dates) || is.na(clean_dates[stage_idx])) {
+          next
+        }
+
+        later_min <- min(later_dates)
+        if (clean_dates[stage_idx] > later_min) {
+          clean_dates[stage_idx] <- as.Date(NA)
+          nulled_conflict[stage_idx] <- TRUE
+        }
+      }
     }
-    
-    # For each meas_date: last stage_date <= meas_date
-    idx <- findInterval(meas_dates, stage_tree$stage_date)
-    
-    stage_vec <- ifelse(
-      idx == 0,
-      NA_integer_,                # before first observed stage -> NA
-      stage_tree$stage[idx]
-    )
-    
+
     tibble(
-      tree_id = id,
-      date    = meas_dates,
-      stage   = stage_vec
+      tree_id = row_i$tree_id,
+      stage = seq_along(stage_cols),
+      stage_label = paste("Stage", seq_along(stage_cols)),
+      stage_date_raw = raw_dates,
+      stage_date = clean_dates,
+      doy = lubridate::yday(clean_dates),
+      stage_order_conflict_nulled = nulled_conflict,
+      stage_date_source = dplyr::case_when(
+        is.na(raw_dates) ~ "missing_raw",
+        nulled_conflict ~ "nulled_stage_order_conflict",
+        !is.na(clean_dates) ~ "retained",
+        TRUE ~ NA_character_
+      )
     )
-  })
-  
-  # Optional: make stage an ordered factor and add DOY
-  res %>%
-    mutate(
-      tree_id = as.character(tree_id),
-      stage = factor(stage,
-                     levels = sort(unique(na.omit(stage))),
-                     ordered = TRUE
-      ),
-      doy = yday(date)
-    )
+  }) %>%
+    dplyr::arrange(.data$tree_id, .data$stage)
 }
 
-df <- read_excel(fp, sheet = "Phenology") %>%
-  rename_with(tolower) %>%
-  dplyr::select(id_number, starts_with("stage"), starts_with("doy"), discard, comments, ) |>
-  rename(tree_id = id_number) |>
-  filter(!is.na(tree_id)) |> 
-  build_phenology_timeseries() |> 
-  drop_na(stage)
+build_phenology_timeseries <- function(df_transitions) {
+  meas_dates <- df_transitions %>%
+    dplyr::filter(!is.na(.data$stage_date)) %>%
+    dplyr::pull(.data$stage_date) %>%
+    unique() %>%
+    sort()
 
-write_csv(df, "./data/interim/tree_phenology.csv")
-glimpse(df)
+  tree_ids <- df_transitions %>%
+    dplyr::pull(.data$tree_id) %>%
+    unique()
+
+  purrr::map_dfr(tree_ids, function(tree_id_i) {
+    stage_tree <- df_transitions %>%
+      dplyr::filter(.data$tree_id == tree_id_i, !is.na(.data$stage_date)) %>%
+      dplyr::arrange(.data$stage_date, .data$stage)
+
+    if (!nrow(stage_tree)) {
+      return(tibble(
+        tree_id = tree_id_i,
+        date = meas_dates,
+        stage = NA_integer_
+      ))
+    }
+
+    idx <- findInterval(meas_dates, stage_tree$stage_date)
+    stage_vec <- rep(NA_integer_, length(meas_dates))
+    idx_valid <- idx > 0
+    stage_vec[idx_valid] <- stage_tree$stage[idx[idx_valid]]
+
+    tibble(
+      tree_id = tree_id_i,
+      date = meas_dates,
+      stage = as.integer(stage_vec)
+    )
+  }) %>%
+    dplyr::mutate(
+      tree_id = as.character(.data$tree_id),
+      date = as.Date(.data$date),
+      doy = lubridate::yday(.data$date)
+    ) %>%
+    tidyr::drop_na(.data$stage)
+}
+
+df_phenology_raw <- read_excel(fp, sheet = "Phenology") %>%
+  rename_with(tolower) %>%
+  dplyr::select(id_number, starts_with("stage"), starts_with("doy"), discard, comments) %>%
+  dplyr::rename(tree_id = id_number) %>%
+  dplyr::filter(!is.na(.data$tree_id))
+
+df_phenology_transitions <- clean_phenology_transitions(df_phenology_raw)
+df_phenology <- build_phenology_timeseries(df_phenology_transitions)
+
+write_csv(df_phenology_transitions, "./data/interim/tree_phenology_transitions.csv")
+write_csv(df_phenology, "./data/interim/tree_phenology.csv")
+
+glimpse(df_phenology_transitions)
+glimpse(df_phenology)
 
 
 ## Biomass (Functions only) ----
@@ -664,4 +688,3 @@ glimpse(df)
 # tree_meta <- get_meta("tree")
 # tree_growth <- get_data("tree", "growth", with_meta = TRUE, path = "./data/interim")
 # box_soilwater <- get_data("box", "soilwater", with_meta = TRUE, path = "./data/interim")
-
