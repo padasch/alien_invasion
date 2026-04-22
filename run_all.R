@@ -19,9 +19,7 @@ output_root <- file.path(proj_root, "output")
 
 notebooks <- c(
   "notebooks/1-treatment-effects.Rmd",
-  # "notebooks/2-swc-interpolation.Rmd",
-  "notebooks/3-sem-aggregation.Rmd",
-  # "notebooks/4-data-qc.Rmd"
+  "notebooks/3-sem-aggregation.Rmd"
 )
 
 # Slice (4): Run both soils without soil as treatment.
