@@ -147,7 +147,38 @@ knitr::kable(
 )
 ```
 
-# 4. Final Figures Used Downstream
+# 4. Raw-Scale Daily Treatment Summaries
+
+For provenance and interpretation, the same daily treatment summaries are also exported on the original non-log SWP scale in kPa.
+
+```{r swp-raw-treatment-summary}
+soil_raw_daily_grouped <- soil_daily_long %>%
+  dplyr::filter(!is.na(.data$soil_mp)) %>%
+  dplyr::mutate(soiltype = gsub("-", "_", .data$soiltype)) %>%
+  dplyr::group_by(
+    .data$date,
+    .data$soiltype,
+    .data$robinia,
+    .data$precipitation,
+    .data$culture
+  ) %>%
+  dplyr::summarise(
+    soil_mp_mean_kpa = mean(.data$soil_mp, na.rm = TRUE),
+    n_boxes = dplyr::n_distinct(.data$boxlabel),
+    .groups = "drop"
+  )
+
+readr::write_csv(soil_raw_daily_grouped, file.path(swp_export_dir, "soil-water-potential_raw-daily-treatment-means.csv"))
+```
+
+```{r swp-raw-treatment-summary-preview}
+knitr::kable(
+  dplyr::slice_head(soil_raw_daily_grouped, n = 12),
+  caption = "Preview of the daily treatment-level SWP table on the original kPa scale"
+)
+```
+
+# 5. Final Figures Used Downstream
 
 These are the same final SWP figures that are called in the summary notebooks.
 
@@ -170,6 +201,18 @@ plot_soil_mp(
   filter_soiltype = "both",
   show = "raw",
   include_soil_treatment = TRUE
+)
+```
+
+## Non-Log Raw SWP in kPa
+
+```{r swp-final-raw-kpa, fig.width=10, fig.height=6}
+plot_soil_mp(
+  soil_daily_long,
+  filter_soiltype = "both",
+  show = "both",
+  include_soil_treatment = TRUE,
+  value_scale = "raw"
 )
 ```
 

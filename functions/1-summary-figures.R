@@ -705,9 +705,11 @@ wrangle_soil_data <- function() {
 plot_soil_mp <- function(df_soil, 
                          filter_soiltype = c("both","inoc-beech","inoc-robinia"),
                          show = c("both", "raw", "smooth"),
-                         include_soil_treatment = NULL) {
+                         include_soil_treatment = NULL,
+                         value_scale = c("log", "raw")) {
   filter_soiltype <- match.arg(filter_soiltype)
   show <- match.arg(show)
+  value_scale <- match.arg(value_scale)
   include_soil_treatment <- alinv_resolve_include_soil_treatment(
     include_soil_treatment = include_soil_treatment,
     soil_filter = filter_soiltype
@@ -718,9 +720,16 @@ plot_soil_mp <- function(df_soil,
   )
 
   df_plot <- df_soil %>%
-    dplyr::filter(!is.na(.data$soil_mp), .data$soil_mp < 0) %>%
+    dplyr::filter(!is.na(.data$soil_mp)) %>%
+    {
+      if (identical(value_scale, "log")) {
+        dplyr::filter(., .data$soil_mp < 0)
+      } else {
+        .
+      }
+    } %>%
     dplyr::mutate(
-      soil_mp_log = -log10(-.data$soil_mp),
+      soil_mp_value = if (identical(value_scale, "log")) -log10(-.data$soil_mp) else .data$soil_mp,
       soiltype = gsub("-", "_", .data$soiltype),
       robinia = factor(.data$robinia, levels = c("without-robinia", "with-robinia")),
       precipitation = factor(.data$precipitation, levels = c("control", "drought")),
@@ -747,15 +756,15 @@ plot_soil_mp <- function(df_soil,
     )
   }
 
-  y_min <- min(df_plot$soil_mp_log, na.rm = TRUE)
-  y_max <- max(df_plot$soil_mp_log, na.rm = TRUE)
+  y_min <- min(df_plot$soil_mp_value, na.rm = TRUE)
+  y_max <- max(df_plot$soil_mp_value, na.rm = TRUE)
   y_bar <- y_min - 0.04 * (y_max - y_min)
 
   p <- ggplot2::ggplot(
     df_plot,
     ggplot2::aes(
       x = .data$date,
-      y = .data$soil_mp_log,
+      y = .data$soil_mp_value,
       color = .data$precipitation,
       linetype = .data$culture,
       group = interaction(.data$precipitation, .data$culture)
@@ -770,7 +779,7 @@ plot_soil_mp <- function(df_soil,
 
   df_agg <- df_plot %>%
     dplyr::group_by(dplyr::across(dplyr::all_of(group_cols))) %>%
-    dplyr::summarise(soil_mp_log = mean(.data$soil_mp_log, na.rm = TRUE), .groups = "drop")
+    dplyr::summarise(soil_mp_value = mean(.data$soil_mp_value, na.rm = TRUE), .groups = "drop")
 
   # Add layers based on show parameter
   if (show %in% c("both", "raw")) {
@@ -820,14 +829,14 @@ plot_soil_mp <- function(df_soil,
     scale_precip_color() +
     scale_culture_linetype() +
     ggplot2::scale_y_continuous(
-      name = "log10(phi_soil) [kPa]",
+      name = if (identical(value_scale, "log")) "log10(phi_soil) [kPa]" else "Soil water potential [kPa]",
       breaks = pretty(c(y_min, y_max), n = 6)
     ) +
     ggplot2::scale_x_date(date_labels = "%m/%y") +
     ggplot2::labs(
       x = "Date",
       title = paste0(
-        "Soil water potential: ",
+        if (identical(value_scale, "log")) "Soil water potential: " else "Soil water potential (raw kPa): ",
         switch(show,
                "both" = "raw trajectories + smoothed treatment means",
                "raw"  = "mean sensor trajectories per treatment",
@@ -863,23 +872,26 @@ plot_soil_mp <- function(df_soil,
 plot_ts_soil_mp <- function(filter_soiltype = c("both","inoc-beech","inoc-robinia"),
                             show = c("both", "raw", "smooth"),
                             include_soil_treatment = NULL,
+                            value_scale = c("log", "raw"),
                             save_fig = FALSE,
                             device = "pdf") {
   filter_soiltype <- match.arg(filter_soiltype)
   show <- match.arg(show)
+  value_scale <- match.arg(value_scale)
 
   df_soil <- wrangle_soil_data()
   p <- plot_soil_mp(
     df_soil,
     filter_soiltype = filter_soiltype,
     show = show,
-    include_soil_treatment = include_soil_treatment
+    include_soil_treatment = include_soil_treatment,
+    value_scale = value_scale
   )
 
   if (!is.null(p) && save_fig) {
     save_plot(
       p,
-      stub = paste0("soil_water_potential_", show, "_", gsub("-", "_", filter_soiltype)),
+      stub = paste0("soil_water_potential_", value_scale, "_", show, "_", gsub("-", "_", filter_soiltype)),
       soiltype = filter_soiltype,
       subdir = "timeseries",
       device = device
