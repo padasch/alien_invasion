@@ -1,0 +1,180 @@
+---
+title: 'ALINV – SWP Provenance'
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    code_folding: hide
+    highlight: espresso
+    theme: journal
+    fig_width: 9
+    fig_height: 6
+execute:
+  warning: false
+  message: false
+  echo: true
+  results: hide
+params:
+  scenario_label: "global"
+  soil_filter: "both"
+  include_soil_treatment: false
+  analysis_date: !r as.character(Sys.Date())
+  output_root: "output"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  results = "hide",
+  fig.show = "hold",
+  fig.width = 9,
+  fig.height = 6
+)
+
+source_path_candidates <- c(
+  "functions/_source.R",
+  "../functions/_source.R",
+  "./functions/_source.R"
+)
+source_path <- source_path_candidates[file.exists(source_path_candidates)][1]
+if (is.na(source_path)) {
+  stop("Could not locate functions/_source.R for notebook setup.")
+}
+source(source_path)
+
+source_dir <- dirname(source_path)
+proj_root <- normalizePath(file.path(source_dir, ".."), winslash = "/", mustWork = TRUE)
+
+source(file.path(source_dir, "1-summary-figures.R"))
+
+analysis_ctx <- alinv_init_notebook_context(if (exists("params")) params else NULL)
+analysis_root <- analysis_ctx$analysis_root
+analysis_data_root <- analysis_ctx$analysis_data_root
+swp_export_dir <- alinv_data_path("swp_provenance", create_dir = TRUE)
+```
+
+# Introduction
+
+This notebook documents how the final soil water potential (SWP) product is derived from the raw sensor timeseries and how it becomes the final figures used in the summary notebooks.
+
+All intermediate tables created here are exported under `r alinv_project_relative_path(swp_export_dir)`.
+
+# 1. Raw Sensor Timeseries to Daily Long Table
+
+The raw input is the 10-minute sensor file `data/raw/sensor_data/soil_10min.dat`. The wrangling helper:
+
+1. reads the raw file,
+2. aggregates it to daily mean SWP per sensor,
+3. maps sensors to mesocosm boxes,
+4. joins the box metadata needed for treatment-level summaries.
+
+```{r swp-daily-long}
+soil_daily_long <- wrangle_soil_data()
+readr::write_csv(soil_daily_long, file.path(swp_export_dir, "soil-water-potential_daily-long.csv"))
+```
+
+```{r swp-daily-long-summary}
+soil_daily_summary <- soil_daily_long %>%
+  dplyr::summarise(
+    n_dates = dplyr::n_distinct(.data$date),
+    n_boxes = dplyr::n_distinct(.data$boxlabel),
+    n_rows = dplyr::n(),
+    n_missing_swp = sum(is.na(.data$soil_mp))
+  )
+
+knitr::kable(soil_daily_summary, caption = "Daily long-table summary after sensor aggregation and metadata joins")
+```
+
+# 2. Filter and Transform to the Plot Scale
+
+Only negative SWP values are retained, and the final plotted scale is:
+
+$$\mathrm{SWP}_{plot} = -\log_{10}(-\mathrm{SWP}_{kPa})$$
+
+This is the scale used by the summary notebooks for the SWP figures.
+
+```{r swp-plot-scale}
+soil_plot_scale <- soil_daily_long %>%
+  dplyr::filter(!is.na(.data$soil_mp), .data$soil_mp < 0) %>%
+  dplyr::mutate(
+    soil_mp_plot = -log10(-.data$soil_mp),
+    soiltype = gsub("-", "_", .data$soiltype)
+  )
+
+readr::write_csv(soil_plot_scale, file.path(swp_export_dir, "soil-water-potential_plot-scale.csv"))
+```
+
+```{r swp-plot-scale-summary}
+plot_scale_summary <- soil_plot_scale %>%
+  dplyr::summarise(
+    n_rows = dplyr::n(),
+    min_plot_value = min(.data$soil_mp_plot, na.rm = TRUE),
+    max_plot_value = max(.data$soil_mp_plot, na.rm = TRUE)
+  )
+
+knitr::kable(plot_scale_summary, caption = "Summary of the filtered SWP values on the final plot scale")
+```
+
+# 3. Daily Treatment Summaries Feeding the Final Figures
+
+The summary figures in the main notebooks then aggregate the plot-scale SWP by date and treatment combination. These are the plot-ready daily means used downstream for the raw and smoothed trajectory figures.
+
+```{r swp-treatment-summary}
+soil_plot_daily_grouped <- soil_plot_scale %>%
+  dplyr::group_by(
+    .data$date,
+    .data$soiltype,
+    .data$robinia,
+    .data$precipitation,
+    .data$culture
+  ) %>%
+  dplyr::summarise(
+    soil_mp_plot_mean = mean(.data$soil_mp_plot, na.rm = TRUE),
+    n_boxes = dplyr::n_distinct(.data$boxlabel),
+    .groups = "drop"
+  )
+
+readr::write_csv(soil_plot_daily_grouped, file.path(swp_export_dir, "soil-water-potential_plot-daily-treatment-means.csv"))
+```
+
+```{r swp-treatment-summary-preview}
+knitr::kable(
+  dplyr::slice_head(soil_plot_daily_grouped, n = 12),
+  caption = "Preview of the daily treatment-level SWP table used for the downstream plots"
+)
+```
+
+# 4. Final Figures Used Downstream
+
+These are the same final SWP figures that are called in the summary notebooks.
+
+## Raw Trajectories Plus Smoothed Treatment Means
+
+```{r swp-final-both, fig.width=10, fig.height=6}
+plot_soil_mp(
+  soil_daily_long,
+  filter_soiltype = "both",
+  show = "both",
+  include_soil_treatment = TRUE
+)
+```
+
+## Raw Treatment Means
+
+```{r swp-final-raw, fig.width=10, fig.height=6}
+plot_soil_mp(
+  soil_daily_long,
+  filter_soiltype = "both",
+  show = "raw",
+  include_soil_treatment = TRUE
+)
+```
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```
