@@ -23,9 +23,11 @@ if (requireNamespace("emmeans", quietly = TRUE)) {
   chlorophyll   = "chl",
   condition     = "condition",
   growth        = c(
-    "height", "diameter",
-    "height_inc_t0_rel", "diameter_inc_t0_rel",
-    "height_inc_phase_rel", "diameter_inc_phase_rel"
+    "height", "diameter", "volume",
+    "height_inc_t0", "diameter_inc_t0", "volume_inc_t0",
+    "height_inc_t0_rel", "diameter_inc_t0_rel", "volume_inc_t0_rel",
+    "height_inc_phase_abs", "diameter_inc_phase_abs", "volume_inc_phase_abs",
+    "height_inc_phase_rel", "diameter_inc_phase_rel", "volume_inc_phase_rel"
   ),
   quantum_yield = "qy",
   senescence    = c("percent_senesced", "chlavg"),
@@ -260,12 +262,12 @@ extract_per_date_contrasts_from_fixef <- function(fit, factor_name) {
     numeric(1)
   )
 
-  estimate <- -raw_est
+  estimate <- raw_est
   stat <- estimate / se
 
   tibble::tibble(
     date = as.Date(date_levels),
-    contrast = paste0(factor_levels[[1]], " - ", treatment_level),
+    contrast = paste0(treatment_level, " - ", factor_levels[[1]]),
     estimate = estimate,
     se = se,
     stat = stat,
@@ -276,8 +278,16 @@ extract_per_date_contrasts_from_fixef <- function(fit, factor_name) {
     dplyr::arrange(.data$date, .data$contrast)
 }
 
-# Robust per-date contrasts for ANY categorical factor; use revpairwise so
-# effect = baseline − treatment (matches your interpretation)
+swap_contrast_label <- function(x) {
+  parts <- strsplit(x, " - ", fixed = TRUE)[[1]]
+  if (length(parts) != 2L) {
+    return(x)
+  }
+  paste(parts[[2]], parts[[1]], sep = " - ")
+}
+
+# Robust per-date contrasts for ANY categorical factor; convert emmeans
+# revpairwise output to treatment − baseline for consistent display.
 extract_per_date_contrasts_any <- function(fit, factor_name) {
   if (!requireNamespace("emmeans", quietly = TRUE)) {
     message(
@@ -308,20 +318,20 @@ extract_per_date_contrasts_any <- function(fit, factor_name) {
     ) %>%
     transmute(
       date,
-      contrast = .data$contrast,
-      estimate = .data$estimate,
+      contrast = vapply(.data$contrast, swap_contrast_label, character(1)),
+      estimate = -.data$estimate,
       se = .data[[secol]],
-      stat = if (!is.na(zcol)) .data[[zcol]] else NA_real_,
+      stat = if (!is.na(zcol)) -.data[[zcol]] else -.data$estimate / .data[[secol]],
       df = if (!is.na(dfcol)) .data[[dfcol]] else NA_real_,
-      lower = .data[[lowc]],
-      upper = .data[[upc]]
+      lower = -.data[[upc]],
+      upper = -.data[[lowc]]
     ) %>%
     filter(is.finite(estimate), !is.na(date)) %>%
     arrange(date, contrast)
 }
 
 # Combine contrasts for the three factors that have >=2 levels in the subset
-compute_combined_effects <- function(fit, df, factors = NULL) {
+compute_combined_effects <- function(fit, df, factors = NULL, resp_var = NULL) {
   if (is.null(factors)) {
     factors <- alinv_get_treatment_factors(
       include_soil_treatment = "soiltype" %in% names(df) &&
@@ -338,18 +348,36 @@ compute_combined_effects <- function(fit, df, factors = NULL) {
       out[[fac]] <- eff
     }
   }
-  if (length(out)) bind_rows(out) else tibble()
+  if (!length(out)) {
+    return(tibble())
+  }
+
+  bind_rows(out) %>%
+    mutate(
+      response_var = resp_var %||% NA_character_,
+      contrast_basis = "treatment - baseline"
+    ) %>%
+    alinv_apply_response_orientation(
+      resp_var = resp_var,
+      estimate_col = "estimate",
+      lower_col = "lower",
+      upper_col = "upper",
+      stat_col = "stat"
+    )
 }
 
 # Combined plot of effect-size time series (Robinia, Precipitation, Culture)
-plot_combined_effects <- function(effects_df, title, ylab = "Effect size (baseline − treatment)", y_limits = NULL) {
+plot_combined_effects <- function(effects_df,
+                                  title,
+                                  ylab = alinv_temporal_effect_y_label(),
+                                  y_limits = NULL) {
   if (!nrow(effects_df)) stop("No contrasts to plot.")
   lab_map <- c(
-    robinia = "Robinia (without − with)",
-    precipitation = "Drought (control − drought)",
-    culture = "Culture (mono − mixed)",
-    soiltype = "Soil (wetter robinia soil − drier beech soil)",
-    extreme_event = "Extreme Event (no - yes)"
+    robinia = "Robinia (with - without)",
+    precipitation = "Precipitation (drought - control)",
+    culture = "Culture (mixed - mono)",
+    soiltype = "Soil (drier beech soil - wetter robinia soil)",
+    extreme_event = "Extreme event (yes - no)"
   )
   
   ylowest <- effects_df$estimate - effects_df$se
@@ -358,6 +386,17 @@ plot_combined_effects <- function(effects_df, title, ylab = "Effect size (baseli
   if (!is.null(y_limits) && length(y_limits) == 2L) {
     ylowest <- y_limits[1]
   }
+
+  drought_periods <- list(
+    c("2025-06-20", "2025-07-02"),
+    c("2025-08-12", "2025-08-20")
+  )
+  date_range <- range(effects_df$date, na.rm = TRUE)
+  visible_periods <- purrr::keep(drought_periods, function(win) {
+    win_start <- as.Date(win[[1]])
+    win_end <- as.Date(win[[2]])
+    win_start <= date_range[2] && win_end >= date_range[1]
+  })
   
   p <- effects_df %>%
     mutate(effect_lbl = dplyr::recode(effect, !!!lab_map)) %>%
@@ -367,16 +406,6 @@ plot_combined_effects <- function(effects_df, title, ylab = "Effect size (baseli
     geom_ribbon(alpha = 0.15, color = NA) +
     geom_line(linewidth = 1) +
     geom_point(size = 2) +
-    annotate("segment",
-             x = as.Date("2025-06-20"), xend = as.Date("2025-07-02"),
-             y = ylowest, yend = ylowest,
-             size = 2.5, color = "indianred", lineend = "round"
-    ) +
-    annotate("segment",
-             x = as.Date("2025-08-12"), xend = as.Date("2025-08-20"),
-             y = ylowest, yend = ylowest,
-             size = 2.5, color = "indianred", lineend = "round"
-    ) +
     scale_color_brewer(palette = "Dark2") +
     scale_fill_brewer(palette = "Dark2") +
     scale_x_date(date_breaks = "1 month", date_labels = "%b") +
@@ -394,6 +423,23 @@ plot_combined_effects <- function(effects_df, title, ylab = "Effect size (baseli
     ) +
     guides(color = guide_legend(nrow = 2, byrow = TRUE),
            fill  = guide_legend(nrow = 2, byrow = TRUE))
+
+  for (win in visible_periods) {
+    win_start <- max(as.Date(win[[1]]), date_range[1])
+    win_end <- min(as.Date(win[[2]]), date_range[2])
+    if (win_start > win_end) next
+
+    p <- p + annotate(
+      "segment",
+      x = win_start,
+      xend = win_end,
+      y = ylowest,
+      yend = ylowest,
+      size = 2.5,
+      color = "indianred",
+      lineend = "round"
+    )
+  }
 
   if (!is.null(y_limits) && length(y_limits) == 2L) {
     p <- p + coord_cartesian(ylim = y_limits)
@@ -465,7 +511,7 @@ temporal_effect_plot_meta <- function(type = "tree",
       " (soil: ", soil_type, ", data: ",
       data_name, if (!is.null(resp_var)) paste0(", ", resp_var) else "", ")"
     ),
-    y_axis_label = "Effect size (baseline - treatment)",
+    y_axis_label = alinv_temporal_effect_y_label(),
     y_limit_lower = y_limits[[1]],
     y_limit_upper = y_limits[[2]]
   )
@@ -505,7 +551,7 @@ plot_temporal_effects_from_csv <- function(effects_df,
   plot_combined_effects(
     effects_df = effects_df,
     title = title %||% meta_value("title", "Temporal GLMM effects"),
-    ylab = meta_value("y_axis_label", "Effect size (baseline - treatment)"),
+    ylab = meta_value("y_axis_label", alinv_temporal_effect_y_label()),
     y_limits = y_limits
   )
 }
@@ -599,6 +645,35 @@ make_effect_figure_generic <- function(
     include_soil_treatment = include_soil_treatment,
     swc_source   = swc_source
   )
+
+  if (!nrow(dfm)) {
+    result <- list(
+      plot = alinv_empty_plot(
+        title = "No temporal GLMM data",
+        subtitle = paste0("No model rows available for ", target_species, " / ", data_name, if (!is.null(resp_var)) paste0(" / ", resp_var) else "")
+      ),
+      model = NULL,
+      effects = tibble::tibble(),
+      data_model = dfm
+    )
+    saveRDS(result, cache_path)
+    write_temporal_effect_csv_bundle(
+      result = result,
+      export_stem = export_stem,
+      meta = temporal_effect_plot_meta(
+        type = type,
+        data_name = data_name,
+        resp_var = resp_var,
+        target_species = target_species,
+        soil_type = soil_type,
+        include_soil_treatment = include_soil_treatment,
+        add_covars = add_covars,
+        swc_source = swc_source,
+        y_limits = y_limits %||% alinv_temporal_effect_y_limits()
+      )
+    )
+    return(result)
+  }
   
   fit <- fit_glmm_per_date(
     dfm,
@@ -611,7 +686,8 @@ make_effect_figure_generic <- function(
     factors = alinv_get_treatment_factors(
       include_soil_treatment = include_soil_treatment,
       soil_filter = soil_type
-    )
+    ),
+    resp_var = resp_var %||% if (length(.default_resp_map[[data_name]]) == 1) .default_resp_map[[data_name]] else resp_var
   )
   if (nrow(eff)) {
     eff <- eff %>%
@@ -632,7 +708,10 @@ make_effect_figure_generic <- function(
   p <- if (nrow(eff)) {
     plot_combined_effects(eff, ttl, y_limits = y_limits %||% alinv_temporal_effect_y_limits())
   } else {
-    NULL
+    alinv_empty_plot(
+      title = "No temporal GLMM contrasts",
+      subtitle = paste0("No treatment contrasts could be extracted for ", target_species, " / ", data_name, if (!is.null(resp_var)) paste0(" / ", resp_var) else "")
+    )
   }
   
   result <- list(plot = p, model = fit, effects = eff, data_model = dfm)

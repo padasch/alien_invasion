@@ -348,6 +348,11 @@ build_sem_matrix_data <- function(effects_main,
       include_interaction = include_interaction,
       swc_source = swc_source,
       phase = phase
+    ) %>%
+    alinv_apply_response_orientation(
+      resp_col = "response_var",
+      estimate_col = "estimate",
+      estimate_sig_col = "estimate_sig"
     )
 }
 
@@ -433,7 +438,7 @@ plot_overarching_sem_effect_matrices <- function(summary_df,
       high = "steelblue4",
       midpoint = 0,
       na.value = "white",
-      name = "Mean std. effect"
+      name = "Mean oriented std. effect"
     ) +
     scale_alpha(range = c(0, 1), guide = "none") +
     facet_wrap(~panel, ncol = 3, scales = "free_x") +
@@ -485,7 +490,7 @@ plot_sem_effect_matrices <- function(matrix_df,
       high = "steelblue4",
       midpoint = 0,
       na.value = "white",
-      name = "Std. effect"
+      name = "Oriented std. effect"
     ) +
     scale_alpha(range = c(0, 1), guide = "none") +
     facet_wrap(~panel, ncol = 3, scales = "free_x") +
@@ -558,6 +563,13 @@ prepare_sem_heatmap_panel <- function(matrix_df,
     return(tibble::tibble())
   }
 
+  if (!"estimate_raw" %in% names(df_panel)) {
+    df_panel$estimate_raw <- df_panel$estimate
+  }
+  if (!"estimate_sig_raw" %in% names(df_panel)) {
+    df_panel$estimate_sig_raw <- df_panel$estimate_sig
+  }
+
   if (identical(path_type, "treatment_to_swc")) {
     df_panel <- df_panel %>%
       dplyr::filter(.data$treatment != "swc") %>%
@@ -597,7 +609,7 @@ prepare_sem_heatmap_panel <- function(matrix_df,
       row_label = .data$row_label,
       col_label = .data$col_label,
       value = .data$estimate_sig,
-      value_raw = .data$estimate
+      value_raw = dplyr::coalesce(.data$estimate_sig_raw, .data$estimate_raw, .data$estimate)
     ) %>%
     dplyr::mutate(
       row_label = factor(.data$row_label, levels = row_order),
@@ -696,7 +708,7 @@ plot_sem_heatmap_panel <- function(panel_df,
       midpoint = 0,
       limits = c(-limit, limit),
       na.value = "white",
-      name = "Std. effect"
+      name = "Oriented std. effect"
     ) +
     scale_color_identity() +
     labs(
@@ -1145,6 +1157,23 @@ augment_sem_result_for_exports <- function(result,
     return(result)
   }
 
+  display_sign <- alinv_response_display_sign(resp_var)[[1]]
+  orient_effect_table <- function(df_effects) {
+    if (is.null(df_effects) || !nrow(df_effects)) {
+      return(df_effects)
+    }
+
+    df_effects %>%
+      dplyr::mutate(
+        display_sign = display_sign,
+        a_display = .data$a,
+        b_display = .data$b * .data$display_sign,
+        c_direct_display = .data$c_direct * .data$display_sign,
+        indirect_display = .data$indirect * .data$display_sign,
+        total_display = .data$total * .data$display_sign
+      )
+  }
+
   graph_bits <- build_sem_graph_components(
     effects_main = result$effects %||% tibble::tibble(),
     effects_int = result$effects_int %||% tibble::tibble(),
@@ -1156,6 +1185,17 @@ augment_sem_result_for_exports <- function(result,
     modeled_factors = modeled_factors
   )
 
+  result$effects <- orient_effect_table(result$effects)
+  result$effects_int <- orient_effect_table(result$effects_int)
+  if (!is.null(result$matrix_data) && nrow(result$matrix_data)) {
+    result$matrix_data <- result$matrix_data %>%
+      alinv_apply_response_orientation(
+        resp_col = "response_var",
+        estimate_col = "estimate",
+        estimate_sig_col = "estimate_sig"
+      )
+    result$matrix_overarching <- summarize_sem_matrix_significant_mean(result$matrix_data)
+  }
   result$modeled_factors <- modeled_factors
   result$graph_nodes <- graph_bits$nodes
   result$graph_edges <- graph_bits$edges
@@ -1246,6 +1286,34 @@ run_sem_for_trait <- function(type = "tree",
     swc_source   = swc_source
   )
 
+  if (!nrow(df_pre)) {
+    result <- list(
+      data = tibble::tibble(),
+      effects = tibble::tibble(),
+      effects_int = tibble::tibble(),
+      matrix_data = tibble::tibble(),
+      matrix_plots = list(),
+      matrix_overarching = tibble::tibble(),
+      matrix_overarching_plots = list(),
+      modeled_factors = character(),
+      note = "No SEM data available after filtering.",
+      plot = alinv_empty_plot(
+        title = "No SEM data",
+        subtitle = paste0("No model rows available for ", species, " / ", data_name, " / ", resp_var)
+      )
+    )
+    result <- augment_sem_result_for_exports(
+      result = result,
+      resp_var = resp_var,
+      species = species,
+      soil_type = soil_type,
+      include_interaction = include_interaction
+    )
+    saveRDS(result, cache_path)
+    write_sem_csv_bundle(result, export_stem = export_stem)
+    return(result)
+  }
+
   # optional exploratory SEM by seasonal phase
   if (!identical(phase_window, "all")) {
     df_pre <- df_pre %>%
@@ -1264,6 +1332,34 @@ run_sem_for_trait <- function(type = "tree",
     df_prepared       = df_pre,
     scale_all_numeric = scale_all_numeric
   )
+
+  if (!nrow(df_sem_ready)) {
+    result <- list(
+      data = df_sem_ready,
+      effects = tibble::tibble(),
+      effects_int = tibble::tibble(),
+      matrix_data = tibble::tibble(),
+      matrix_plots = list(),
+      matrix_overarching = tibble::tibble(),
+      matrix_overarching_plots = list(),
+      modeled_factors = character(),
+      note = "No SEM rows remained after preparation.",
+      plot = alinv_empty_plot(
+        title = "No SEM data",
+        subtitle = paste0("No analyzable rows remained for ", species, " / ", data_name, " / ", resp_var)
+      )
+    )
+    result <- augment_sem_result_for_exports(
+      result = result,
+      resp_var = resp_var,
+      species = species,
+      soil_type = soil_type,
+      include_interaction = include_interaction
+    )
+    saveRDS(result, cache_path)
+    write_sem_csv_bundle(result, export_stem = export_stem)
+    return(result)
+  }
 
   # 3) Fit SEM submodels
   mods <- fit_sem_models(

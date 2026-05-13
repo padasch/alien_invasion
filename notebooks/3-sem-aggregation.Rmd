@@ -59,7 +59,7 @@ Current render scenario: `r scenario_label`. Soil filtering is set to `r soil_ty
 
 Phase-wise SEM panels were removed because per-phase subsets do not contain enough data for stable SEM fitting.
 
-The underlying heatmap matrices are exported as CSV files under `r heatmap_export_dir`. These CSVs can be replotted later with `scripts/6-plot-sem-heatmaps-from-csv.R`.
+The underlying heatmap matrices are exported as CSV files under `r alinv_project_relative_path(heatmap_export_dir)`. These CSVs can be replotted later with `scripts/6-plot-sem-heatmaps-from-csv.R`.
 
 Interpretation of effects in the mediation SEM:
 
@@ -68,6 +68,8 @@ Interpretation of effects in the mediation SEM:
 - Combined effect (total): direct + indirect.
 
 Important clarification: the treatment -> SWC path alone is not the full indirect effect. It is one component (path a) used to compute the indirect effect together with path b.
+
+Display values are oriented so positive values indicate beneficial effects and negative values indicate harmful effects. Higher senescence is treated as harmful.
 
 ```{r config}
 species_vec <- c("fagus", "quercus")
@@ -78,10 +80,19 @@ resp_labels <- c(
   condition = "Condition",
   height = "Height",
   diameter = "Diameter",
+  volume = "Volume",
+  height_inc_t0 = "Height inc. t0",
+  diameter_inc_t0 = "Diameter inc. t0",
+  volume_inc_t0 = "Volume inc. t0",
   height_inc_t0_rel = "Height rel. inc t0",
   diameter_inc_t0_rel = "Diameter rel. inc t0",
+  volume_inc_t0_rel = "Volume rel. inc t0",
+  height_inc_phase_abs = "Height inc. phase",
+  diameter_inc_phase_abs = "Diameter inc. phase",
+  volume_inc_phase_abs = "Volume inc. phase",
   height_inc_phase_rel = "Height rel. inc phase",
   diameter_inc_phase_rel = "Diameter rel. inc phase",
+  volume_inc_phase_rel = "Volume rel. inc phase",
   qy = "Quantum yield",
   percent_senesced = "Senescence (%)",
   chlavg = "Senescence chlorophyll",

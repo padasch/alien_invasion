@@ -582,7 +582,12 @@ plot_ts_resp <- function(filter_soiltype = c("both","inoc-beech","inoc-robinia")
 
   if (!nrow(df)) {
     message("No soil respiration rows available after filtering for soil type: ", filter_soiltype)
-    return(invisible(NULL))
+    return(
+      alinv_empty_plot(
+        title = "No soil respiration data",
+        subtitle = paste0("No rows available after filtering for soil type: ", filter_soiltype)
+      )
+    )
   }
   
   # summarize for SE/drought bars
@@ -734,7 +739,12 @@ plot_soil_mp <- function(df_soil,
 
   if (!nrow(df_plot)) {
     message("No soil water potential rows available for soil type: ", filter_soiltype)
-    return(invisible(NULL))
+    return(
+      alinv_empty_plot(
+        title = "No soil water potential data",
+        subtitle = paste0("No rows available after filtering for soil type: ", filter_soiltype)
+      )
+    )
   }
 
   y_min <- min(df_plot$soil_mp_log, na.rm = TRUE)
@@ -789,6 +799,12 @@ plot_soil_mp <- function(df_soil,
       )
   }
   
+  visible_periods <- purrr::keep(DROUGHT_PERIODS, function(win) {
+    win_start <- as.Date(win[[1]])
+    win_end <- as.Date(win[[2]])
+    win_start <= max(df_plot$date, na.rm = TRUE) && win_end >= min(df_plot$date, na.rm = TRUE)
+  })
+
   p <- p +
     {
       if (isTRUE(show_soiltype)) {
@@ -820,17 +836,25 @@ plot_soil_mp <- function(df_soil,
       )
     ) +
     theme_common() +
-    ggplot2::annotate(
-      "segment",
-      x = as.Date(DROUGHT_PERIODS[[1]][1]), xend = as.Date(DROUGHT_PERIODS[[1]][2]),
-      y = y_bar, yend = y_bar, size = 2.2, color = "orange", lineend = "round", alpha = 0.9
-    ) +
-    ggplot2::annotate(
-      "segment",
-      x = as.Date(DROUGHT_PERIODS[[2]][1]), xend = as.Date(DROUGHT_PERIODS[[2]][2]),
-      y = y_bar, yend = y_bar, size = 2.2, color = "orange", lineend = "round", alpha = 0.9
-    ) +
     ggplot2::coord_cartesian(ylim = c(y_bar, y_max + 0.03 * (y_max - y_min)))
+
+  for (win in visible_periods) {
+    win_start <- max(as.Date(win[[1]]), min(df_plot$date, na.rm = TRUE))
+    win_end <- min(as.Date(win[[2]]), max(df_plot$date, na.rm = TRUE))
+    if (win_start > win_end) next
+
+    p <- p + ggplot2::annotate(
+      "segment",
+      x = win_start,
+      xend = win_end,
+      y = y_bar,
+      yend = y_bar,
+      size = 2.2,
+      color = "orange",
+      lineend = "round",
+      alpha = 0.9
+    )
+  }
 
   return(p)
 }

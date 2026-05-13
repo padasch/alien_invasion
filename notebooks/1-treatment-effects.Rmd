@@ -58,6 +58,7 @@ source(file.path(source_dir, "4-structural-equation-model.R"))
 source(file.path(source_dir, "6-effect-size-model-aggregation.R"))
 source(file.path(source_dir, "5-combining-glmm-sem.R"))
 source(file.path(source_dir, "7-phenology-transition-models.R"))
+source(file.path(source_dir, "8-size-trajectories.R"))
 
 library(patchwork)
 
@@ -92,7 +93,7 @@ For each tree-level response variable, a linear mixed-effects model is fitted ac
 
 $$y_{ijk} = \mu + \alpha_t + (\alpha_t \times \text{Robinia})_{j} + (\alpha_t \times \text{Precipitation})_{j} + (\alpha_t \times \text{Culture})_{j} + (\alpha_t \times \text{Soiltype})_{j} + b_{\text{box}} + b_{\text{tree}} + \varepsilon_{ijk}$$
 
-where $\alpha_t$ is a date fixed effect and treatment effects are estimated per date via date×treatment interactions. Random intercepts are fitted for box ($b_{\text{box}}$) and tree ($b_{\text{tree}}$). Treatment contrasts at each date are extracted using estimated marginal means (`emmeans`, reverse pairwise).
+where $\alpha_t$ is a date fixed effect and treatment effects are estimated per date via date×treatment interactions. Random intercepts are fitted for box ($b_{\text{box}}$) and tree ($b_{\text{tree}}$). Treatment contrasts at each date are extracted as `treatment - baseline`, then oriented for display so positive values indicate beneficial effects and negative values indicate harmful effects. For senescence, higher values are treated as unfavorable and therefore shown with a negative sign.
 
 For this scenario, soil terms are `r if (include_soil_treatment) "included" else "omitted"` in the temporal GLMM.
 
@@ -136,10 +137,19 @@ summary_resp_labels <- c(
   condition = "Condition",
   height = "Height",
   diameter = "Diameter",
+  volume = "Volume",
+  height_inc_t0 = "Height inc. t0",
+  diameter_inc_t0 = "Diameter inc. t0",
+  volume_inc_t0 = "Volume inc. t0",
   height_inc_t0_rel = "Height rel. inc t0",
   diameter_inc_t0_rel = "Diameter rel. inc t0",
+  volume_inc_t0_rel = "Volume rel. inc t0",
+  height_inc_phase_abs = "Height inc. phase",
+  diameter_inc_phase_abs = "Diameter inc. phase",
+  volume_inc_phase_abs = "Volume inc. phase",
   height_inc_phase_rel = "Height rel. inc phase",
   diameter_inc_phase_rel = "Diameter rel. inc phase",
+  volume_inc_phase_rel = "Volume rel. inc phase",
   qy = "Quantum yield",
   percent_senesced = "Senescence (%)",
   chlavg = "Senescence chlorophyll",
@@ -235,45 +245,6 @@ plot_summary_total_sem_heatmaps <- function() {
   patchwork::wrap_plots(plot_list, ncol = 1)
 }
 
-plot_growth_metric_ts <- function(resp_var,
-                                  y_label,
-                                  panel_title,
-                                  drought_bars = TRUE) {
-  resp_sym <- rlang::sym(resp_var)
-
-  df_metric <- get_data("tree", "growth") %>%
-    alinv_apply_soil_context(
-      soil_filter = soil_type,
-      include_soil_treatment = include_soil_treatment
-    ) %>%
-    dplyr::filter(!is.na(.data[[resp_var]])) %>%
-    normalize_factors_tree()
-
-  if (!nrow(df_metric)) {
-    return(
-      ggplot() +
-        theme_void() +
-        ggtitle(paste("No data available for", resp_var))
-    )
-  }
-
-  df_sum <- summarize_ts(
-    df_metric,
-    !!resp_sym,
-    keys = c("species", "robinia", "precipitation", "culture")
-  )
-
-  p <- build_timeseries(
-    df_in = df_metric,
-    y = !!resp_sym,
-    facet = "tree",
-    style = "band",
-    ylab = y_label,
-    title = panel_title
-  )
-
-  add_drought_bars_background(p, df_sum, show = drought_bars)
-}
 ```
 
 ## Temporal Effects
@@ -328,7 +299,7 @@ if (nrow(all_eff) > 0) {
 
 ## Total SEM Effects
 
-These heatmaps summarise the total SEM effect of each treatment on each response variable, using the shared color scale from the full-data SEM fits in the current scenario.
+These heatmaps summarise the total SEM effect of each treatment on each response variable, using the shared color scale from the full-data SEM fits in the current scenario. Positive values indicate beneficial effects and negative values indicate harmful effects; higher senescence is treated as harmful.
 
 ```{r total-sem-effects-summary, fig.width=12, fig.height=8}
 print(plot_summary_total_sem_heatmaps())
@@ -552,7 +523,7 @@ print(res_cond_quercus$sem$plot)
 
 ## Growth
 
-The growth chapter is split into absolute size, absolute increment from the first measurement, relative increment from the first measurement, and relative increment to the phase baseline. For the phase-baseline metrics, phase 1 is scaled to the first measurement and later phases are scaled to the last measurement of the previous phase.
+The growth chapter is split into absolute size, absolute increment from the first measurement, relative increment from the first measurement, and relative increment to the phase baseline. For the phase-baseline metrics, phase 1 is scaled to the first measurement and later phases are scaled to the last measurement of the previous phase. A dedicated size notebook adds the same analysis for `Volume` and for absolute increments within phase, using the same treatment colors, faceting, and direct-effect SEM panels.
 
 ### Height
 
