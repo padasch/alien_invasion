@@ -126,8 +126,127 @@ alinv_project_relative_path <- function(path) {
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
+alinv_clean_names <- function(x) {
+  x <- trimws(as.character(x))
+  x <- gsub("([a-z0-9])([A-Z])", "\\1_\\2", x)
+  x <- gsub("[^A-Za-z0-9]+", "_", x)
+  x <- tolower(x)
+  x <- gsub("^_+|_+$", "", x)
+  x[x == ""] <- "x"
+  make.unique(x, sep = "_")
+}
+
+alinv_clean_names_df <- function(df) {
+  names(df) <- alinv_clean_names(names(df))
+  df
+}
+
+alinv_drop_empty_cols <- function(df) {
+  keep <- vapply(
+    df,
+    function(col) {
+      if (is.character(col)) {
+        return(any(!is.na(col) & nzchar(trimws(col))))
+      }
+      any(!is.na(col))
+    },
+    logical(1)
+  )
+  df[, keep, drop = FALSE]
+}
+
 alinv_temporal_effect_y_limits <- function() {
   c(-2, 2)
+}
+
+alinv_temporal_effect_y_label <- function() {
+  "Effect size (positive = beneficial, negative = harmful)"
+}
+
+alinv_empty_plot <- function(title, subtitle = NULL) {
+  ggplot2::ggplot() +
+    ggplot2::theme_void() +
+    ggplot2::labs(title = title, subtitle = subtitle) +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(size = 12, face = "bold"),
+      plot.subtitle = ggplot2::element_text(size = 10)
+    )
+}
+
+ALINV_RESPONSE_DISPLAY_SIGN <- c(
+  percent_senesced = -1
+)
+
+alinv_response_display_sign <- function(resp_var) {
+  signs <- ALINV_RESPONSE_DISPLAY_SIGN[as.character(resp_var)]
+  signs[is.na(signs)] <- 1
+  as.numeric(signs)
+}
+
+alinv_apply_response_orientation <- function(df,
+                                             resp_var = NULL,
+                                             resp_col = NULL,
+                                             estimate_col = "estimate",
+                                             lower_col = NULL,
+                                             upper_col = NULL,
+                                             stat_col = NULL,
+                                             estimate_sig_col = NULL) {
+  if (is.null(df) || !nrow(df)) {
+    return(df)
+  }
+
+  if (!is.null(resp_col)) {
+    if (!resp_col %in% names(df)) {
+      stop("resp_col not found in data frame: ", resp_col, call. = FALSE)
+    }
+    resp_vals <- df[[resp_col]]
+  } else if (!is.null(resp_var)) {
+    resp_vals <- rep(resp_var, nrow(df))
+  } else {
+    stop("Provide either resp_var or resp_col.", call. = FALSE)
+  }
+
+  sign_vec <- alinv_response_display_sign(resp_vals)
+  df$display_sign <- sign_vec
+
+  orient_bounds <- function(lower_vals, upper_vals, signs) {
+    tibble::tibble(
+      lower = ifelse(signs < 0, upper_vals * signs, lower_vals * signs),
+      upper = ifelse(signs < 0, lower_vals * signs, upper_vals * signs)
+    )
+  }
+
+  if (!is.null(estimate_col) && estimate_col %in% names(df)) {
+    raw_col <- paste0(estimate_col, "_raw")
+    df[[raw_col]] <- df[[estimate_col]]
+    df[[estimate_col]] <- df[[estimate_col]] * sign_vec
+  }
+
+  if (!is.null(lower_col) && !is.null(upper_col) &&
+      lower_col %in% names(df) && upper_col %in% names(df)) {
+    lower_raw_col <- paste0(lower_col, "_raw")
+    upper_raw_col <- paste0(upper_col, "_raw")
+    df[[lower_raw_col]] <- df[[lower_col]]
+    df[[upper_raw_col]] <- df[[upper_col]]
+
+    bounds <- orient_bounds(df[[lower_col]], df[[upper_col]], sign_vec)
+    df[[lower_col]] <- bounds$lower
+    df[[upper_col]] <- bounds$upper
+  }
+
+  if (!is.null(stat_col) && stat_col %in% names(df)) {
+    raw_col <- paste0(stat_col, "_raw")
+    df[[raw_col]] <- df[[stat_col]]
+    df[[stat_col]] <- df[[stat_col]] * sign_vec
+  }
+
+  if (!is.null(estimate_sig_col) && estimate_sig_col %in% names(df)) {
+    raw_col <- paste0(estimate_sig_col, "_raw")
+    df[[raw_col]] <- df[[estimate_sig_col]]
+    df[[estimate_sig_col]] <- df[[estimate_sig_col]] * sign_vec
+  }
+
+  df
 }
 
 ALINV_SOIL_LABELS <- c(

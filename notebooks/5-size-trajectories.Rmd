@@ -1,0 +1,147 @@
+---
+title: 'ALINV – Size Trajectories and Size Models'
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    code_folding: hide
+    highlight: espresso
+    theme: journal
+    fig_width: 9
+    fig_height: 6
+execute:
+  warning: false
+  message: false
+  echo: true
+  results: hide
+params:
+  scenario_label: "both soils (with soil as treatment)"
+  soil_filter: "both"
+  include_soil_treatment: true
+  analysis_date: !r as.character(Sys.Date())
+  output_root: "output"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  results = "hide",
+  fig.show = "hold",
+  fig.width = 9,
+  fig.height = 6
+)
+
+source_path_candidates <- c(
+  "functions/_source.R",
+  "../functions/_source.R",
+  "./functions/_source.R"
+)
+source_path <- source_path_candidates[file.exists(source_path_candidates)][1]
+if (is.na(source_path)) {
+  stop("Could not locate functions/_source.R for notebook setup.")
+}
+source(source_path)
+
+source_dir <- dirname(source_path)
+proj_root <- normalizePath(file.path(source_dir, ".."), winslash = "/", mustWork = TRUE)
+
+source(file.path(source_dir, "1-summary-figures.R"))
+source(file.path(source_dir, "3-effect-size-factorial.R"))
+source(file.path(source_dir, "4-structural-equation-model.R"))
+source(file.path(source_dir, "5-combining-glmm-sem.R"))
+source(file.path(source_dir, "8-size-trajectories.R"))
+
+analysis_ctx <- alinv_init_notebook_context(if (exists("params")) params else NULL)
+scenario_label <- analysis_ctx$scenario_label
+soil_type <- analysis_ctx$soil_filter
+include_soil_treatment <- analysis_ctx$include_soil_treatment
+analysis_root <- analysis_ctx$analysis_root
+analysis_data_root <- analysis_ctx$analysis_data_root
+species_vec <- c("fagus", "quercus")
+
+options(alinv.temporal_y_limits = alinv_temporal_effect_y_limits())
+```
+
+# Introduction
+
+This notebook focuses on the size-related responses in the ALINV experiment. It covers `Height`, `Diameter`, and `Volume`, where `Volume` is calculated as a cylindrical stem-volume proxy from the cleaned height and diameter measurements:
+
+$$\mathrm{Volume\ (cm^3)} = \pi \left(\frac{\mathrm{Diameter\ (mm)}}{20}\right)^2 \times \mathrm{Height\ (cm)}$$
+
+Current render scenario: `r scenario_label`. Soil filtering is set to `r soil_type`, and soil is `r if (include_soil_treatment) "included as an explicit treatment contrast." else "pooled across both soils and omitted as a treatment contrast."`
+
+For the within-phase increments, phase 1 is referenced to the first measurement, while later phases are referenced to the last measurement of the previous phase. To make these resets visually explicit, the timeseries below add a zero-valued restart point at each phase boundary and break the line between phases.
+
+Scenario-local plot-ready trajectory exports are written to `r alinv_project_relative_path(file.path(analysis_data_root, "size_trajectories"))`.
+
+# Plot-Ready Data
+
+```{r size-trajectory-exports}
+size_bundle <- build_growth_plot_bundle(
+  soil_type = soil_type,
+  include_soil_treatment = include_soil_treatment
+)
+export_growth_plot_bundle(
+  size_bundle,
+  export_dir = alinv_data_path("size_trajectories", create_dir = TRUE)
+)
+```
+
+# Size Responses
+
+The model panels below pair the descriptive timeseries with the temporal GLMM and direct-effect SEM for each species. Positive effect sizes indicate beneficial effects and negative effect sizes indicate harmful effects.
+
+```{r size-response-loop, results='asis', fig.width=9.5, fig.height=5.8}
+size_specs <- growth_metric_catalog()
+
+for (metric_name in unique(size_specs$metric_group)) {
+  cat("## ", metric_name, "\n\n", sep = "")
+
+  specs_metric <- size_specs %>%
+    dplyr::filter(.data$metric_group == metric_name)
+
+  for (i in seq_len(nrow(specs_metric))) {
+    spec_i <- specs_metric[i, ]
+
+    cat("### ", spec_i$variant_label[[1]], "\n\n", sep = "")
+    print(
+      plot_growth_metric_ts(
+        resp_var = spec_i$resp_var[[1]],
+        y_label = spec_i$y_label[[1]],
+        panel_title = spec_i$panel_title[[1]],
+        soil_type = soil_type,
+        include_soil_treatment = include_soil_treatment,
+        drought_bars = TRUE
+      )
+    )
+    cat("\n")
+
+    for (species_i in species_vec) {
+      cat("#### ", stringr::str_to_title(species_i), "\n\n", sep = "")
+
+      res_i <- make_temporal_sem_combo(
+        type = "tree",
+        data_name = "growth",
+        resp_var = spec_i$resp_var[[1]],
+        species = species_i,
+        soil_type = soil_type,
+        include_soil_treatment = include_soil_treatment,
+        include_interaction = FALSE
+      )
+
+      print(res_i$temporal$plot)
+      print(res_i$sem$plot)
+      cat("\n")
+    }
+  }
+}
+```
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

@@ -10,7 +10,16 @@ library(purrr)
 
 # Load helpers (if not already loaded)
 if (!exists(".alinv_project_root", mode = "function")) {
-  source(file.path(dirname(sys.frame(1)$ofile %||% "."), "_source.R"))
+  source_candidates <- c(
+    "functions/_source.R",
+    "_source.R",
+    "../functions/_source.R"
+  )
+  source_path <- source_candidates[file.exists(source_candidates)][1]
+  if (is.na(source_path)) {
+    stop("Could not locate functions/_source.R for cleaning script setup.")
+  }
+  source(source_path)
 }
 
 # Set filepath
@@ -664,4 +673,3 @@ glimpse(df)
 # tree_meta <- get_meta("tree")
 # tree_growth <- get_data("tree", "growth", with_meta = TRUE, path = "./data/interim")
 # box_soilwater <- get_data("box", "soilwater", with_meta = TRUE, path = "./data/interim")
-

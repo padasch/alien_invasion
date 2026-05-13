@@ -4,13 +4,21 @@
 library(readxl)
 library(tidyr)
 library(readr)
-library(janitor)
 library(dplyr)
 library(purrr)
 
 # Load helpers (if not already loaded)
 if (!exists(".alinv_project_root", mode = "function")) {
-  source(file.path(dirname(sys.frame(1)$ofile %||% "."), "_source.R"))
+  source_candidates <- c(
+    "functions/_source.R",
+    "_source.R",
+    "../functions/_source.R"
+  )
+  source_path <- source_candidates[file.exists(source_candidates)][1]
+  if (is.na(source_path)) {
+    stop("Could not locate functions/_source.R for cleaning script setup.")
+  }
+  source(source_path)
 }
 
 # Set filepath
@@ -24,8 +32,8 @@ print(excel_sheets(fp))
 
 # Tree meta data
 meta_tree <- read_excel(fp, sheet = "All_labels") %>%
-  remove_empty(which = "cols") %>%
-  clean_names() %>%
+  alinv_drop_empty_cols() %>%
+  alinv_clean_names_df() %>%
   mutate(across(where(is.character), ~ tolower(trimws(.x)))) %>%
   mutate(across(where(is.character), ~ gsub("_", "-", .x))) %>%
   mutate(treelabel = sub("^[^-]+-", "", species_treelabel)) |>
@@ -37,8 +45,8 @@ meta_tree <- read_excel(fp, sheet = "All_labels") %>%
 
 # Box meta data
 meta_box <- read_excel(fp, sheet = "Label_Compartment") %>%
-  remove_empty(which = "cols") %>%
-  clean_names() %>%
+  alinv_drop_empty_cols() %>%
+  alinv_clean_names_df() %>%
   mutate(across(where(is.character), ~ tolower(trimws(.x)))) %>%
   mutate(across(where(is.character), ~ gsub("_", "-", .x)))
 
@@ -68,7 +76,7 @@ df <- read_excel(fp, sheet = "Fluoropen QY") %>%
   ) %>%
   select(treelabel, date, qy) %>%
   arrange(treelabel, date) %>%
-  clean_names() %>%
+  alinv_clean_names_df() %>%
   mutate(across(where(is.character), ~ tolower(trimws(.x))))
 
 df <- df %>%
@@ -97,7 +105,7 @@ df <- read_excel(fp, sheet = "Chlorophyll content") %>%
   ) %>%
   select(treelabel, date, chl) %>%
   arrange(treelabel, date) %>%
-  clean_names() %>%
+  alinv_clean_names_df() %>%
   mutate(across(where(is.character), ~ tolower(trimws(.x))))
 
 df <- df %>%
@@ -205,9 +213,10 @@ df <- read_excel(fp, sheet = "Growth_Measurements_D_H") %>%
   mutate(
     tree_id = as.integer(id_number),
     diameter = parse_number(diameter_mm),
-    height = parse_number(height_cm)
+    height = parse_number(height_cm),
+    volume = pi * (diameter / 20)^2 * height
   ) %>%
-  dplyr::select(tree_id, date, diameter, height) %>%
+  dplyr::select(tree_id, date, diameter, height, volume) %>%
   arrange(tree_id, date) |>
   filter(!is.na(tree_id)) |> 
   group_by(tree_id) |>
@@ -222,16 +231,20 @@ df <- read_excel(fp, sheet = "Growth_Measurements_D_H") %>%
     # first measurements per tree (baseline)
     first_diameter = first(diameter),
     first_height   = first(height),
+    first_volume   = first(volume),
     
     # cumulative absolute increments from first measurement
     diameter_inc_t0 = diameter - first_diameter,
     height_inc_t0   = height   - first_height,
+    volume_inc_t0   = volume   - first_volume,
     
     # relative size and relative cumulative increment
     diameter_rel        = diameter / first_diameter,
     height_rel          = height   / first_height,
+    volume_rel          = volume   / first_volume,
     diameter_inc_t0_rel = diameter_inc_t0 / first_diameter,
     height_inc_t0_rel   = height_inc_t0   / first_height,
+    volume_inc_t0_rel   = volume_inc_t0   / first_volume,
 
     # phase baselines: first measurement for phase 1,
     # last measurement of prior phase for phases 2 and 3
@@ -247,6 +260,17 @@ df <- read_excel(fp, sheet = "Growth_Measurements_D_H") %>%
       phase == "September+"  ~ dplyr::last(height[phase == "July-August" & !is.na(height)], default = NA_real_),
       TRUE ~ NA_real_
     ),
+    phase_volume_baseline = dplyr::case_when(
+      phase == "until June"  ~ first_volume,
+      phase == "July-August" ~ dplyr::last(volume[phase == "until June" & !is.na(volume)], default = NA_real_),
+      phase == "September+"  ~ dplyr::last(volume[phase == "July-August" & !is.na(volume)], default = NA_real_),
+      TRUE ~ NA_real_
+    ),
+
+    # absolute increment within phase, chained to prior phase end baseline
+    diameter_inc_phase_abs = diameter - phase_diameter_baseline,
+    height_inc_phase_abs = height - phase_height_baseline,
+    volume_inc_phase_abs = volume - phase_volume_baseline,
 
     # relative increment within phase, chained to prior phase end baseline
     diameter_inc_phase_rel = dplyr::if_else(
@@ -259,6 +283,11 @@ df <- read_excel(fp, sheet = "Growth_Measurements_D_H") %>%
       height / phase_height_baseline - 1,
       NA_real_
     ),
+    volume_inc_phase_rel = dplyr::if_else(
+      !is.na(phase_volume_baseline) & abs(phase_volume_baseline) > .Machine$double.eps,
+      volume / phase_volume_baseline - 1,
+      NA_real_
+    ),
     
     # time between consecutive measurements [years]
     delta_t_years = as.numeric(date - dplyr::lag(date)) / 365.25,
@@ -266,14 +295,17 @@ df <- read_excel(fp, sheet = "Growth_Measurements_D_H") %>%
     # increments between consecutive measurements
     diameter_inc_dt = diameter - dplyr::lag(diameter),
     height_inc_dt   = height   - dplyr::lag(height),
+    volume_inc_dt   = volume   - dplyr::lag(volume),
     
     # absolute growth rate (AGR) between dates
     diameter_agr = diameter_inc_dt / delta_t_years,
     height_agr   = height_inc_dt   / delta_t_years,
+    volume_agr   = volume_inc_dt   / delta_t_years,
     
     # relative growth rate (RGR) between dates (log-scale)
     diameter_rgr = (log(diameter) - log(dplyr::lag(diameter))) / delta_t_years,
-    height_rgr   = (log(height)   - log(dplyr::lag(height)))   / delta_t_years
+    height_rgr   = (log(height)   - log(dplyr::lag(height)))   / delta_t_years,
+    volume_rgr   = (log(volume)   - log(dplyr::lag(volume)))   / delta_t_years
   ) %>%
   ungroup()
 
@@ -412,8 +444,8 @@ wrangle_tree_biomass <- function(fp, sheet = "Biomass") {
     distinct(treelabel, .keep_all = TRUE)
 
   read_excel(fp, sheet = sheet) %>%
-    remove_empty(which = "cols") %>%
-    clean_names() %>%
+    alinv_drop_empty_cols() %>%
+    alinv_clean_names_df() %>%
     mutate(across(where(is.character), ~ tolower(trimws(.x)))) %>%
     mutate(across(where(is.character), ~ gsub("_", "-", .x))) %>%
     mutate(

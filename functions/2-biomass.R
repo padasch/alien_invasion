@@ -8,8 +8,8 @@ wrangle_tree_biomass <- function(fp, sheet = "Biomass") {
     distinct(treelabel, .keep_all = TRUE)
 
   read_excel(fp, sheet = sheet) %>%
-    remove_empty(which = "cols") %>%
-    clean_names() %>%
+    alinv_drop_empty_cols() %>%
+    alinv_clean_names_df() %>%
     mutate(across(where(is.character), ~ tolower(trimws(.x)))) %>%
     mutate(across(where(is.character), ~ gsub("_", "-", .x))) %>%
     mutate(
