@@ -660,7 +660,7 @@ write_sem_heatmap_csvs <- function(matrix_df,
   purrr::walk(seq_len(nrow(specs)), function(i) {
     spec <- specs[i, ]
     panel_df <- prepare_sem_heatmap_panel(
-      matrix_df = matrix_df %>% dplyr::filter(.data$species == species),
+      matrix_df = matrix_df %>% dplyr::filter(.data$species == .env$species),
       path_type = spec$path_type,
       resp_labels = resp_labels,
       treat_labels = treat_labels

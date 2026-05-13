@@ -389,14 +389,14 @@ get_growth_figure_path <- function(manifest,
                                    species = NA_character_) {
   df <- manifest %>%
     dplyr::filter(
-      .data$figure_type == figure_type,
-      .data$resp_var == resp_var
+      .data$figure_type == .env$figure_type,
+      .data$resp_var == .env$resp_var
     )
 
   if (is.na(species)) {
     df <- df %>% dplyr::filter(is.na(.data$species))
   } else {
-    df <- df %>% dplyr::filter(.data$species == species)
+    df <- df %>% dplyr::filter(.data$species == .env$species)
   }
 
   if (!nrow(df)) {
