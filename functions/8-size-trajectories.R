@@ -256,3 +256,155 @@ export_growth_plot_bundle <- function(bundle,
   readr::write_csv(bundle$summary %||% tibble::tibble(), file.path(export_dir, "size-trajectories-summary.csv"))
   invisible(bundle)
 }
+
+growth_metric_slug <- function(metric_group, variant_key) {
+  metric_slug <- gsub("[^a-z0-9]+", "-", tolower(metric_group))
+  variant_slug <- gsub("[^a-z0-9]+", "-", tolower(variant_key))
+  paste(metric_slug, variant_slug, sep = "-")
+}
+
+save_growth_plot_png <- function(plot_obj,
+                                 file_path,
+                                 width = 9.5,
+                                 height = 5.8,
+                                 dpi = 300) {
+  dir.create(dirname(file_path), recursive = TRUE, showWarnings = FALSE)
+  ggplot2::ggsave(
+    filename = file_path,
+    plot = plot_obj,
+    width = width,
+    height = height,
+    dpi = dpi
+  )
+  file_path
+}
+
+growth_markdown_image <- function(path,
+                                  width = "100%") {
+  if (is.null(path) || is.na(path) || !nzchar(path)) {
+    return("_Figure unavailable._\n\n")
+  }
+
+  if (!file.exists(path)) {
+    return("_Figure unavailable._\n\n")
+  }
+
+  paste0(
+    "<img src=\"",
+    knitr::image_uri(path),
+    "\" style=\"width: ",
+    width,
+    ";\" />\n\n"
+  )
+}
+
+build_growth_figure_manifest <- function(soil_type = NULL,
+                                         include_soil_treatment = NULL,
+                                         species_vec = c("fagus", "quercus"),
+                                         export_dir = alinv_data_path("size_trajectories", "figures", create_dir = TRUE)) {
+  catalog <- growth_metric_catalog()
+  manifest <- vector("list", nrow(catalog) * (1 + 2 * length(species_vec)))
+  idx <- 0L
+
+  dir.create(export_dir, recursive = TRUE, showWarnings = FALSE)
+
+  for (i in seq_len(nrow(catalog))) {
+    spec_i <- catalog[i, ]
+    variant_slug <- growth_metric_slug(spec_i$metric_group[[1]], spec_i$variant_key[[1]])
+
+    ts_plot <- plot_growth_metric_ts(
+      resp_var = spec_i$resp_var[[1]],
+      y_label = spec_i$y_label[[1]],
+      panel_title = spec_i$panel_title[[1]],
+      soil_type = soil_type,
+      include_soil_treatment = include_soil_treatment,
+      drought_bars = TRUE
+    )
+
+    ts_path <- file.path(export_dir, "timeseries", paste0(variant_slug, ".png"))
+    save_growth_plot_png(ts_plot, ts_path)
+
+    idx <- idx + 1L
+    manifest[[idx]] <- tibble::tibble(
+      figure_type = "timeseries",
+      metric_group = spec_i$metric_group[[1]],
+      variant_key = spec_i$variant_key[[1]],
+      resp_var = spec_i$resp_var[[1]],
+      variant_label = spec_i$variant_label[[1]],
+      species = NA_character_,
+      path = ts_path,
+      path_rel = alinv_project_relative_path(ts_path)
+    )
+
+    for (species_i in species_vec) {
+      res_i <- make_temporal_sem_combo(
+        type = "tree",
+        data_name = "growth",
+        resp_var = spec_i$resp_var[[1]],
+        species = species_i,
+        soil_type = soil_type,
+        include_soil_treatment = include_soil_treatment,
+        include_interaction = FALSE
+      )
+
+      temporal_path <- file.path(export_dir, "temporal", paste0(species_i, "-", variant_slug, ".png"))
+      sem_path <- file.path(export_dir, "sem", paste0(species_i, "-", variant_slug, ".png"))
+
+      save_growth_plot_png(res_i$temporal$plot, temporal_path)
+      save_growth_plot_png(res_i$sem$plot, sem_path)
+
+      idx <- idx + 1L
+      manifest[[idx]] <- tibble::tibble(
+        figure_type = "temporal",
+        metric_group = spec_i$metric_group[[1]],
+        variant_key = spec_i$variant_key[[1]],
+        resp_var = spec_i$resp_var[[1]],
+        variant_label = spec_i$variant_label[[1]],
+        species = species_i,
+        path = temporal_path,
+        path_rel = alinv_project_relative_path(temporal_path)
+      )
+
+      idx <- idx + 1L
+      manifest[[idx]] <- tibble::tibble(
+        figure_type = "sem",
+        metric_group = spec_i$metric_group[[1]],
+        variant_key = spec_i$variant_key[[1]],
+        resp_var = spec_i$resp_var[[1]],
+        variant_label = spec_i$variant_label[[1]],
+        species = species_i,
+        path = sem_path,
+        path_rel = alinv_project_relative_path(sem_path)
+      )
+    }
+  }
+
+  dplyr::bind_rows(manifest) %>%
+    dplyr::filter(!is.na(.data$figure_type))
+}
+
+get_growth_figure_path <- function(manifest,
+                                   figure_type,
+                                   resp_var,
+                                   species = NA_character_) {
+  df <- manifest %>%
+    dplyr::filter(
+      .data$figure_type == figure_type,
+      .data$resp_var == resp_var
+    )
+
+  if (is.na(species)) {
+    df <- df %>% dplyr::filter(is.na(.data$species))
+  } else {
+    df <- df %>% dplyr::filter(.data$species == species)
+  }
+
+  if (!nrow(df)) {
+    return(NA_character_)
+  }
+
+  df %>%
+    dplyr::slice_head(n = 1) %>%
+    dplyr::pull(.data$path) %>%
+    .[[1]]
+}

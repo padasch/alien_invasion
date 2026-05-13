@@ -88,13 +88,23 @@ export_growth_plot_bundle(
   size_bundle,
   export_dir = alinv_data_path("size_trajectories", create_dir = TRUE)
 )
+
+size_figures <- build_growth_figure_manifest(
+  soil_type = soil_type,
+  include_soil_treatment = include_soil_treatment
+)
+
+readr::write_csv(
+  size_figures,
+  file.path(alinv_data_path("size_trajectories", create_dir = TRUE), "size-trajectories-figure-manifest.csv")
+)
 ```
 
-# Size Responses
+# Timeseries
 
-The model panels below pair the descriptive timeseries with the temporal GLMM and direct-effect SEM for each species. Positive effect sizes indicate beneficial effects and negative effect sizes indicate harmful effects.
+The within-phase timeseries below include artificial zero-valued restart points at phase boundaries only for plotting. These restart points are not used in the temporal GLMMs, SEMs, caches, or exports for model fitting.
 
-```{r size-response-loop, results='asis', fig.width=9.5, fig.height=5.8}
+```{r size-timeseries-loop, results='asis', echo=FALSE}
 size_specs <- growth_metric_catalog()
 
 for (metric_name in unique(size_specs$metric_group)) {
@@ -107,34 +117,80 @@ for (metric_name in unique(size_specs$metric_group)) {
     spec_i <- specs_metric[i, ]
 
     cat("### ", spec_i$variant_label[[1]], "\n\n", sep = "")
-    print(
-      plot_growth_metric_ts(
-        resp_var = spec_i$resp_var[[1]],
-        y_label = spec_i$y_label[[1]],
-        panel_title = spec_i$panel_title[[1]],
-        soil_type = soil_type,
-        include_soil_treatment = include_soil_treatment,
-        drought_bars = TRUE
+    cat(
+      growth_markdown_image(
+        get_growth_figure_path(
+          manifest = size_figures,
+          figure_type = "timeseries",
+          resp_var = spec_i$resp_var[[1]]
+        )
       )
     )
-    cat("\n")
+  }
+}
+```
+
+# Temporal GLMM
+
+Positive effect sizes indicate beneficial effects and negative effect sizes indicate harmful effects.
+
+```{r size-temporal-loop, results='asis', echo=FALSE}
+for (metric_name in unique(size_specs$metric_group)) {
+  cat("## ", metric_name, "\n\n", sep = "")
+
+  specs_metric <- size_specs %>%
+    dplyr::filter(.data$metric_group == metric_name)
+
+  for (i in seq_len(nrow(specs_metric))) {
+    spec_i <- specs_metric[i, ]
+
+    cat("### ", spec_i$variant_label[[1]], "\n\n", sep = "")
 
     for (species_i in species_vec) {
       cat("#### ", stringr::str_to_title(species_i), "\n\n", sep = "")
-
-      res_i <- make_temporal_sem_combo(
-        type = "tree",
-        data_name = "growth",
-        resp_var = spec_i$resp_var[[1]],
-        species = species_i,
-        soil_type = soil_type,
-        include_soil_treatment = include_soil_treatment,
-        include_interaction = FALSE
+      cat(
+        growth_markdown_image(
+          get_growth_figure_path(
+            manifest = size_figures,
+            figure_type = "temporal",
+            resp_var = spec_i$resp_var[[1]],
+            species = species_i
+          )
+        )
       )
+    }
+  }
+}
+```
 
-      print(res_i$temporal$plot)
-      print(res_i$sem$plot)
-      cat("\n")
+# SEM
+
+The SEM figures below show only the direct-effect SEM workflow used in the other notebooks.
+
+```{r size-sem-loop, results='asis', echo=FALSE}
+for (metric_name in unique(size_specs$metric_group)) {
+  cat("## ", metric_name, "\n\n", sep = "")
+
+  specs_metric <- size_specs %>%
+    dplyr::filter(.data$metric_group == metric_name)
+
+  for (i in seq_len(nrow(specs_metric))) {
+    spec_i <- specs_metric[i, ]
+
+    cat("### ", spec_i$variant_label[[1]], "\n\n", sep = "")
+
+    for (species_i in species_vec) {
+      cat("#### ", stringr::str_to_title(species_i), "\n\n", sep = "")
+      cat(
+        growth_markdown_image(
+          get_growth_figure_path(
+            manifest = size_figures,
+            figure_type = "sem",
+            resp_var = spec_i$resp_var[[1]],
+            species = species_i
+          )
+        )
+      )
     }
   }
 }

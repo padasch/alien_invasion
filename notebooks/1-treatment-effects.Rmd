@@ -523,346 +523,70 @@ print(res_cond_quercus$sem$plot)
 
 ## Growth
 
-The growth chapter is split into absolute size, absolute increment from the first measurement, relative increment from the first measurement, and relative increment to the phase baseline. For the phase-baseline metrics, phase 1 is scaled to the first measurement and later phases are scaled to the last measurement of the previous phase. A dedicated size notebook adds the same analysis for `Volume` and for absolute increments within phase, using the same treatment colors, faceting, and direct-effect SEM panels.
+The growth chapter covers `Height`, `Diameter`, and `Volume`, each split into absolute size, absolute increment from the first measurement, relative increment from the first measurement, absolute increment within phase, and relative increment within phase. For the phase-baseline metrics, phase 1 is scaled to the first measurement and later phases are scaled to the last measurement of the previous phase. The artificial zero-valued restart points are used only to clarify the within-phase timeseries and are never used for temporal GLMMs, SEMs, caches, or heatmap exports.
 
-### Height
-
-#### Absolute size
-
-##### Timeseries
-
-```{r height-abs-ts, fig.width=9.5, fig.height=5.8}
-print(plot_growth_metric_ts(
-  resp_var = "height",
-  y_label = "Height (cm)",
-  panel_title = "Height over time"
-))
-```
-
-##### Fagus
-
-```{r height-abs-fagus, fig.width=9.5, fig.height=5.8}
-res_height_fagus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "height",
-  species = "fagus",
+```{r growth-figure-manifest, include=FALSE}
+growth_specs_main <- growth_metric_catalog()
+growth_figures_main <- build_growth_figure_manifest(
   soil_type = soil_type,
-  include_interaction = FALSE
+  include_soil_treatment = include_soil_treatment
 )
-print(res_height_fagus$temporal$plot)
-print(res_height_fagus$sem$plot)
-```
 
-##### Quercus
-
-```{r height-abs-quercus, fig.width=9.5, fig.height=5.8}
-res_height_quercus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "height",
-  species = "quercus",
-  soil_type = soil_type,
-  include_interaction = FALSE
+readr::write_csv(
+  growth_figures_main,
+  file.path(alinv_data_path("size_trajectories", create_dir = TRUE), "size-trajectories-figure-manifest.csv")
 )
-print(res_height_quercus$temporal$plot)
-print(res_height_quercus$sem$plot)
 ```
 
-#### Absolute increment from first measurement
+```{r growth-response-loop, results='asis', echo=FALSE}
+for (metric_name in unique(growth_specs_main$metric_group)) {
+  cat("### ", metric_name, "\n\n", sep = "")
 
-##### Timeseries
+  specs_metric <- growth_specs_main %>%
+    dplyr::filter(.data$metric_group == metric_name)
 
-```{r height-inc-t0-ts, fig.width=9.5, fig.height=5.8}
-print(plot_growth_metric_ts(
-  resp_var = "height_inc_t0",
-  y_label = "Height increment from first measurement (cm)",
-  panel_title = "Height increment from first measurement"
-))
-```
+  for (i in seq_len(nrow(specs_metric))) {
+    spec_i <- specs_metric[i, ]
 
-##### Fagus
+    cat("#### ", spec_i$variant_label[[1]], "\n\n", sep = "")
+    cat("##### Timeseries\n\n")
+    cat(
+      growth_markdown_image(
+        get_growth_figure_path(
+          manifest = growth_figures_main,
+          figure_type = "timeseries",
+          resp_var = spec_i$resp_var[[1]]
+        )
+      )
+    )
 
-```{r height-inc-t0-fagus, fig.width=9.5, fig.height=5.8}
-res_height_inc_t0_fagus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "height_inc_t0",
-  species = "fagus",
-  soil_type = soil_type,
-  include_interaction = FALSE
-)
-print(res_height_inc_t0_fagus$temporal$plot)
-print(res_height_inc_t0_fagus$sem$plot)
-```
-
-##### Quercus
-
-```{r height-inc-t0-quercus, fig.width=9.5, fig.height=5.8}
-res_height_inc_t0_quercus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "height_inc_t0",
-  species = "quercus",
-  soil_type = soil_type,
-  include_interaction = FALSE
-)
-print(res_height_inc_t0_quercus$temporal$plot)
-print(res_height_inc_t0_quercus$sem$plot)
-```
-
-#### Relative increment to first measurement
-
-##### Timeseries
-
-```{r height-inc-t0-rel-ts, fig.width=9.5, fig.height=5.8}
-print(plot_growth_metric_ts(
-  resp_var = "height_inc_t0_rel",
-  y_label = "Relative height increment from first measurement (-)",
-  panel_title = "Height relative increment to first measurement"
-))
-```
-
-##### Fagus
-
-```{r height-inc-t0-rel-fagus, fig.width=9.5, fig.height=5.8}
-res_height_inc_t0_rel_fagus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "height_inc_t0_rel",
-  species = "fagus",
-  soil_type = soil_type,
-  include_interaction = FALSE
-)
-print(res_height_inc_t0_rel_fagus$temporal$plot)
-print(res_height_inc_t0_rel_fagus$sem$plot)
-```
-
-##### Quercus
-
-```{r height-inc-t0-rel-quercus, fig.width=9.5, fig.height=5.8}
-res_height_inc_t0_rel_quercus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "height_inc_t0_rel",
-  species = "quercus",
-  soil_type = soil_type,
-  include_interaction = FALSE
-)
-print(res_height_inc_t0_rel_quercus$temporal$plot)
-print(res_height_inc_t0_rel_quercus$sem$plot)
-```
-
-#### Relative increment to phase baseline
-
-##### Timeseries
-
-```{r height-inc-phase-rel-ts, fig.width=9.5, fig.height=5.8}
-print(plot_growth_metric_ts(
-  resp_var = "height_inc_phase_rel",
-  y_label = "Relative height increment to phase baseline (-)",
-  panel_title = "Height relative increment to phase baseline"
-))
-```
-
-##### Fagus
-
-```{r height-inc-phase-rel-fagus, fig.width=9.5, fig.height=5.8}
-res_height_inc_phase_rel_fagus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "height_inc_phase_rel",
-  species = "fagus",
-  soil_type = soil_type,
-  include_interaction = FALSE
-)
-print(res_height_inc_phase_rel_fagus$temporal$plot)
-print(res_height_inc_phase_rel_fagus$sem$plot)
-```
-
-##### Quercus
-
-```{r height-inc-phase-rel-quercus, fig.width=9.5, fig.height=5.8}
-res_height_inc_phase_rel_quercus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "height_inc_phase_rel",
-  species = "quercus",
-  soil_type = soil_type,
-  include_interaction = FALSE
-)
-print(res_height_inc_phase_rel_quercus$temporal$plot)
-print(res_height_inc_phase_rel_quercus$sem$plot)
-```
-
-### Diameter
-
-#### Absolute size
-
-##### Timeseries
-
-```{r diameter-abs-ts, fig.width=9.5, fig.height=5.8}
-print(plot_growth_metric_ts(
-  resp_var = "diameter",
-  y_label = "Diameter (mm)",
-  panel_title = "Diameter over time"
-))
-```
-
-##### Fagus
-
-```{r diameter-abs-fagus, fig.width=9.5, fig.height=5.8}
-res_diameter_fagus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "diameter",
-  species = "fagus",
-  soil_type = soil_type,
-  include_interaction = FALSE
-)
-print(res_diameter_fagus$temporal$plot)
-print(res_diameter_fagus$sem$plot)
-```
-
-##### Quercus
-
-```{r diameter-abs-quercus, fig.width=9.5, fig.height=5.8}
-res_diameter_quercus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "diameter",
-  species = "quercus",
-  soil_type = soil_type,
-  include_interaction = FALSE
-)
-print(res_diameter_quercus$temporal$plot)
-print(res_diameter_quercus$sem$plot)
-```
-
-#### Absolute increment from first measurement
-
-##### Timeseries
-
-```{r diameter-inc-t0-ts, fig.width=9.5, fig.height=5.8}
-print(plot_growth_metric_ts(
-  resp_var = "diameter_inc_t0",
-  y_label = "Diameter increment from first measurement (mm)",
-  panel_title = "Diameter increment from first measurement"
-))
-```
-
-##### Fagus
-
-```{r diameter-inc-t0-fagus, fig.width=9.5, fig.height=5.8}
-res_diameter_inc_t0_fagus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "diameter_inc_t0",
-  species = "fagus",
-  soil_type = soil_type,
-  include_interaction = FALSE
-)
-print(res_diameter_inc_t0_fagus$temporal$plot)
-print(res_diameter_inc_t0_fagus$sem$plot)
-```
-
-##### Quercus
-
-```{r diameter-inc-t0-quercus, fig.width=9.5, fig.height=5.8}
-res_diameter_inc_t0_quercus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "diameter_inc_t0",
-  species = "quercus",
-  soil_type = soil_type,
-  include_interaction = FALSE
-)
-print(res_diameter_inc_t0_quercus$temporal$plot)
-print(res_diameter_inc_t0_quercus$sem$plot)
-```
-
-#### Relative increment to first measurement
-
-##### Timeseries
-
-```{r diameter-inc-t0-rel-ts, fig.width=9.5, fig.height=5.8}
-print(plot_growth_metric_ts(
-  resp_var = "diameter_inc_t0_rel",
-  y_label = "Relative diameter increment from first measurement (-)",
-  panel_title = "Diameter relative increment to first measurement"
-))
-```
-
-##### Fagus
-
-```{r diameter-inc-t0-rel-fagus, fig.width=9.5, fig.height=5.8}
-res_diameter_inc_t0_rel_fagus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "diameter_inc_t0_rel",
-  species = "fagus",
-  soil_type = soil_type,
-  include_interaction = FALSE
-)
-print(res_diameter_inc_t0_rel_fagus$temporal$plot)
-print(res_diameter_inc_t0_rel_fagus$sem$plot)
-```
-
-##### Quercus
-
-```{r diameter-inc-t0-rel-quercus, fig.width=9.5, fig.height=5.8}
-res_diameter_inc_t0_rel_quercus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "diameter_inc_t0_rel",
-  species = "quercus",
-  soil_type = soil_type,
-  include_interaction = FALSE
-)
-print(res_diameter_inc_t0_rel_quercus$temporal$plot)
-print(res_diameter_inc_t0_rel_quercus$sem$plot)
-```
-
-#### Relative increment to phase baseline
-
-##### Timeseries
-
-```{r diameter-inc-phase-rel-ts, fig.width=9.5, fig.height=5.8}
-print(plot_growth_metric_ts(
-  resp_var = "diameter_inc_phase_rel",
-  y_label = "Relative diameter increment to phase baseline (-)",
-  panel_title = "Diameter relative increment to phase baseline"
-))
-```
-
-##### Fagus
-
-```{r diameter-inc-phase-rel-fagus, fig.width=9.5, fig.height=5.8}
-res_diameter_inc_phase_rel_fagus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "diameter_inc_phase_rel",
-  species = "fagus",
-  soil_type = soil_type,
-  include_interaction = FALSE
-)
-print(res_diameter_inc_phase_rel_fagus$temporal$plot)
-print(res_diameter_inc_phase_rel_fagus$sem$plot)
-```
-
-##### Quercus
-
-```{r diameter-inc-phase-rel-quercus, fig.width=9.5, fig.height=5.8}
-res_diameter_inc_phase_rel_quercus <- make_temporal_sem_combo(
-  type = "tree",
-  data_name = "growth",
-  resp_var = "diameter_inc_phase_rel",
-  species = "quercus",
-  soil_type = soil_type,
-  include_interaction = FALSE
-)
-print(res_diameter_inc_phase_rel_quercus$temporal$plot)
-print(res_diameter_inc_phase_rel_quercus$sem$plot)
+    for (species_i in species_vec) {
+      cat("##### ", stringr::str_to_title(species_i), "\n\n", sep = "")
+      cat("###### Temporal GLMM\n\n")
+      cat(
+        growth_markdown_image(
+          get_growth_figure_path(
+            manifest = growth_figures_main,
+            figure_type = "temporal",
+            resp_var = spec_i$resp_var[[1]],
+            species = species_i
+          )
+        )
+      )
+      cat("###### SEM\n\n")
+      cat(
+        growth_markdown_image(
+          get_growth_figure_path(
+            manifest = growth_figures_main,
+            figure_type = "sem",
+            resp_var = spec_i$resp_var[[1]],
+            species = species_i
+          )
+        )
+      )
+    }
+  }
+}
 ```
 
 ## Phenology
