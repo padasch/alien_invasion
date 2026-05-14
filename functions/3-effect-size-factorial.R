@@ -517,6 +517,62 @@ temporal_effect_plot_meta <- function(type = "tree",
   )
 }
 
+extract_temporal_glmm_performance <- function(result,
+                                              data_name,
+                                              resp_var,
+                                              target_species,
+                                              soil_type = "both",
+                                              include_soil_treatment = NULL,
+                                              swc_source = "measured") {
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_type
+  )
+
+  mod <- result$model %||% NULL
+  data_df <- result$data_model %||% tibble::tibble()
+
+  safe_stat <- function(expr) {
+    tryCatch(expr, error = function(e) NA_real_)
+  }
+
+  r2_vals <- tryCatch(
+    {
+      if (is.null(mod) || !requireNamespace("MuMIn", quietly = TRUE)) {
+        stop("No model or MuMIn unavailable.")
+      }
+      MuMIn::r.squaredGLMM(mod)
+    },
+    error = function(e) {
+      matrix(
+        c(NA_real_, NA_real_),
+        nrow = 1,
+        dimnames = list(NULL, c("R2m", "R2c"))
+      )
+    }
+  )
+
+  tibble::tibble(
+    model_scope = "Temporal GLMM",
+    data_name = data_name,
+    resp_var = resp_var,
+    species = target_species,
+    soil_filter = soil_type,
+    include_soil_treatment = isTRUE(include_soil_treatment),
+    swc_source = swc_source,
+    n_obs = nrow(data_df),
+    n_boxes = if ("boxlabel" %in% names(data_df)) dplyr::n_distinct(data_df$boxlabel) else NA_integer_,
+    n_trees = if ("tree_id" %in% names(data_df)) dplyr::n_distinct(data_df$tree_id) else NA_integer_,
+    n_dates = if ("date" %in% names(data_df)) dplyr::n_distinct(data_df$date) else NA_integer_,
+    aic = safe_stat(stats::AIC(mod)),
+    bic = safe_stat(stats::BIC(mod)),
+    logLik = safe_stat(as.numeric(stats::logLik(mod))),
+    sigma = safe_stat(stats::sigma(mod)),
+    r2_marginal = r2_vals[1, "R2m"],
+    r2_conditional = r2_vals[1, "R2c"]
+  )
+}
+
 write_temporal_effect_csv_bundle <- function(result,
                                              export_stem,
                                              meta = NULL) {

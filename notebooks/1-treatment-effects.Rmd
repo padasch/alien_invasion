@@ -113,7 +113,7 @@ Both are `lme4::lmer()` models. Treatment effects are decomposed into:
 - **Indirect path** ($a \times b$): treatment → SWC → response
 - **Total effect**: $c' + a \times b$
 
-All numeric predictors are centred and scaled before fitting.
+All numeric predictors are centred and scaled before fitting. For display, response-directed paths are oriented the same way as the temporal GLMM effects and the heatmaps, so positive values indicate beneficial effects and negative values indicate harmful effects. For senescence, higher values are treated as harmful and therefore shown with a negative sign.
 
 For this scenario, soil terms are `r if (include_soil_treatment) "included" else "omitted"` in the SEM.
 
@@ -156,8 +156,109 @@ summary_resp_labels <- c(
   stage = "Phenology stage"
 )
 
+summary_biomass_labels <- c(
+  shoot_biomass = "Shoot biomass",
+  root_biomass = "Root biomass",
+  root_shoot_biomass = "Root:shoot biomass"
+)
+
 summary_sem_grid <- get_data_var_grid() %>%
   dplyr::filter(.data$type == "tree")
+
+collect_summary_glmm_performance <- function() {
+  out <- vector("list", nrow(summary_sem_grid) * length(species_vec))
+  idx <- 0L
+
+  for (k in seq_len(nrow(summary_sem_grid))) {
+    g <- summary_sem_grid[k, ]
+
+    for (species_name in species_vec) {
+      glmm_res <- tryCatch(
+        make_effect_figure_generic(
+          type = g$type,
+          data_name = g$data,
+          resp_var = g$resp_var,
+          target_species = species_name,
+          soil_type = soil_type,
+          include_soil_treatment = include_soil_treatment,
+          swc_source = "measured",
+          force_run = FALSE
+        ),
+        error = function(e) {
+          message("Skipping summary temporal GLMM fit: ", conditionMessage(e))
+          NULL
+        }
+      )
+
+      if (is.null(glmm_res)) next
+
+      idx <- idx + 1L
+      out[[idx]] <- extract_temporal_glmm_performance(
+        result = glmm_res,
+        data_name = g$data,
+        resp_var = g$resp_var,
+        target_species = species_name,
+        soil_type = soil_type,
+        include_soil_treatment = include_soil_treatment,
+        swc_source = "measured"
+      )
+    }
+  }
+
+  dplyr::bind_rows(out) %>%
+    dplyr::mutate(
+      response = dplyr::coalesce(unname(summary_resp_labels[.data$resp_var]), .data$resp_var)
+    )
+}
+
+collect_summary_sem_performance <- function() {
+  out <- vector("list", nrow(summary_sem_grid) * length(species_vec))
+  idx <- 0L
+
+  for (k in seq_len(nrow(summary_sem_grid))) {
+    g <- summary_sem_grid[k, ]
+
+    for (species_name in species_vec) {
+      sem_res <- tryCatch(
+        run_sem_for_trait(
+          type = g$type,
+          data_name = g$data,
+          resp_var = g$resp_var,
+          species = species_name,
+          soil_type = soil_type,
+          include_soil_treatment = include_soil_treatment,
+          include_interaction = FALSE,
+          phase_window = "all",
+          scale_all_numeric = TRUE,
+          swc_source = "measured",
+          force_run = FALSE
+        ),
+        error = function(e) {
+          message("Skipping summary SEM performance fit: ", conditionMessage(e))
+          NULL
+        }
+      )
+
+      if (is.null(sem_res)) next
+
+      idx <- idx + 1L
+      out[[idx]] <- extract_sem_model_performance(
+        result = sem_res,
+        data_name = g$data,
+        resp_var = g$resp_var,
+        species = species_name,
+        soil_type = soil_type,
+        include_soil_treatment = include_soil_treatment,
+        swc_source = "measured"
+      )
+    }
+  }
+
+  dplyr::bind_rows(out) %>%
+    dplyr::mutate(
+      response = dplyr::coalesce(unname(summary_resp_labels[.data$resp_var]), .data$resp_var)
+    )
+}
 
 collect_summary_sem_matrix_data <- function(species_name) {
   out <- vector("list", nrow(summary_sem_grid))
@@ -245,6 +346,49 @@ plot_summary_total_sem_heatmaps <- function() {
   patchwork::wrap_plots(plot_list, ncol = 1)
 }
 
+df_biomass <- wrangle_tree_biomass(file.path(proj_root, "data", "raw", "data_20260309.xlsx"))
+res_fag <- run_biomass_glmm_species(
+  df_biomass,
+  species_keep = "fagus",
+  soil_type = soil_type,
+  include_soil_treatment = include_soil_treatment
+)
+res_que <- run_biomass_glmm_species(
+  df_biomass,
+  species_keep = "quercus",
+  soil_type = soil_type,
+  include_soil_treatment = include_soil_treatment
+)
+
+summary_glmm_performance <- dplyr::bind_rows(
+  collect_summary_glmm_performance(),
+  dplyr::bind_rows(res_fag$performance, res_que$performance) %>%
+    dplyr::transmute(
+      model_scope = "Biomass GLMM",
+      data_name = "biomass",
+      resp_var = .data$metric,
+      response = dplyr::coalesce(unname(summary_biomass_labels[.data$metric]), .data$metric),
+      species = .data$species,
+      soil_filter = soil_type,
+      include_soil_treatment = isTRUE(include_soil_treatment),
+      swc_source = NA_character_,
+      n_obs = .data$n_obs,
+      n_boxes = NA_integer_,
+      n_trees = NA_integer_,
+      n_dates = NA_integer_,
+      aic = .data$AIC,
+      bic = .data$BIC,
+      logLik = NA_real_,
+      sigma = NA_real_,
+      r2_marginal = .data$R2_marginal,
+      r2_conditional = .data$R2_conditional
+    )
+) %>%
+  dplyr::arrange(.data$model_scope, .data$species, .data$response)
+
+summary_sem_performance <- collect_summary_sem_performance() %>%
+  dplyr::arrange(.data$species, .data$response)
+
 ```
 
 ## Temporal Effects
@@ -307,10 +451,57 @@ print(plot_summary_total_sem_heatmaps())
 
 ---
 
+## Model Performance
+
+The tables below summarise the fitted-model performance metrics across the notebook. Temporal and biomass GLMMs report AIC/BIC and marginal/conditional $R^2$ when available. SEMs report the SWC and response submodel AIC/BIC values plus SEM $R^2$ values when `piecewiseSEM` is available in the current R session.
+
+### GLMM Performance
+
+```{r glmm-performance-summary, results='asis'}
+knitr::kable(
+  summary_glmm_performance %>%
+    dplyr::select(model_scope, species, response, n_obs, n_dates, aic, bic, r2_marginal, r2_conditional) %>%
+    dplyr::mutate(
+      dplyr::across(
+        c(aic, bic, r2_marginal, r2_conditional),
+        ~ round(.x, 3)
+      )
+    ),
+  caption = "GLMM performance summary"
+)
+```
+
+### SEM Performance
+
+```{r sem-performance-summary, results='asis'}
+knitr::kable(
+  summary_sem_performance %>%
+    dplyr::select(
+      species, response, n_obs,
+      aic_swc, bic_swc, aic_response, bic_response,
+      r2_swc_marginal, r2_swc_conditional,
+      r2_response_marginal, r2_response_conditional,
+      piecewise_r2_available
+    ) %>%
+    dplyr::mutate(
+      dplyr::across(
+        c(aic_swc, bic_swc, aic_response, bic_response,
+          r2_swc_marginal, r2_swc_conditional,
+          r2_response_marginal, r2_response_conditional),
+        ~ round(.x, 3)
+      )
+    ),
+  caption = "SEM performance summary"
+)
+```
+
+---
+
 ## Biomass
 
-```{r biomass-data}
-df_biomass <- wrangle_tree_biomass(file.path(proj_root, "data", "raw", "data_20260309.xlsx"))
+```{r biomass-data, include=FALSE}
+# Biomass data and fitted biomass GLMMs are initialized in `notebook-helpers`
+# so the summary performance table and the biomass section use the same results.
 ```
 
 ### Fagus Boxplots
@@ -332,7 +523,6 @@ A one-off GLMM (no temporal factor) quantifies the influence of precipitation, c
 ### Fagus
 
 ```{r biomass-glmm-fagus, fig.width=8, fig.height=6}
-res_fag <- run_biomass_glmm_species(df_biomass, species_keep = "fagus")
 print(res_fag$plot)
 ```
 
@@ -345,7 +535,6 @@ knitr::kable(res_fag$performance %>%
 ### Quercus
 
 ```{r biomass-glmm-quercus, fig.width=8, fig.height=6}
-res_que <- run_biomass_glmm_species(df_biomass, species_keep = "quercus")
 print(res_que$plot)
 ```
 

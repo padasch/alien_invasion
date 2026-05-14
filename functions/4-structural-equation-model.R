@@ -751,6 +751,8 @@ build_sem_graph_components <- function(effects_main,
                                        include_interaction = TRUE,
                                        modeled_factors = NULL,
                                        p_sig = 0.1) {
+  display_sign <- alinv_response_display_sign(resp_var)[[1]]
+
   if (!is.null(sem_mod) && requireNamespace("piecewiseSEM", quietly = TRUE)) {
     r2_tbl <- piecewiseSEM::rsquared(sem_mod)
     r2_swc_marg <- r2_tbl$Marginal[r2_tbl$Response == "swc"]
@@ -851,6 +853,7 @@ build_sem_graph_components <- function(effects_main,
     dplyr::transmute(
       from = factor,
       to   = "swc",
+      est_raw = a,
       est  = a,
       se   = se_a,
       p    = p_a,
@@ -861,7 +864,8 @@ build_sem_graph_components <- function(effects_main,
     dplyr::transmute(
       from = factor,
       to   = resp_node,
-      est  = c_direct,
+      est_raw = c_direct,
+      est  = c_direct * display_sign,
       se   = se_c,
       p    = p_c,
       path = "c' (direct)"
@@ -872,7 +876,8 @@ build_sem_graph_components <- function(effects_main,
     dplyr::transmute(
       from = "swc",
       to   = resp_node,
-      est  = b,
+      est_raw = b,
+      est  = b * display_sign,
       se   = se_b,
       p    = p_b,
       path = "b (swc → response)"
@@ -886,6 +891,7 @@ build_sem_graph_components <- function(effects_main,
       dplyr::transmute(
         from = factor,
         to   = "swc",
+        est_raw = a,
         est  = a,
         se   = se_a,
         p    = p_a,
@@ -896,7 +902,8 @@ build_sem_graph_components <- function(effects_main,
       dplyr::transmute(
         from = factor,
         to   = resp_node,
-        est  = c_direct,
+        est_raw = c_direct,
+        est  = c_direct * display_sign,
         se   = se_c,
         p    = p_c,
         path = "interaction direct"
@@ -1137,7 +1144,7 @@ augment_sem_result_for_exports <- function(result,
     modeled_factors <- unique(as.character(result$effects$factor))
   }
 
-  if (is.null(result$sem) || is.null(result$effects) || !nrow(result$effects)) {
+  if (is.null(result$effects) || !nrow(result$effects)) {
     result$modeled_factors <- modeled_factors
     result$graph_nodes <- tibble::tibble()
     result$graph_edges <- tibble::tibble()
@@ -1200,7 +1207,70 @@ augment_sem_result_for_exports <- function(result,
   result$graph_nodes <- graph_bits$nodes
   result$graph_edges <- graph_bits$edges
   result$graph_metrics <- graph_bits$metrics
+  result$plot <- plot_sem_graph_components(
+    nodes_df = graph_bits$nodes,
+    edges_df = graph_bits$edges,
+    metrics_df = graph_bits$metrics
+  )
   result
+}
+
+extract_sem_model_performance <- function(result,
+                                          data_name,
+                                          resp_var,
+                                          species,
+                                          soil_type,
+                                          include_soil_treatment = NULL,
+                                          swc_source = "measured") {
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_type
+  )
+
+  metric_value <- function(col, default = NA_real_) {
+    metrics_df <- result$graph_metrics %||% tibble::tibble()
+    if (!nrow(metrics_df) || !col %in% names(metrics_df)) {
+      return(default)
+    }
+    metrics_df[[col]][[1]]
+  }
+
+  data_df <- result$data %||% tibble::tibble()
+  mod_swc <- result$mod_swc %||% NULL
+  mod_resp <- result$mod_resp %||% NULL
+
+  safe_stat <- function(expr) {
+    tryCatch(expr, error = function(e) NA_real_)
+  }
+
+  tibble::tibble(
+    model_scope = "SEM",
+    data_name = data_name,
+    resp_var = resp_var,
+    species = species,
+    soil_filter = soil_type,
+    include_soil_treatment = isTRUE(include_soil_treatment),
+    swc_source = swc_source,
+    modeled_factors = paste(result$modeled_factors %||% character(), collapse = ", "),
+    n_obs = nrow(data_df),
+    n_boxes = if ("boxlabel" %in% names(data_df)) dplyr::n_distinct(data_df$boxlabel) else NA_integer_,
+    n_trees = if ("tree_id" %in% names(data_df)) dplyr::n_distinct(data_df$tree_id) else NA_integer_,
+    aic_swc = safe_stat(stats::AIC(mod_swc)),
+    bic_swc = safe_stat(stats::BIC(mod_swc)),
+    aic_response = safe_stat(stats::AIC(mod_resp)),
+    bic_response = safe_stat(stats::BIC(mod_resp)),
+    r2_swc_marginal = metric_value("r2_swc_marg"),
+    r2_swc_conditional = metric_value("r2_swc_cond"),
+    r2_response_marginal = metric_value("r2_resp_marg"),
+    r2_response_conditional = metric_value("r2_resp_cond"),
+    piecewise_r2_available = !all(is.na(c(
+      metric_value("r2_swc_marg"),
+      metric_value("r2_swc_cond"),
+      metric_value("r2_resp_marg"),
+      metric_value("r2_resp_cond")
+    ))),
+    note = result$note %||% ""
+  )
 }
 
 write_sem_csv_bundle <- function(result,
