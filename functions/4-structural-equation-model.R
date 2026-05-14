@@ -745,6 +745,8 @@ plot_sem_heatmap_panel <- function(panel_df,
 build_sem_graph_components <- function(effects_main,
                                        effects_int = NULL,
                                        sem_mod,
+                                       mod_swc = NULL,
+                                       mod_resp = NULL,
                                        resp_var,
                                        species,
                                        soil_type,
@@ -766,14 +768,20 @@ build_sem_graph_components <- function(effects_main,
       resp_var, r2_resp_marg, r2_resp_cond
     )
   } else {
-    r2_swc_marg <- NA_real_
-    r2_swc_cond <- NA_real_
-    r2_resp_marg <- NA_real_
-    r2_resp_cond <- NA_real_
-    r2_label <- if (!requireNamespace("piecewiseSEM", quietly = TRUE)) {
-      "R² omitted: package 'piecewiseSEM' unavailable in this R session."
+    r2_swc <- alinv_lmm_r2(mod_swc)
+    r2_resp <- alinv_lmm_r2(mod_resp)
+    r2_swc_marg <- r2_swc$r2_marginal[[1]]
+    r2_swc_cond <- r2_swc$r2_conditional[[1]]
+    r2_resp_marg <- r2_resp$r2_marginal[[1]]
+    r2_resp_cond <- r2_resp$r2_conditional[[1]]
+    r2_label <- if (all(is.na(c(r2_swc_marg, r2_swc_cond, r2_resp_marg, r2_resp_cond)))) {
+      "R² unavailable in this R session."
     } else {
-      ""
+      sprintf(
+        "SWC:    R²(marg) = %.2f, R²(cond) = %.2f\n%s: R²(marg) = %.2f, R²(cond) = %.2f",
+        r2_swc_marg, r2_swc_cond,
+        resp_var, r2_resp_marg, r2_resp_cond
+      )
     }
   }
 
@@ -1059,6 +1067,8 @@ plot_sem_graph_components <- function(nodes_df,
 plot_sem_graph <- function(effects_main,
                            effects_int = NULL,
                            sem_mod,
+                           mod_swc = NULL,
+                           mod_resp = NULL,
                            resp_var,
                            species,
                            soil_type,
@@ -1068,6 +1078,8 @@ plot_sem_graph <- function(effects_main,
     effects_main = effects_main,
     effects_int = effects_int,
     sem_mod = sem_mod,
+    mod_swc = mod_swc,
+    mod_resp = mod_resp,
     resp_var = resp_var,
     species = species,
     soil_type = soil_type,
@@ -1185,6 +1197,8 @@ augment_sem_result_for_exports <- function(result,
     effects_main = result$effects %||% tibble::tibble(),
     effects_int = result$effects_int %||% tibble::tibble(),
     sem_mod = result$sem,
+    mod_swc = result$mod_swc %||% NULL,
+    mod_resp = result$mod_resp %||% NULL,
     resp_var = resp_var,
     species = species,
     soil_type = soil_type,
@@ -1238,6 +1252,8 @@ extract_sem_model_performance <- function(result,
   data_df <- result$data %||% tibble::tibble()
   mod_swc <- result$mod_swc %||% NULL
   mod_resp <- result$mod_resp %||% NULL
+  r2_swc <- alinv_lmm_r2(mod_swc)
+  r2_resp <- alinv_lmm_r2(mod_resp)
 
   safe_stat <- function(expr) {
     tryCatch(expr, error = function(e) NA_real_)
@@ -1259,15 +1275,15 @@ extract_sem_model_performance <- function(result,
     bic_swc = safe_stat(stats::BIC(mod_swc)),
     aic_response = safe_stat(stats::AIC(mod_resp)),
     bic_response = safe_stat(stats::BIC(mod_resp)),
-    r2_swc_marginal = metric_value("r2_swc_marg"),
-    r2_swc_conditional = metric_value("r2_swc_cond"),
-    r2_response_marginal = metric_value("r2_resp_marg"),
-    r2_response_conditional = metric_value("r2_resp_cond"),
+    r2_swc_marginal = dplyr::coalesce(metric_value("r2_swc_marg"), r2_swc$r2_marginal[[1]]),
+    r2_swc_conditional = dplyr::coalesce(metric_value("r2_swc_cond"), r2_swc$r2_conditional[[1]]),
+    r2_response_marginal = dplyr::coalesce(metric_value("r2_resp_marg"), r2_resp$r2_marginal[[1]]),
+    r2_response_conditional = dplyr::coalesce(metric_value("r2_resp_cond"), r2_resp$r2_conditional[[1]]),
     piecewise_r2_available = !all(is.na(c(
-      metric_value("r2_swc_marg"),
-      metric_value("r2_swc_cond"),
-      metric_value("r2_resp_marg"),
-      metric_value("r2_resp_cond")
+      dplyr::coalesce(metric_value("r2_swc_marg"), r2_swc$r2_marginal[[1]]),
+      dplyr::coalesce(metric_value("r2_swc_cond"), r2_swc$r2_conditional[[1]]),
+      dplyr::coalesce(metric_value("r2_resp_marg"), r2_resp$r2_marginal[[1]]),
+      dplyr::coalesce(metric_value("r2_resp_cond"), r2_resp$r2_conditional[[1]])
     ))),
     note = result$note %||% ""
   )
@@ -1452,7 +1468,7 @@ run_sem_for_trait <- function(type = "tree",
       data = df_sem_ready
     )
   } else {
-    sem_note <- "Package 'piecewiseSEM' unavailable; SEM path coefficients were computed from the fitted submodels, but SEM R² summaries are omitted."
+    sem_note <- "Package 'piecewiseSEM' unavailable; SEM path coefficients were computed from the fitted submodels and submodel R² values were estimated directly from the fitted mixed models."
     message(sem_note)
     NULL
   }
@@ -1506,6 +1522,8 @@ run_sem_for_trait <- function(type = "tree",
     effects_main = effects_main,
     effects_int = effects_int,
     sem_mod = sem_mod,
+    mod_swc = mod_swc,
+    mod_resp = mod_resp,
     resp_var = resp_var,
     species = species,
     soil_type = soil_type,
@@ -1517,6 +1535,8 @@ run_sem_for_trait <- function(type = "tree",
     effects_main = effects_main,
     effects_int = effects_int,
     sem_mod = sem_mod,
+    mod_swc = mod_swc,
+    mod_resp = mod_resp,
     resp_var = resp_var,
     species = species,
     soil_type = soil_type,

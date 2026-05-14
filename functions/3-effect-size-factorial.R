@@ -536,21 +536,7 @@ extract_temporal_glmm_performance <- function(result,
     tryCatch(expr, error = function(e) NA_real_)
   }
 
-  r2_vals <- tryCatch(
-    {
-      if (is.null(mod) || !requireNamespace("MuMIn", quietly = TRUE)) {
-        stop("No model or MuMIn unavailable.")
-      }
-      MuMIn::r.squaredGLMM(mod)
-    },
-    error = function(e) {
-      matrix(
-        c(NA_real_, NA_real_),
-        nrow = 1,
-        dimnames = list(NULL, c("R2m", "R2c"))
-      )
-    }
-  )
+  r2_vals <- alinv_lmm_r2(mod)
 
   tibble::tibble(
     model_scope = "Temporal GLMM",
@@ -568,8 +554,8 @@ extract_temporal_glmm_performance <- function(result,
     bic = safe_stat(stats::BIC(mod)),
     logLik = safe_stat(as.numeric(stats::logLik(mod))),
     sigma = safe_stat(stats::sigma(mod)),
-    r2_marginal = r2_vals[1, "R2m"],
-    r2_conditional = r2_vals[1, "R2c"]
+    r2_marginal = r2_vals$r2_marginal[[1]],
+    r2_conditional = r2_vals$r2_conditional[[1]]
   )
 }
 

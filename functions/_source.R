@@ -173,6 +173,71 @@ alinv_empty_plot <- function(title, subtitle = NULL) {
     )
 }
 
+alinv_lmm_r2 <- function(mod) {
+  if (is.null(mod)) {
+    return(tibble::tibble(r2_marginal = NA_real_, r2_conditional = NA_real_))
+  }
+
+  if (requireNamespace("performance", quietly = TRUE)) {
+    r2_obj <- tryCatch(
+      performance::r2_nakagawa(mod),
+      error = function(e) NULL
+    )
+    if (!is.null(r2_obj)) {
+      return(tibble::tibble(
+        r2_marginal = unname(r2_obj$R2_marginal %||% NA_real_),
+        r2_conditional = unname(r2_obj$R2_conditional %||% NA_real_)
+      ))
+    }
+  }
+
+  if (requireNamespace("MuMIn", quietly = TRUE)) {
+    r2_obj <- tryCatch(
+      MuMIn::r.squaredGLMM(mod),
+      error = function(e) NULL
+    )
+    if (!is.null(r2_obj)) {
+      return(tibble::tibble(
+        r2_marginal = unname(r2_obj[1, "R2m"]),
+        r2_conditional = unname(r2_obj[1, "R2c"])
+      ))
+    }
+  }
+
+  pred_fixed <- tryCatch(
+    stats::predict(mod, re.form = NA),
+    error = function(e) NULL
+  )
+
+  var_fixed <- if (is.null(pred_fixed)) {
+    NA_real_
+  } else {
+    stats::var(as.numeric(pred_fixed), na.rm = TRUE)
+  }
+
+  vc_df <- tryCatch(
+    as.data.frame(lme4::VarCorr(mod)),
+    error = function(e) NULL
+  )
+
+  if (is.null(vc_df) || !nrow(vc_df) || !is.finite(var_fixed)) {
+    return(tibble::tibble(r2_marginal = NA_real_, r2_conditional = NA_real_))
+  }
+
+  var_random <- sum(vc_df$vcov[vc_df$grp != "Residual"], na.rm = TRUE)
+  var_residual <- vc_df$vcov[vc_df$grp == "Residual"][1]
+  total_var <- var_fixed + var_random + var_residual
+
+  if (!is.finite(total_var) || total_var <= 0) {
+    return(tibble::tibble(r2_marginal = NA_real_, r2_conditional = NA_real_))
+  }
+
+  tibble::tibble(
+    r2_marginal = var_fixed / total_var,
+    r2_conditional = (var_fixed + var_random) / total_var
+  )
+}
+
 ALINV_RESPONSE_DISPLAY_SIGN <- c(
   percent_senesced = -1
 )

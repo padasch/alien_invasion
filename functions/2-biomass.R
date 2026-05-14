@@ -234,14 +234,14 @@ extract_biomass_effects <- function(fit_obj) {
 extract_model_performance <- function(fit_obj) {
 
   mod <- fit_obj$model
-  r2  <- tryCatch(MuMIn::r.squaredGLMM(mod), error = function(e) matrix(c(NA, NA), nrow = 1, dimnames = list(NULL, c("R2m", "R2c"))))
+  r2  <- alinv_lmm_r2(mod)
   tibble::tibble(
     metric   = fit_obj$metric,
     species  = fit_obj$species,
     AIC      = stats::AIC(mod),
     BIC      = stats::BIC(mod),
-    R2_marginal    = r2[1, "R2m"],
-    R2_conditional = r2[1, "R2c"],
+    R2_marginal    = r2$r2_marginal[[1]],
+    R2_conditional = r2$r2_conditional[[1]],
     n_obs    = nrow(fit_obj$data)
   )
 }
