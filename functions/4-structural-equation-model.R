@@ -1209,12 +1209,14 @@ augment_sem_result_for_exports <- function(result,
   result$effects <- orient_effect_table(result$effects)
   result$effects_int <- orient_effect_table(result$effects_int)
   if (!is.null(result$matrix_data) && nrow(result$matrix_data)) {
-    result$matrix_data <- result$matrix_data %>%
-      alinv_apply_response_orientation(
-        resp_col = "response_var",
-        estimate_col = "estimate",
-        estimate_sig_col = "estimate_sig"
-      )
+    if (!"estimate_raw" %in% names(result$matrix_data)) {
+      result$matrix_data <- result$matrix_data %>%
+        alinv_apply_response_orientation(
+          resp_col = "response_var",
+          estimate_col = "estimate",
+          estimate_sig_col = "estimate_sig"
+        )
+    }
     result$matrix_overarching <- summarize_sem_matrix_significant_mean(result$matrix_data)
   }
   result$modeled_factors <- modeled_factors
