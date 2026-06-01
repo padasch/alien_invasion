@@ -238,9 +238,7 @@ alinv_lmm_r2 <- function(mod) {
   )
 }
 
-ALINV_RESPONSE_DISPLAY_SIGN <- c(
-  percent_senesced = -1
-)
+ALINV_RESPONSE_DISPLAY_SIGN <- stats::setNames(numeric(), character())
 
 alinv_response_display_sign <- function(resp_var) {
   signs <- ALINV_RESPONSE_DISPLAY_SIGN[as.character(resp_var)]
@@ -312,6 +310,38 @@ alinv_apply_response_orientation <- function(df,
   }
 
   df
+}
+
+alinv_response_labels <- function() {
+  c(
+    chl = "Chlorophyll",
+    condition = "Condition",
+    height = "Height",
+    diameter = "Diameter",
+    volume = "Volume",
+    height_inc_t0 = "Height inc. t0",
+    diameter_inc_t0 = "Diameter inc. t0",
+    volume_inc_t0 = "Volume inc. t0",
+    height_inc_t0_rel = "Height rel. inc t0",
+    diameter_inc_t0_rel = "Diameter rel. inc t0",
+    volume_inc_t0_rel = "Volume rel. inc t0",
+    height_inc_phase_abs = "Height inc. phase",
+    diameter_inc_phase_abs = "Diameter inc. phase",
+    volume_inc_phase_abs = "Volume inc. phase",
+    height_inc_phase_rel = "Height rel. inc phase",
+    diameter_inc_phase_rel = "Diameter rel. inc phase",
+    volume_inc_phase_rel = "Volume rel. inc phase",
+    qy = "Quantum yield",
+    remaining_green = "Remaining green (%)",
+    chlavg = "Senescence chlorophyll",
+    stage = "Phenology stage"
+  )
+}
+
+alinv_response_label <- function(resp_var) {
+  labels <- alinv_response_labels()
+  out <- unname(labels[as.character(resp_var)])
+  ifelse(is.na(out) | !nzchar(out), as.character(resp_var), out)
 }
 
 ALINV_SOIL_LABELS <- c(
@@ -777,6 +807,12 @@ get_data <- function(type = c("tree", "box"), data_name, with_meta = TRUE, path 
   
   # Load data
   df <- read_csv(file.path(path, data_file), show_col_types = FALSE)
+
+  if (identical(type, "tree") && identical(data_name, "senescence") &&
+      "percent_senesced" %in% names(df) && !"remaining_green" %in% names(df)) {
+    df <- df %>%
+      dplyr::mutate(remaining_green = 100 - .data$percent_senesced)
+  }
   
   # Optionally attach meta
   if (with_meta) {
@@ -929,7 +965,7 @@ get_data_var_grid <- function(){
     "tree",  "growth",       "diameter_inc_phase_rel",
     "tree",  "growth",       "volume_inc_phase_rel",
     "tree",  "phenology",    "stage",
-    "tree",  "senescence",   "percent_senesced",
+    "tree",  "senescence",   "remaining_green",
     "tree",  "senescence",   "chlavg",
     "tree",  "quantum_yield","qy",
     "box",   "respiration",  "co2",

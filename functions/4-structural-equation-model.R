@@ -754,6 +754,7 @@ build_sem_graph_components <- function(effects_main,
                                        modeled_factors = NULL,
                                        p_sig = 0.1) {
   display_sign <- alinv_response_display_sign(resp_var)[[1]]
+  resp_label <- alinv_response_label(resp_var)
 
   if (!is.null(sem_mod) && requireNamespace("piecewiseSEM", quietly = TRUE)) {
     r2_tbl <- piecewiseSEM::rsquared(sem_mod)
@@ -765,7 +766,7 @@ build_sem_graph_components <- function(effects_main,
     r2_label <- sprintf(
       "SWC:    R²(marg) = %.2f, R²(cond) = %.2f\n%s: R²(marg) = %.2f, R²(cond) = %.2f",
       r2_swc_marg, r2_swc_cond,
-      resp_var, r2_resp_marg, r2_resp_cond
+      resp_label, r2_resp_marg, r2_resp_cond
     )
   } else {
     r2_swc <- alinv_lmm_r2(mod_swc)
@@ -780,7 +781,7 @@ build_sem_graph_components <- function(effects_main,
       sprintf(
         "SWC:    R²(marg) = %.2f, R²(cond) = %.2f\n%s: R²(marg) = %.2f, R²(cond) = %.2f",
         r2_swc_marg, r2_swc_cond,
-        resp_var, r2_resp_marg, r2_resp_cond
+        resp_label, r2_resp_marg, r2_resp_cond
       )
     }
   }
@@ -856,6 +857,10 @@ build_sem_graph_components <- function(effects_main,
   )
 
   nodes <- dplyr::bind_rows(nodes_main, nodes_int, node_swc, node_resp)
+  nodes <- nodes %>%
+    dplyr::mutate(
+      label = dplyr::if_else(.data$node == resp_var, resp_label, .data$node)
+    )
 
   edges_a <- effects_main %>%
     dplyr::transmute(
@@ -962,7 +967,7 @@ build_sem_graph_components <- function(effects_main,
     )
 
   title_txt <- paste0(
-    "SEM: ", resp_var,
+    "SEM: ", resp_label,
     " (species: ", species,
     ", soil: ", soil_type,
     if (include_interaction) ", with robinia:extreme" else ", no robinia:extreme",
@@ -1026,7 +1031,7 @@ plot_sem_graph_components <- function(nodes_df,
     ) +
     geom_label(
       data = nodes_df,
-      aes(x = x, y = y, label = node),
+      aes(x = x, y = y, label = dplyr::coalesce(.data$label, .data$node)),
       size = 3.5,
       label.size = 0.3,
       label.r = grid::unit(0.15, "lines"),
@@ -1157,6 +1162,7 @@ augment_sem_result_for_exports <- function(result,
   }
 
   if (is.null(result$effects) || !nrow(result$effects)) {
+    resp_label <- alinv_response_label(resp_var)
     result$modeled_factors <- modeled_factors
     result$graph_nodes <- tibble::tibble()
     result$graph_edges <- tibble::tibble()
@@ -1171,7 +1177,7 @@ augment_sem_result_for_exports <- function(result,
       r2_resp_marg = NA_real_,
       r2_resp_cond = NA_real_,
       r2_label = "",
-      title = paste0("SEM: ", resp_var, " (species: ", species, ", soil: ", soil_type, ")")
+      title = paste0("SEM: ", resp_label, " (species: ", species, ", soil: ", soil_type, ")")
     )
     return(result)
   }
@@ -1318,6 +1324,7 @@ run_sem_for_trait <- function(type = "tree",
                               aic_improve = 2,
                               swc_source = "measured",
                               force_run = FALSE) {
+  resp_label <- alinv_response_label(resp_var)
   include_soil_treatment <- alinv_resolve_include_soil_treatment(
     include_soil_treatment = include_soil_treatment,
     soil_filter = soil_type
@@ -1387,7 +1394,7 @@ run_sem_for_trait <- function(type = "tree",
       note = "No SEM data available after filtering.",
       plot = alinv_empty_plot(
         title = "No SEM data",
-        subtitle = paste0("No model rows available for ", species, " / ", data_name, " / ", resp_var)
+        subtitle = paste0("No model rows available for ", species, " / ", data_name, " / ", resp_label)
       )
     )
     result <- augment_sem_result_for_exports(
@@ -1434,7 +1441,7 @@ run_sem_for_trait <- function(type = "tree",
       note = "No SEM rows remained after preparation.",
       plot = alinv_empty_plot(
         title = "No SEM data",
-        subtitle = paste0("No analyzable rows remained for ", species, " / ", data_name, " / ", resp_var)
+        subtitle = paste0("No analyzable rows remained for ", species, " / ", data_name, " / ", resp_label)
       )
     )
     result <- augment_sem_result_for_exports(

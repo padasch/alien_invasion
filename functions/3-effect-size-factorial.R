@@ -30,7 +30,7 @@ if (requireNamespace("emmeans", quietly = TRUE)) {
     "height_inc_phase_rel", "diameter_inc_phase_rel", "volume_inc_phase_rel"
   ),
   quantum_yield = "qy",
-  senescence    = c("percent_senesced", "chlavg"),
+  senescence    = c("remaining_green", "chlavg"),
   phenology     = "doy"                          # special handling below
 )
 # ---------------------- HELPERS --------------------------------

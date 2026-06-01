@@ -179,10 +179,13 @@ df <- read_excel(fp, sheet = "Senescence") %>%
     chl1 = parse_number(as.character(Chl1)),
     chl2 = parse_number(as.character(Chl2)),
     percent_senesced = parse_number(as.character(`%`)),
+    # Derived analysis variable so larger values always indicate a more
+    # favorable canopy state in downstream inferential models.
+    remaining_green = 100 - percent_senesced,
     comment = as.character(Comment),
     chlavg = rowMeans(cbind(chl1, chl2), na.rm = TRUE)
   ) %>%
-  select(tree_id, date, percent_senesced, chl1, chl2, chlavg, comment) %>%
+  select(tree_id, date, percent_senesced, remaining_green, chl1, chl2, chlavg, comment) %>%
   arrange(tree_id, date) |>
   filter(!is.na(tree_id))
 

@@ -93,7 +93,7 @@ For each tree-level response variable, a linear mixed-effects model is fitted ac
 
 $$y_{ijk} = \mu + \alpha_t + (\alpha_t \times \text{Robinia})_{j} + (\alpha_t \times \text{Precipitation})_{j} + (\alpha_t \times \text{Culture})_{j} + (\alpha_t \times \text{Soiltype})_{j} + b_{\text{box}} + b_{\text{tree}} + \varepsilon_{ijk}$$
 
-where $\alpha_t$ is a date fixed effect and treatment effects are estimated per date via date×treatment interactions. Random intercepts are fitted for box ($b_{\text{box}}$) and tree ($b_{\text{tree}}$). Treatment contrasts at each date are extracted as `treatment - baseline`, then oriented for display so positive values indicate beneficial effects and negative values indicate harmful effects. For senescence, higher values are treated as unfavorable and therefore shown with a negative sign.
+where $\alpha_t$ is a date fixed effect and treatment effects are estimated per date via date×treatment interactions. Random intercepts are fitted for box ($b_{\text{box}}$) and tree ($b_{\text{tree}}$). Treatment contrasts at each date are extracted as `treatment - baseline`, then oriented for display so positive values indicate beneficial effects and negative values indicate harmful effects.
 
 For this scenario, soil terms are `r if (include_soil_treatment) "included" else "omitted"` in the temporal GLMM.
 
@@ -113,7 +113,7 @@ Both are `lme4::lmer()` models. Treatment effects are decomposed into:
 - **Indirect path** ($a \times b$): treatment → SWC → response
 - **Total effect**: $c' + a \times b$
 
-All numeric predictors are centred and scaled before fitting. For display, response-directed paths are oriented the same way as the temporal GLMM effects and the heatmaps, so positive values indicate beneficial effects and negative values indicate harmful effects. For senescence, higher values are treated as harmful and therefore shown with a negative sign.
+All numeric predictors are centred and scaled before fitting. For display, response-directed paths are oriented the same way as the temporal GLMM effects and the heatmaps, so positive values indicate beneficial effects and negative values indicate harmful effects.
 
 For this scenario, soil terms are `r if (include_soil_treatment) "included" else "omitted"` in the SEM.
 
@@ -132,29 +132,7 @@ For this scenario, soil terms are `r if (include_soil_treatment) "included" else
 # Summary
 
 ```{r notebook-helpers, include=FALSE}
-summary_resp_labels <- c(
-  chl = "Chlorophyll",
-  condition = "Condition",
-  height = "Height",
-  diameter = "Diameter",
-  volume = "Volume",
-  height_inc_t0 = "Height inc. t0",
-  diameter_inc_t0 = "Diameter inc. t0",
-  volume_inc_t0 = "Volume inc. t0",
-  height_inc_t0_rel = "Height rel. inc t0",
-  diameter_inc_t0_rel = "Diameter rel. inc t0",
-  volume_inc_t0_rel = "Volume rel. inc t0",
-  height_inc_phase_abs = "Height inc. phase",
-  diameter_inc_phase_abs = "Diameter inc. phase",
-  volume_inc_phase_abs = "Volume inc. phase",
-  height_inc_phase_rel = "Height rel. inc phase",
-  diameter_inc_phase_rel = "Diameter rel. inc phase",
-  volume_inc_phase_rel = "Volume rel. inc phase",
-  qy = "Quantum yield",
-  percent_senesced = "Senescence (%)",
-  chlavg = "Senescence chlorophyll",
-  stage = "Phenology stage"
-)
+summary_resp_labels <- alinv_response_labels()
 
 summary_biomass_labels <- c(
   shoot_biomass = "Shoot biomass",
@@ -443,7 +421,7 @@ if (nrow(all_eff) > 0) {
 
 ## Total SEM Effects
 
-These heatmaps summarise the total SEM effect of each treatment on each response variable, using the shared color scale from the full-data SEM fits in the current scenario. Positive values indicate beneficial effects and negative values indicate harmful effects; higher senescence is treated as harmful.
+These heatmaps summarise the total SEM effect of each treatment on each response variable, using the shared color scale from the full-data SEM fits in the current scenario. Positive values indicate beneficial effects and negative values indicate harmful effects. For senescence, the inferential response is `Remaining green (%) = 100 - Senescence (%)`, so negative values indicate less green canopy remaining at a given date.
 
 ```{r total-sem-effects-summary, fig.width=12, fig.height=8}
 print(plot_summary_total_sem_heatmaps())
@@ -902,11 +880,13 @@ plot_ts_senescence_percent(filter_soiltype = soil_type,
 
 #### Fagus
 
+The raw timeseries above shows measured `Senescence (%)`. The temporal GLMM and SEM panels below instead model `Remaining green (%) = 100 - Senescence (%)`, so negative effects indicate less green canopy remaining at a given date, consistent with earlier or faster senescence progression. This is not a true senescence-onset timing model.
+
 ```{r senescence-pct-fagus-panels, fig.width=9.5, fig.height=5.8}
 res_sen_pct_fagus <- make_temporal_sem_combo(
   type = "tree",
   data_name = "senescence",
-  resp_var = "percent_senesced",
+  resp_var = "remaining_green",
   species = "fagus",
   soil_type = soil_type,
   include_interaction = FALSE
@@ -921,7 +901,7 @@ print(res_sen_pct_fagus$sem$plot)
 res_sen_pct_quercus <- make_temporal_sem_combo(
   type = "tree",
   data_name = "senescence",
-  resp_var = "percent_senesced",
+  resp_var = "remaining_green",
   species = "quercus",
   soil_type = soil_type,
   include_interaction = FALSE

@@ -1,5 +1,10 @@
 #!/usr/bin/env Rscript
 
+renv_lib <- Sys.glob(file.path("renv", "library", "*", "R-*", "*"))
+if (length(renv_lib)) {
+  .libPaths(c(normalizePath(renv_lib[[1]], winslash = "/", mustWork = TRUE), .libPaths()))
+}
+
 suppressPackageStartupMessages({
   library(rmarkdown)
 })
