@@ -59,21 +59,14 @@ plot_tree_biomass_treatments <- function(df_biomass,
       include_soil_treatment = include_soil_treatment
     ) %>%
     mutate(
-      precipitation = factor(precipitation, levels = c("control", "drought")),
-      culture = factor(culture, levels = c("mono", "mixed")),
-      robinia = factor(robinia, levels = c("without-robinia", "with-robinia")),
+      precipitation = factor(precipitation, levels = alinv_factor_levels("precipitation")),
+      culture = factor(culture, levels = alinv_factor_levels("culture")),
+      robinia = factor(robinia, levels = alinv_factor_levels("robinia")),
       soiltype = alinv_relevel_soiltype(soiltype)
     )
 
-  robinia_labels <- c(
-    `without-robinia` = "Without robinia",
-    `with-robinia` = "With robinia"
-  )
-
-  soiltype_labels <- c(
-    `inoc-beech` = "drier soil (beech soil)",
-    `inoc-robinia` = "wetter soil (robinia soil)"
-  )
+  robinia_labels <- alinv_level_labels("robinia")
+  soiltype_labels <- alinv_level_labels("soiltype")
 
   metric_info <- list(
     root_biomass       = list(col = "root_biomass",       title = "Root biomass (g)"),
@@ -178,9 +171,9 @@ fit_biomass_glmm <- function(df_biomass,
       include_soil_treatment = include_soil_treatment
     ) %>%
     mutate(
-      precipitation = factor(precipitation, levels = c("control", "drought")),
-      culture       = factor(culture,       levels = c("mono", "mixed")),
-      robinia       = factor(robinia,       levels = c("without-robinia", "with-robinia")),
+      precipitation = factor(precipitation, levels = alinv_factor_levels("precipitation")),
+      culture       = factor(culture,       levels = alinv_factor_levels("culture")),
+      robinia       = factor(robinia,       levels = alinv_factor_levels("robinia")),
       soiltype_f    = alinv_relevel_soiltype(soiltype)
     ) %>%
     rename(y = !!metric) %>%
@@ -222,11 +215,22 @@ extract_biomass_effects <- function(fit_obj) {
 
 # Readable labels for GLMM coefficient names
 .rename_glmm_terms <- function(terms) {
-  lookup <- c(
-    "precipitationdrought"  = "Precipitation: Control \u2192 Drought",
-    "culturemixed"          = "Culture: Mono \u2192 Mixed",
-    "robiniawith-robinia"   = "Robinia: Without \u2192 With",
-    "soiltype_finoc-beech" = "Soil: wetter soil (robinia soil) \u2192 drier soil (beech soil)"
+  cfg <- ALINV_TREATMENT_CONFIG
+  coef_names <- c(
+    paste0("precipitation", cfg$treatment_level[cfg$effect == "precipitation"]),
+    paste0("culture", cfg$treatment_level[cfg$effect == "culture"]),
+    paste0("robinia", cfg$treatment_level[cfg$effect == "robinia"]),
+    paste0("soiltype_f", cfg$treatment_level[cfg$effect == "soiltype"])
+  )
+  names(coef_names) <- c("precipitation", "culture", "robinia", "soiltype")
+  lookup <- stats::setNames(
+    c(
+      alinv_treatment_label_map("heatmap")[["precipitation"]],
+      alinv_treatment_label_map("heatmap")[["culture"]],
+      alinv_treatment_label_map("heatmap")[["robinia"]],
+      alinv_treatment_label_map("heatmap")[["soiltype"]]
+    ),
+    coef_names
   )
   ifelse(terms %in% names(lookup), lookup[terms], terms)
 }

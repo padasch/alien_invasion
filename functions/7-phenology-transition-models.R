@@ -7,33 +7,19 @@ suppressPackageStartupMessages({
 
 phenology_transition_treatment_info <- function(include_soil_treatment = NULL,
                                                 soil_filter = NULL) {
-  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+  alinv_treatment_config(
     include_soil_treatment = include_soil_treatment,
     soil_filter = soil_filter
-  )
-
-  info <- tibble::tribble(
-    ~effect,           ~baseline_level,    ~treatment_level,   ~treatment_label, ~contrast_label,                 ~plot_order,
-    "precipitation",   "control",          "drought",          "Drought",        "drought - control",             1L,
-    "robinia",         "without-robinia",  "with-robinia",     "With robinia",   "with robinia - without robinia", 2L,
-    "culture",         "mono",             "mixed",            "Mixed culture",  "mixed - mono",                  3L
-  )
-
-  if (isTRUE(include_soil_treatment)) {
-    info <- dplyr::bind_rows(
-      info,
-      tibble::tibble(
-        effect = "soiltype",
-        baseline_level = "inoc-robinia",
-        treatment_level = "inoc-beech",
-        treatment_label = "Drier soil",
-        contrast_label = "drier soil - wetter soil",
-        plot_order = 4L
-      )
+  ) %>%
+    dplyr::filter(.data$effect != "extreme_event") %>%
+    dplyr::transmute(
+      effect = .data$effect,
+      baseline_level = .data$baseline_level,
+      treatment_level = .data$treatment_level,
+      treatment_label = .data$short_label,
+      contrast_label = .data$contrast_label,
+      plot_order = .data$plot_order
     )
-  }
-
-  info
 }
 
 phenology_transition_cache_path <- function(species_keep,
@@ -92,9 +78,9 @@ prepare_phenology_transition_data <- function(species_keep,
         paste0("Stage ", .data$stage),
         levels = paste0("Stage ", stages_keep)
       ),
-      precipitation = factor(.data$precipitation, levels = c("control", "drought")),
-      robinia = factor(.data$robinia, levels = c("without-robinia", "with-robinia")),
-      culture = factor(.data$culture, levels = c("mono", "mixed")),
+      precipitation = factor(.data$precipitation, levels = alinv_factor_levels("precipitation")),
+      robinia = factor(.data$robinia, levels = alinv_factor_levels("robinia")),
+      culture = factor(.data$culture, levels = alinv_factor_levels("culture")),
       soiltype = alinv_relevel_soiltype(.data$soiltype)
     ) %>%
     droplevels()

@@ -2,10 +2,10 @@
 
 PLOT_STYLE <- list(
   levels = list(
-    precipitation = c("control","drought"),
-    culture       = c("mono","mixed"),
-    robinia       = c("without-robinia","with-robinia"),
-    species       = c("fagus","quercus","robinia"),
+    precipitation = alinv_factor_levels("precipitation"),
+    culture       = alinv_factor_levels("culture"),
+    robinia       = alinv_factor_levels("robinia"),
+    species       = alinv_factor_levels("species"),
     soiltype      = c("inoc_robinia","inoc_beech")
   ),
   colors = list(
@@ -103,20 +103,16 @@ scale_culture_alpha <- function(name = "Culture") {
 
 # -------- soiltype display labels --------
 SOILTYPE_LABELS <- c(
-  inoc_beech   = "drier soil (beech soil)",
-  inoc_robinia = "wetter soil (robinia soil)",
-  `inoc-beech`   = "drier soil (beech soil)",
-  `inoc-robinia` = "wetter soil (robinia soil)"
+  alinv_level_labels("soiltype")
 )
 
 # -------- common facets --------
 facet_tree <- function() {
   facet_grid(
-    rows = vars(species),
-    cols = vars(robinia),
-    labeller = labeller(
-      robinia = c(`without-robinia`="without robinia",
-                  `with-robinia`   ="with robinia")
+      rows = vars(species),
+      cols = vars(robinia),
+      labeller = labeller(
+      robinia = alinv_level_labels("robinia")
     )
   )
 }
@@ -126,8 +122,7 @@ facet_soil <- function(show_soiltype = TRUE) {
       rows = vars(soiltype),
       cols = vars(robinia),
       labeller = labeller(
-        robinia  = c(`without-robinia`="without robinia",
-                     `with-robinia`   ="with robinia"),
+        robinia  = alinv_level_labels("robinia"),
         soiltype = SOILTYPE_LABELS
       )
     )
@@ -135,8 +130,7 @@ facet_soil <- function(show_soiltype = TRUE) {
     facet_grid(
       . ~ robinia,
       labeller = labeller(
-        robinia = c(`without-robinia`="without robinia",
-                    `with-robinia`   ="with robinia")
+        robinia = alinv_level_labels("robinia")
       )
     )
   }
@@ -731,9 +725,9 @@ plot_soil_mp <- function(df_soil,
     dplyr::mutate(
       soil_mp_value = if (identical(value_scale, "log")) -log10(-.data$soil_mp) else .data$soil_mp,
       soiltype = gsub("-", "_", .data$soiltype),
-      robinia = factor(.data$robinia, levels = c("without-robinia", "with-robinia")),
-      precipitation = factor(.data$precipitation, levels = c("control", "drought")),
-      culture = factor(.data$culture, levels = c("mono", "mixed"))
+      robinia = factor(.data$robinia, levels = alinv_factor_levels("robinia")),
+      precipitation = factor(.data$precipitation, levels = alinv_factor_levels("precipitation")),
+      culture = factor(.data$culture, levels = alinv_factor_levels("culture"))
     )
 
   df_plot <- df_plot %>%
@@ -1039,7 +1033,7 @@ build_raw_smooth <- function(df_in, y, facet = c("tree","soil"),
   if (facet == "tree") {
     facet_vars <- ggplot2::vars(.data$species, .data$robinia)
     labeller_spec <- ggplot2::labeller(
-      robinia = c(`without-robinia`="without robinia", `with-robinia`="with robinia")
+      robinia = alinv_level_labels("robinia")
     )
     facet_grid <- ggplot2::facet_grid(rows = ggplot2::vars(.data$species), cols = ggplot2::vars(.data$robinia), labeller = labeller_spec)
   } else {
@@ -1295,7 +1289,7 @@ boxplot_soil_cn_isotopes_simple <- function(save_fig = FALSE,
   df_long <- df %>%
     dplyr::mutate(
       soiltype = gsub("-", "_", soiltype),
-      soiltype = factor(soiltype, levels = c("inoc_beech", "inoc_robinia"))
+      soiltype = factor(soiltype, levels = c("inoc_robinia", "inoc_beech"))
     ) %>%
     dplyr::select(soiltype, c_perc, n_perc, d13c_permille, d15n_permille) %>%
     tidyr::pivot_longer(

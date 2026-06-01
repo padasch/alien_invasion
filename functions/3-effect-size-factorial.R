@@ -56,12 +56,12 @@ if (requireNamespace("emmeans", quietly = TRUE)) {
     mutate(
       date = as.Date(date),
       date = factor(date),
-      robinia = factor(robinia, levels = c("without-robinia", "with-robinia")),
-      precipitation = factor(precipitation, levels = c("control", "drought")),
-      culture = factor(culture, levels = c("mono", "mixed")),
+      robinia = factor(robinia, levels = alinv_factor_levels("robinia")),
+      precipitation = factor(precipitation, levels = alinv_factor_levels("precipitation")),
+      culture = factor(culture, levels = alinv_factor_levels("culture")),
       soiltype = alinv_relevel_soiltype(soiltype),
-      extreme_event = factor(extreme_event, levels = c("no", "yes")),
-      species = factor(species)
+      extreme_event = factor(extreme_event, levels = alinv_factor_levels("extreme_event")),
+      species = factor(species, levels = alinv_factor_levels("species"))
     ) %>%
     droplevels()
 }
@@ -372,13 +372,7 @@ plot_combined_effects <- function(effects_df,
                                   ylab = alinv_temporal_effect_y_label(),
                                   y_limits = NULL) {
   if (!nrow(effects_df)) stop("No contrasts to plot.")
-  lab_map <- c(
-    robinia = "Robinia (with - without)",
-    precipitation = "Precipitation (drought - control)",
-    culture = "Culture (mixed - mono)",
-    soiltype = "Soil (drier beech soil - wetter robinia soil)",
-    extreme_event = "Extreme event (yes - no)"
-  )
+  lab_map <- alinv_treatment_label_map("temporal")
   
   ylowest <- effects_df$estimate - effects_df$se
   ylowest <- min(ylowest, na.rm = TRUE)
@@ -497,6 +491,7 @@ temporal_effect_plot_meta <- function(type = "tree",
                                       swc_source = "measured",
                                       title = NULL,
                                       y_limits = alinv_temporal_effect_y_limits()) {
+  resp_label <- if (!is.null(resp_var)) alinv_response_label(resp_var) else NULL
   tibble::tibble(
     type = type,
     data_name = data_name,
@@ -509,7 +504,7 @@ temporal_effect_plot_meta <- function(type = "tree",
     title = title %||% paste0(
       "Time-varying treatment effects on ", target_species,
       " (soil: ", soil_type, ", data: ",
-      data_name, if (!is.null(resp_var)) paste0(", ", resp_var) else "", ")"
+      data_name, if (!is.null(resp_label)) paste0(", ", resp_label) else "", ")"
     ),
     y_axis_label = alinv_temporal_effect_y_label(),
     y_limit_lower = y_limits[[1]],
@@ -613,6 +608,7 @@ make_effect_figure_generic <- function(
     force_run = FALSE                # NEW: overwrite existing results for today
 ) {
   data_name <- match.arg(data_name)
+  resp_label <- if (!is.null(resp_var)) alinv_response_label(resp_var) else NULL
   include_soil_treatment <- alinv_resolve_include_soil_treatment(
     include_soil_treatment = include_soil_treatment,
     soil_filter = soil_type
@@ -692,7 +688,7 @@ make_effect_figure_generic <- function(
     result <- list(
       plot = alinv_empty_plot(
         title = "No temporal GLMM data",
-        subtitle = paste0("No model rows available for ", target_species, " / ", data_name, if (!is.null(resp_var)) paste0(" / ", resp_var) else "")
+        subtitle = paste0("No model rows available for ", target_species, " / ", data_name, if (!is.null(resp_label)) paste0(" / ", resp_label) else "")
       ),
       model = NULL,
       effects = tibble::tibble(),
@@ -745,14 +741,14 @@ make_effect_figure_generic <- function(
   ttl <- paste0(
     "Time-varying treatment effects on ", target_species,
     " (soil: ", soil_type, ", data: ",
-    data_name, if (!is.null(resp_var)) paste0(", ", resp_var) else "", ")"
+    data_name, if (!is.null(resp_label)) paste0(", ", resp_label) else "", ")"
   )
   p <- if (nrow(eff)) {
     plot_combined_effects(eff, ttl, y_limits = y_limits %||% alinv_temporal_effect_y_limits())
   } else {
     alinv_empty_plot(
       title = "No temporal GLMM contrasts",
-      subtitle = paste0("No treatment contrasts could be extracted for ", target_species, " / ", data_name, if (!is.null(resp_var)) paste0(" / ", resp_var) else "")
+      subtitle = paste0("No treatment contrasts could be extracted for ", target_species, " / ", data_name, if (!is.null(resp_label)) paste0(" / ", resp_label) else "")
     )
   }
   

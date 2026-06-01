@@ -421,7 +421,7 @@ if (nrow(all_eff) > 0) {
 
 ## Total SEM Effects
 
-These heatmaps summarise the total SEM effect of each treatment on each response variable, using the shared color scale from the full-data SEM fits in the current scenario. Positive values indicate beneficial effects and negative values indicate harmful effects. For senescence, the inferential response is `Remaining green (%) = 100 - Senescence (%)`, so negative values indicate less green canopy remaining at a given date.
+These heatmaps summarise the total SEM effect of each treatment on each response variable, using the shared color scale from the full-data SEM fits in the current scenario. Positive values indicate beneficial effects and negative values indicate harmful effects. For senescence, the inferential panels labeled `Senescence` are fitted on `Remaining green (%) = 100 - Senescence (%)`, so negative values indicate earlier or faster senescence progression.
 
 ```{r total-sem-effects-summary, fig.width=12, fig.height=8}
 print(plot_summary_total_sem_heatmaps())
@@ -880,7 +880,7 @@ plot_ts_senescence_percent(filter_soiltype = soil_type,
 
 #### Fagus
 
-The raw timeseries above shows measured `Senescence (%)`. The temporal GLMM and SEM panels below instead model `Remaining green (%) = 100 - Senescence (%)`, so negative effects indicate less green canopy remaining at a given date, consistent with earlier or faster senescence progression. This is not a true senescence-onset timing model.
+The raw timeseries above shows measured `Senescence (%)`. The temporal GLMM and SEM panels below are labeled `Senescence`, but are fitted on `Remaining green (%) = 100 - Senescence (%)`, so negative effects indicate earlier or faster senescence progression. This is not a true senescence-onset timing model.
 
 ```{r senescence-pct-fagus-panels, fig.width=9.5, fig.height=5.8}
 res_sen_pct_fagus <- make_temporal_sem_combo(

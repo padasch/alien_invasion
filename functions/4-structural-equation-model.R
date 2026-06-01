@@ -16,10 +16,10 @@ prepare_sem_data <- function(df_prepared,
       # factors / treatments
       tree_id = factor(tree_id),
       boxlabel = factor(boxlabel),
-      robinia = factor(robinia, levels = c("without-robinia", "with-robinia")),
-      extreme_event = factor(extreme_event, levels = c("no", "yes")),
-      precipitation = factor(precipitation, levels = c("control", "drought")),
-      culture = factor(culture, levels = c("mono", "mixed")),
+      robinia = factor(robinia, levels = alinv_factor_levels("robinia")),
+      extreme_event = factor(extreme_event, levels = alinv_factor_levels("extreme_event")),
+      precipitation = factor(precipitation, levels = alinv_factor_levels("precipitation")),
+      culture = factor(culture, levels = alinv_factor_levels("culture")),
       soiltype = alinv_relevel_soiltype(soiltype),
 
       # time components (raw + centered)
@@ -518,14 +518,7 @@ sem_heatmap_specs <- function() {
 }
 
 sem_heatmap_treatment_labels <- function() {
-  c(
-    robinia = "Robinia: without -> with",
-    precipitation = "Precipitation: control -> drought",
-    culture = "Culture: mono -> mixed",
-    soiltype = "Soil: wetter soil (robinia soil) -> drier soil (beech soil)",
-    extreme_event = "Extreme event: no -> yes",
-    swc = "SWC"
-  )
+  c(alinv_treatment_label_map("heatmap"), swc = "SWC")
 }
 
 compute_shared_sem_heatmap_limit <- function(matrix_df) {
@@ -1512,18 +1505,18 @@ run_sem_for_trait <- function(type = "tree",
 
   matrix_overarching_plots <- if (nrow(matrix_overarching)) {
     list(
-      direct = plot_overarching_sem_effect_matrices(matrix_overarching, target_path_type = "direct", title = paste0("Overarching mean SEM matrix (direct): ", species, " - ", resp_var)),
-      indirect = plot_overarching_sem_effect_matrices(matrix_overarching, target_path_type = "indirect", title = paste0("Overarching mean SEM matrix (indirect): ", species, " - ", resp_var)),
-      total = plot_overarching_sem_effect_matrices(matrix_overarching, target_path_type = "total", title = paste0("Overarching mean SEM matrix (total): ", species, " - ", resp_var))
+      direct = plot_overarching_sem_effect_matrices(matrix_overarching, target_path_type = "direct", title = paste0("Overarching mean SEM matrix (direct): ", species, " - ", alinv_response_label(resp_var))),
+      indirect = plot_overarching_sem_effect_matrices(matrix_overarching, target_path_type = "indirect", title = paste0("Overarching mean SEM matrix (indirect): ", species, " - ", alinv_response_label(resp_var))),
+      total = plot_overarching_sem_effect_matrices(matrix_overarching, target_path_type = "total", title = paste0("Overarching mean SEM matrix (total): ", species, " - ", alinv_response_label(resp_var)))
     )
   } else {
     list()
   }
 
   matrix_plots <- list(
-    direct = plot_sem_effect_matrices(matrix_data, target_path_type = "direct", title = paste0("SEM matrix (direct): ", species, " - ", resp_var)),
-    indirect = plot_sem_effect_matrices(matrix_data, target_path_type = "indirect", title = paste0("SEM matrix (indirect): ", species, " - ", resp_var)),
-    total = plot_sem_effect_matrices(matrix_data, target_path_type = "total", title = paste0("SEM matrix (total): ", species, " - ", resp_var))
+    direct = plot_sem_effect_matrices(matrix_data, target_path_type = "direct", title = paste0("SEM matrix (direct): ", species, " - ", alinv_response_label(resp_var))),
+    indirect = plot_sem_effect_matrices(matrix_data, target_path_type = "indirect", title = paste0("SEM matrix (indirect): ", species, " - ", alinv_response_label(resp_var))),
+    total = plot_sem_effect_matrices(matrix_data, target_path_type = "total", title = paste0("SEM matrix (total): ", species, " - ", alinv_response_label(resp_var)))
   )
 
   # 6) Plot graph with full metadata (species, soil_type, resp_var)

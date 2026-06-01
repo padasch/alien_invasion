@@ -126,6 +126,13 @@ alinv_project_relative_path <- function(path) {
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
+alinv_config_path <- file.path(.alinv_project_root(), "config", "analysis-config.R")
+if (file.exists(alinv_config_path)) {
+  source(alinv_config_path, local = FALSE)
+} else {
+  stop("Missing analysis config: ", alinv_config_path, call. = FALSE)
+}
+
 alinv_clean_names <- function(x) {
   x <- trimws(as.character(x))
   x <- gsub("([a-z0-9])([A-Z])", "\\1_\\2", x)
@@ -312,53 +319,10 @@ alinv_apply_response_orientation <- function(df,
   df
 }
 
-alinv_response_labels <- function() {
-  c(
-    chl = "Chlorophyll",
-    condition = "Condition",
-    height = "Height",
-    diameter = "Diameter",
-    volume = "Volume",
-    height_inc_t0 = "Height inc. t0",
-    diameter_inc_t0 = "Diameter inc. t0",
-    volume_inc_t0 = "Volume inc. t0",
-    height_inc_t0_rel = "Height rel. inc t0",
-    diameter_inc_t0_rel = "Diameter rel. inc t0",
-    volume_inc_t0_rel = "Volume rel. inc t0",
-    height_inc_phase_abs = "Height inc. phase",
-    diameter_inc_phase_abs = "Diameter inc. phase",
-    volume_inc_phase_abs = "Volume inc. phase",
-    height_inc_phase_rel = "Height rel. inc phase",
-    diameter_inc_phase_rel = "Diameter rel. inc phase",
-    volume_inc_phase_rel = "Volume rel. inc phase",
-    qy = "Quantum yield",
-    remaining_green = "Remaining green (%)",
-    chlavg = "Senescence chlorophyll",
-    stage = "Phenology stage"
-  )
-}
-
-alinv_response_label <- function(resp_var) {
-  labels <- alinv_response_labels()
-  out <- unname(labels[as.character(resp_var)])
-  ifelse(is.na(out) | !nzchar(out), as.character(resp_var), out)
-}
-
-ALINV_SOIL_LABELS <- c(
-  `inoc-beech` = "drier soil (beech soil)",
-  `inoc-robinia` = "wetter soil (robinia soil)",
-  inoc_beech = "drier soil (beech soil)",
-  inoc_robinia = "wetter soil (robinia soil)"
-)
+ALINV_SOIL_LABELS <- alinv_level_labels("soiltype")
 
 alinv_scenario_grid <- function() {
-  tibble::tribble(
-    ~scenario_label, ~soil_filter, ~include_soil_treatment,
-    "drier soil (beech soil)", "inoc-beech", FALSE,
-    "wetter soil (robinia soil)", "inoc-robinia", FALSE,
-    "both soils (with soil as treatment)", "both", TRUE,
-    "both soils (without soil as treatment)", "both", FALSE
-  )
+  ALINV_SCENARIO_GRID
 }
 
 alinv_get_analysis_context <- function() {
@@ -418,11 +382,25 @@ alinv_get_treatment_factors <- function(include_soil_treatment = NULL,
     soil_filter = soil_filter
   )
 
-  base_factors <- c("robinia", "precipitation", "culture")
-  if (isTRUE(include_soil_treatment)) {
-    base_factors <- c(base_factors, "soiltype")
+  cfg <- alinv_treatment_config(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_filter
+  )
+  cfg$effect
+}
+
+alinv_treatment_config <- function(include_soil_treatment = NULL,
+                                   soil_filter = NULL) {
+  include_soil_treatment <- alinv_resolve_include_soil_treatment(
+    include_soil_treatment = include_soil_treatment,
+    soil_filter = soil_filter
+  )
+
+  cfg <- ALINV_TREATMENT_CONFIG
+  if (!isTRUE(include_soil_treatment)) {
+    cfg <- dplyr::filter(cfg, .data$effect != "soiltype")
   }
-  c(base_factors, "extreme_event")
+  cfg
 }
 
 alinv_set_analysis_context <- function(
@@ -576,7 +554,7 @@ alinv_filter_by_soil <- function(df,
 }
 
 alinv_relevel_soiltype <- function(x) {
-  factor(x, levels = c("inoc-robinia", "inoc-beech"))
+  factor(x, levels = alinv_factor_levels("soiltype"))
 }
 
 alinv_apply_soil_context <- function(df,

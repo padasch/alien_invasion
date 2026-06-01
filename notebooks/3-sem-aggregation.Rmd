@@ -69,7 +69,7 @@ Interpretation of effects in the mediation SEM:
 
 Important clarification: the treatment -> SWC path alone is not the full indirect effect. It is one component (path a) used to compute the indirect effect together with path b.
 
-Display values are oriented so positive values indicate beneficial effects and negative values indicate harmful effects. For senescence, the inferential response is `Remaining green (%) = 100 - Senescence (%)`, so negative values indicate less green canopy remaining at a given date.
+Display values are oriented so positive values indicate beneficial effects and negative values indicate harmful effects. For senescence, the inferential panels labeled `Senescence` are fitted on `Remaining green (%) = 100 - Senescence (%)`, so negative values indicate earlier or faster senescence progression.
 
 ```{r config}
 species_vec <- c("fagus", "quercus")
