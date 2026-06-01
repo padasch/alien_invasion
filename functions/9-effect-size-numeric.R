@@ -1,3 +1,5 @@
+## Legacy exploratory numeric-time GLMM helpers.
+
 make_effect_figure_numeric <- function(
     type = "tree",
     data_name = c("chlorophyll", "condition", "growth", "quantum_yield", "senescence", "phenology"),
