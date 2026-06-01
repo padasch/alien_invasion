@@ -286,8 +286,51 @@ swap_contrast_label <- function(x) {
   paste(parts[[2]], parts[[1]], sep = " - ")
 }
 
-# Robust per-date contrasts for ANY categorical factor; convert emmeans
-# revpairwise output to treatment − baseline for consistent display.
+normalize_contrast_level <- function(x) {
+  x %>%
+    as.character() %>%
+    trimws() %>%
+    gsub("[()]", "", ., perl = TRUE)
+}
+
+normalize_temporal_contrasts <- function(df) {
+  if (is.null(df) || !nrow(df) || !"effect" %in% names(df) || !"contrast" %in% names(df)) {
+    return(df)
+  }
+
+  cfg <- ALINV_TREATMENT_CONFIG %>%
+    dplyr::select("effect", "baseline_level", "treatment_level")
+
+  out <- dplyr::left_join(df, cfg, by = "effect")
+  parts <- strsplit(as.character(out$contrast), " - ", fixed = TRUE)
+  left <- vapply(parts, function(x) if (length(x) >= 1) normalize_contrast_level(x[[1]]) else NA_character_, character(1))
+  right <- vapply(parts, function(x) if (length(x) >= 2) normalize_contrast_level(x[[2]]) else NA_character_, character(1))
+  flip <- !is.na(out$baseline_level) &
+    !is.na(out$treatment_level) &
+    left == out$baseline_level &
+    right == out$treatment_level
+
+  out$estimate <- ifelse(flip, -out$estimate, out$estimate)
+  if ("lower" %in% names(out) && "upper" %in% names(out)) {
+    lower_old <- out$lower
+    upper_old <- out$upper
+    out$lower <- ifelse(flip, -upper_old, lower_old)
+    out$upper <- ifelse(flip, -lower_old, upper_old)
+  }
+  if ("stat" %in% names(out)) {
+    out$stat <- ifelse(flip, -out$stat, out$stat)
+  }
+  out$contrast <- ifelse(
+    !is.na(out$baseline_level) & !is.na(out$treatment_level),
+    paste0(out$treatment_level, " - ", out$baseline_level),
+    as.character(out$contrast)
+  )
+
+  dplyr::select(out, -dplyr::any_of(c("baseline_level", "treatment_level")))
+}
+
+# Robust per-date contrasts for any categorical factor. The returned
+# contrast is standardized to treatment - baseline.
 extract_per_date_contrasts_any <- function(fit, factor_name) {
   if (!requireNamespace("emmeans", quietly = TRUE)) {
     message(
@@ -318,16 +361,19 @@ extract_per_date_contrasts_any <- function(fit, factor_name) {
     ) %>%
     transmute(
       date,
-      contrast = vapply(.data$contrast, swap_contrast_label, character(1)),
-      estimate = -.data$estimate,
+      contrast = as.character(.data$contrast),
+      estimate = .data$estimate,
       se = .data[[secol]],
-      stat = if (!is.na(zcol)) -.data[[zcol]] else -.data$estimate / .data[[secol]],
+      stat = if (!is.na(zcol)) .data[[zcol]] else .data$estimate / .data[[secol]],
       df = if (!is.na(dfcol)) .data[[dfcol]] else NA_real_,
-      lower = -.data[[upc]],
-      upper = -.data[[lowc]]
+      lower = .data[[lowc]],
+      upper = .data[[upc]],
+      effect = factor_name
     ) %>%
+    normalize_temporal_contrasts() %>%
     filter(is.finite(estimate), !is.na(date)) %>%
-    arrange(date, contrast)
+    arrange(date, contrast) %>%
+    dplyr::select(-.data$effect)
 }
 
 # Combine contrasts for the three factors that have >=2 levels in the subset
@@ -558,6 +604,7 @@ write_temporal_effect_csv_bundle <- function(result,
                                              export_stem,
                                              meta = NULL) {
   effects_df <- result$effects %||% tibble::tibble()
+  effects_df <- normalize_temporal_contrasts(effects_df)
   data_model_df <- result$data_model %||% tibble::tibble()
   meta_df <- meta %||% tibble::tibble()
 
@@ -584,6 +631,8 @@ plot_temporal_effects_from_csv <- function(effects_df,
         ggtitle(title %||% meta_value("title", "No temporal GLMM effect data"))
     )
   }
+
+  effects_df <- normalize_temporal_contrasts(effects_df)
 
   plot_combined_effects(
     effects_df = effects_df,
@@ -644,6 +693,7 @@ make_effect_figure_generic <- function(
     if (cache_has_empty_effects) {
       message("Cached temporal results contained no extracted contrasts. Re-running: ", cache_path)
     } else {
+      cached_result$effects <- normalize_temporal_contrasts(cached_result$effects %||% tibble::tibble())
       cached_meta <- temporal_effect_plot_meta(
         type = type,
         data_name = data_name,

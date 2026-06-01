@@ -57,11 +57,11 @@ ALINV_SCENARIO_GRID <- tibble::tribble(
 
 ALINV_TREATMENT_CONFIG <- tibble::tribble(
   ~effect, ~baseline_level, ~treatment_level, ~short_label, ~temporal_label, ~heatmap_label, ~contrast_label, ~plot_order,
-  "precipitation", "control", "drought", "Drought", "Precipitation (drought - control)", "Precipitation: control -> drought", "drought - control", 1L,
-  "robinia", "without-robinia", "with-robinia", "With robinia", "Robinia (with - without)", "Robinia: without -> with", "with robinia - without robinia", 2L,
-  "culture", "mono", "mixed", "Mixed culture", "Culture (mixed - mono)", "Culture: mono -> mixed", "mixed - mono", 3L,
-  "soiltype", "inoc-robinia", "inoc-beech", "Drier soil", "Soil (drier beech soil - wetter robinia soil)", "Soil: wetter soil (robinia soil) -> drier soil (beech soil)", "drier soil - wetter soil", 4L,
-  "extreme_event", "no", "yes", "Extreme event", "Extreme event (yes - no)", "Extreme event: no -> yes", "yes - no", 5L
+  "precipitation", "control", "drought", "Drought", "Precipitation (control -> drought)", "Precipitation: control -> drought", "drought - control", 1L,
+  "robinia", "without-robinia", "with-robinia", "With robinia", "Robinia (without -> with)", "Robinia: without -> with", "with robinia - without robinia", 2L,
+  "culture", "mono", "mixed", "Mixed culture", "Culture (mono -> mixed)", "Culture: mono -> mixed", "mixed - mono", 3L,
+  "soiltype", "inoc-robinia", "inoc-beech", "Drier soil", "Soil (wetter robinia soil -> drier beech soil)", "Soil: wetter soil (robinia soil) -> drier soil (beech soil)", "drier soil - wetter soil", 4L,
+  "extreme_event", "no", "yes", "Extreme event", "Extreme event (no -> yes)", "Extreme event: no -> yes", "yes - no", 5L
 )
 
 alinv_factor_levels <- function(name) {
