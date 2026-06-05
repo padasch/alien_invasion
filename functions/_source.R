@@ -133,6 +133,70 @@ if (file.exists(alinv_config_path)) {
   stop("Missing analysis config: ", alinv_config_path, call. = FALSE)
 }
 
+alinv_compute_volume_proxy <- function(diameter_mm, height_cm, species) {
+  species_chr <- as.character(species)
+  out <- rep(NA_real_, length(species_chr))
+
+  species_levels <- unique(species_chr[!is.na(species_chr)])
+  for (sp in species_levels) {
+    idx <- which(species_chr == sp)
+    spec_i <- tryCatch(
+      alinv_volume_allometry_spec(sp),
+      error = function(e) NULL
+    )
+    if (is.null(spec_i) || !nrow(spec_i)) {
+      out[idx] <- NA_real_
+      next
+    }
+    out[idx] <- spec_i$beta1[[1]] * (diameter_mm[idx]^2 * height_cm[idx])^spec_i$beta2[[1]]
+  }
+
+  out
+}
+
+alinv_volume_allometry_range_report <- function(df,
+                                                species_col = "species",
+                                                diameter_col = "diameter",
+                                                height_col = "height") {
+  if (!all(c(species_col, diameter_col, height_col) %in% names(df))) {
+    stop("Range report requires species, diameter, and height columns.", call. = FALSE)
+  }
+
+  report <- df %>%
+    dplyr::mutate(
+      rcd2h = .data[[diameter_col]]^2 * .data[[height_col]]
+    ) %>%
+    dplyr::group_by(.data[[species_col]]) %>%
+    dplyr::summarise(
+      n = dplyr::n(),
+      min_rcd2h = min(.data$rcd2h, na.rm = TRUE),
+      max_rcd2h = max(.data$rcd2h, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    dplyr::rename(repo_species = 1L) %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(
+      source_species_key = alinv_volume_allometry_spec(.data$repo_species)$source_species_key[[1]],
+      source_species_label = alinv_volume_allometry_spec(.data$repo_species)$source_species_label[[1]],
+      rcd2h_min_calibration = alinv_volume_allometry_spec(.data$repo_species)$rcd2h_min[[1]],
+      rcd2h_max_calibration = alinv_volume_allometry_spec(.data$repo_species)$rcd2h_max[[1]],
+      within_calibration_range = .data$min_rcd2h >= .data$rcd2h_min_calibration &&
+        .data$max_rcd2h <= .data$rcd2h_max_calibration
+    ) %>%
+    dplyr::ungroup()
+
+  tibble::as_tibble(report)
+}
+
+alinv_volume_model_cache_tag <- function(data_name = NULL, resp_var = NULL) {
+  resp_var <- resp_var %||% ""
+  if (identical(as.character(data_name), "growth") && grepl("^volume", resp_var)) {
+    paste0("-volproxy-", alinv_volume_proxy_version())
+  } else {
+    ""
+  }
+}
+
 alinv_clean_names <- function(x) {
   x <- trimws(as.character(x))
   x <- gsub("([a-z0-9])([A-Z])", "\\1_\\2", x)

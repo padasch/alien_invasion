@@ -1,6 +1,40 @@
 # Central analysis configuration for factor baselines, response labels, and
 # treatment display wording used across notebooks and exported outputs.
 
+# Annighöfer et al. (2016) Table 4 RCD²H allometries used for the derived
+# growth proxy currently labelled "Volume" in the analysis outputs.
+#
+# Notes:
+# - The repo keeps the public response name "volume" for continuity, but the
+#   quantity is now an allometric proxy rather than a geometric cylinder.
+# - The experimental oak is Quercus ilex biologically, but the repo treats the
+#   oak group generically as `quercus`. We therefore use a configurable
+#   surrogate species from Annighöfer et al.
+# - The current default surrogate is Quercus robur because its published
+#   calibration range covers the observed RCD²H values in this dataset.
+
+ALINV_VOLUME_PROXY_VERSION <- "annighofer_table4_v1"
+
+ALINV_VOLUME_ALLOMETRY <- list(
+  source = list(
+    citation = paste(
+      "Annighofer, P., Ameztegui, A., Ammer, C. et al.",
+      "Species-specific and generic biomass equations for seedlings and saplings",
+      "of European tree species. Eur J Forest Res 135, 313-329 (2016).",
+      "https://doi.org/10.1007/s10342-016-0937-z"
+    ),
+    equation = "proxy = beta1 * (diameter_mm^2 * height_cm)^beta2",
+    table = "Table 4"
+  ),
+  oak_surrogate = "quercus_robur",
+  specs = tibble::tribble(
+    ~repo_species, ~source_species_key, ~source_species_label, ~beta1, ~beta2, ~rcd2h_min, ~rcd2h_max, ~notes,
+    "fagus", "fagus_sylvatica", "Fagus sylvatica", 0.62342, 0.87409, 0, 132559, "Species-specific Table 4 equation.",
+    "quercus", "quercus_robur", "Quercus robur", 0.67311, 0.85202, 2, 65307, "Current default surrogate for repo `quercus` because the published range covers the observed data.",
+    "quercus", "quercus_petraea", "Quercus petraea", 0.52740, 0.81213, 1, 16366, "Alternative oak surrogate kept switchable in config; would require extrapolation for current larger observations."
+  )
+)
+
 ALINV_FACTOR_LEVELS <- list(
   precipitation = c("control", "drought"),
   culture = c("mono", "mixed"),
@@ -92,4 +126,37 @@ alinv_treatment_label_map <- function(style = c("temporal", "heatmap", "short", 
     contrast = "contrast_label"
   )
   stats::setNames(ALINV_TREATMENT_CONFIG[[col_name]], ALINV_TREATMENT_CONFIG$effect)
+}
+
+alinv_volume_proxy_version <- function() {
+  ALINV_VOLUME_PROXY_VERSION
+}
+
+alinv_volume_allometry_catalog <- function() {
+  ALINV_VOLUME_ALLOMETRY$specs
+}
+
+alinv_volume_allometry_source <- function() {
+  ALINV_VOLUME_ALLOMETRY$source
+}
+
+alinv_volume_allometry_spec <- function(repo_species) {
+  repo_species <- as.character(repo_species)
+  specs <- alinv_volume_allometry_catalog()
+  surrogate_key <- ALINV_VOLUME_ALLOMETRY$oak_surrogate
+
+  if (identical(repo_species, "quercus")) {
+    out <- specs[specs$repo_species == "quercus" & specs$source_species_key == surrogate_key, , drop = FALSE]
+  } else {
+    out <- specs[specs$repo_species == repo_species, , drop = FALSE]
+    if (nrow(out) > 1L) {
+      out <- out[1, , drop = FALSE]
+    }
+  }
+
+  if (!nrow(out)) {
+    stop("No configured volume allometry for repo species: ", repo_species, call. = FALSE)
+  }
+
+  tibble::as_tibble(out)
 }

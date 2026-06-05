@@ -216,8 +216,20 @@ df <- read_excel(fp, sheet = "Growth_Measurements_D_H") %>%
   mutate(
     tree_id = as.integer(id_number),
     diameter = parse_number(diameter_mm),
-    height = parse_number(height_cm),
-    volume = pi * (diameter / 20)^2 * height
+    height = parse_number(height_cm)
+  ) %>%
+  left_join(
+    meta_tree %>% transmute(tree_id = as.integer(tree_id), species),
+    by = "tree_id"
+  ) %>%
+  mutate(
+    # Annighöfer et al. (2016) Table 4 allometry based on RCD²H. The public
+    # response name stays `volume` for continuity across the analysis pipeline.
+    volume = alinv_compute_volume_proxy(
+      diameter_mm = diameter,
+      height_cm = height,
+      species = species
+    )
   ) %>%
   dplyr::select(tree_id, date, diameter, height, volume) %>%
   arrange(tree_id, date) |>
@@ -312,8 +324,18 @@ df <- read_excel(fp, sheet = "Growth_Measurements_D_H") %>%
   ) %>%
   ungroup()
 
+volume_range_report <- df %>%
+  left_join(
+    meta_tree %>% transmute(tree_id = as.integer(tree_id), species),
+    by = "tree_id"
+  ) %>%
+  filter(species %in% c("fagus", "quercus")) %>%
+  select(species, diameter, height) %>%
+  alinv_volume_allometry_range_report()
+
 write_csv(df, "./data/interim/tree_growth.csv")
 glimpse(df)
+print(volume_range_report)
 
 
 ## Specific Leaf Area ----

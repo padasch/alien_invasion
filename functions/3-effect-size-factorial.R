@@ -511,6 +511,7 @@ temporal_effect_cache_path <- function(type = "tree",
     soil_filter = soil_type,
     include_soil_treatment = include_soil_treatment
   )
+  volume_tag <- alinv_volume_model_cache_tag(data_name = data_name, resp_var = resp_var)
 
   file_name <- paste0(
     "effect-",
@@ -521,6 +522,7 @@ temporal_effect_cache_path <- function(type = "tree",
     soil_mode_tag, "-",
     covar_tag, "-",
     swc_tag,
+    volume_tag,
     ".rds"
   )
 

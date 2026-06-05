@@ -324,6 +324,25 @@ plot_summary_total_sem_heatmaps <- function() {
   patchwork::wrap_plots(plot_list, ncol = 1)
 }
 
+plot_summary_volume_sem_combo <- function() {
+  sem_all_species <- purrr::map_dfr(species_vec, collect_summary_sem_matrix_data)
+
+  if (!nrow(sem_all_species)) {
+    return(
+      ggplot() +
+        theme_void() +
+        ggtitle("No SEM matrix data available for combined volume summary")
+    )
+  }
+
+  plot_volume_sem_summary_figure(
+    matrix_df = sem_all_species,
+    soil_type = soil_type,
+    include_soil_treatment = include_soil_treatment,
+    species_vec = species_vec
+  )
+}
+
 df_biomass <- wrangle_tree_biomass(file.path(proj_root, "data", "raw", "data_20260309.xlsx"))
 res_fag <- run_biomass_glmm_species(
   df_biomass,
@@ -425,6 +444,27 @@ These heatmaps summarise the total SEM effect of each treatment on each response
 
 ```{r total-sem-effects-summary, fig.width=12, fig.height=8}
 print(plot_summary_total_sem_heatmaps())
+```
+
+---
+
+## Phase-Wise Volume Growth and Total SEM Effects
+
+This combined overview links the phase-based absolute `Volume` increment timeseries to a reduced total-effect SEM heatmap. `Volume` is estimated from the Annighöfer et al. (2016) Table 4 `RCD^2H` allometry and shown here only as the phase-based absolute increment among the growth metrics.
+
+```{r volume-sem-summary-combo, fig.width=16, fig.height=9}
+volume_sem_combo_plot <- plot_summary_volume_sem_combo()
+print(volume_sem_combo_plot)
+
+save_growth_plot_png(
+  plot_obj = volume_sem_combo_plot,
+  file_path = file.path(
+    alinv_data_path("summary_figures", create_dir = TRUE),
+    "volume-phase-sem-summary.png"
+  ),
+  width = 16,
+  height = 9
+)
 ```
 
 ---
@@ -690,7 +730,7 @@ print(res_cond_quercus$sem$plot)
 
 ## Growth
 
-The growth chapter covers `Height`, `Diameter`, and `Volume`, each split into absolute size, absolute increment from the first measurement, relative increment from the first measurement, absolute increment within phase, and relative increment within phase. For the phase-baseline metrics, phase 1 is scaled to the first measurement and later phases are scaled to the last measurement of the previous phase. The artificial zero-valued restart points are used only to clarify the within-phase timeseries and are never used for temporal GLMMs, SEMs, caches, or heatmap exports.
+The growth chapter covers `Height`, `Diameter`, and `Volume`, each split into absolute size, absolute increment from the first measurement, relative increment from the first measurement, absolute increment within phase, and relative increment within phase. `Volume` is estimated from the Annighöfer et al. (2016) Table 4 `RCD^2H` allometry rather than from a cylindrical stem formula. For the phase-baseline metrics, phase 1 is scaled to the first measurement and later phases are scaled to the last measurement of the previous phase. The artificial zero-valued restart points are used only to clarify the within-phase timeseries and are never used for temporal GLMMs, SEMs, caches, or heatmap exports.
 
 ```{r growth-figure-manifest, include=FALSE}
 growth_specs_main <- growth_metric_catalog()

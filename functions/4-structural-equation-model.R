@@ -521,6 +521,16 @@ sem_heatmap_treatment_labels <- function() {
   c(alinv_treatment_label_map("heatmap"), swc = "SWC")
 }
 
+sem_heatmap_response_order_labels <- function(resp_levels, resp_labels = NULL) {
+  resp_labels <- resp_labels %||% c()
+  out <- ifelse(
+    resp_levels %in% names(resp_labels),
+    unname(resp_labels[resp_levels]),
+    resp_levels
+  )
+  out[!is.na(out) & nzchar(out)]
+}
+
 compute_shared_sem_heatmap_limit <- function(matrix_df) {
   vals <- matrix_df$estimate_sig
   vals <- vals[is.finite(vals)]
@@ -545,9 +555,11 @@ compute_shared_sem_heatmap_limit <- function(matrix_df) {
 prepare_sem_heatmap_panel <- function(matrix_df,
                                       path_type,
                                       resp_labels = NULL,
-                                      treat_labels = sem_heatmap_treatment_labels()) {
+                                      treat_labels = sem_heatmap_treatment_labels(),
+                                      resp_var_order = NULL) {
   resp_labels <- resp_labels %||% c()
   treat_labels <- treat_labels %||% sem_heatmap_treatment_labels()
+  resp_var_order <- resp_var_order %||% NULL
 
   df_panel <- matrix_df %>%
     dplyr::filter(.data$path_type == .env$path_type)
@@ -580,9 +592,8 @@ prepare_sem_heatmap_panel <- function(matrix_df,
         col_label = dplyr::recode(.data$response_var, !!!resp_labels, .default = .data$response_var)
       )
     row_order <- "SWC"
-    resp_levels <- unique(df_panel$response_var)
-    col_order <- unname(c(resp_labels[resp_levels], stats::setNames(resp_levels, resp_levels)))
-    col_order <- col_order[!is.na(col_order) & !duplicated(col_order)]
+    resp_levels <- resp_var_order %||% unique(df_panel$response_var)
+    col_order <- sem_heatmap_response_order_labels(resp_levels, resp_labels)
   } else {
     df_panel <- df_panel %>%
       dplyr::filter(.data$treatment != "swc") %>%
@@ -592,12 +603,11 @@ prepare_sem_heatmap_panel <- function(matrix_df,
       )
     row_order <- unname(treat_labels[names(treat_labels) %in% unique(df_panel$treatment)])
     row_order <- row_order[!is.na(row_order)]
-    resp_levels <- unique(df_panel$response_var)
-    col_order <- unname(c(resp_labels[resp_levels], stats::setNames(resp_levels, resp_levels)))
-    col_order <- col_order[!is.na(col_order) & !duplicated(col_order)]
+    resp_levels <- resp_var_order %||% unique(df_panel$response_var)
+    col_order <- sem_heatmap_response_order_labels(resp_levels, resp_labels)
   }
 
-  df_panel %>%
+  df_values <- df_panel %>%
     dplyr::transmute(
       row_label = .data$row_label,
       col_label = .data$col_label,
@@ -608,6 +618,13 @@ prepare_sem_heatmap_panel <- function(matrix_df,
       row_label = factor(.data$row_label, levels = row_order),
       col_label = factor(.data$col_label, levels = col_order)
     ) %>%
+    dplyr::arrange(.data$row_label, .data$col_label)
+
+  tidyr::expand_grid(
+    row_label = factor(row_order, levels = row_order),
+    col_label = factor(col_order, levels = col_order)
+  ) %>%
+    dplyr::left_join(df_values, by = c("row_label", "col_label")) %>%
     dplyr::arrange(.data$row_label, .data$col_label)
 }
 
@@ -1120,6 +1137,7 @@ sem_cache_path <- function(type = "tree",
     soil_filter = soil_type,
     include_soil_treatment = include_soil_treatment
   )
+  volume_tag <- alinv_volume_model_cache_tag(data_name = data_name, resp_var = resp_var)
 
   file_name <- paste0(
     "sem-",
@@ -1133,6 +1151,7 @@ sem_cache_path <- function(type = "tree",
     rfe_tag, "-",
     phase_tag, "-",
     swc_tag,
+    volume_tag,
     ".rds"
   )
 

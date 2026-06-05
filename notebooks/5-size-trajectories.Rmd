@@ -67,9 +67,9 @@ options(alinv.temporal_y_limits = alinv_temporal_effect_y_limits())
 
 # Introduction
 
-This notebook focuses on the size-related responses in the ALINV experiment. It covers `Height`, `Diameter`, and `Volume`, where `Volume` is calculated as a cylindrical stem-volume proxy from the cleaned height and diameter measurements:
+This notebook focuses on the size-related responses in the ALINV experiment. It covers `Height`, `Diameter`, and `Volume`, where `Volume` is now an allometric proxy derived from the Annighöfer et al. (2016) Table 4 `RCD^2H` equation rather than a geometric cylinder:
 
-$$\mathrm{Volume\ (cm^3)} = \pi \left(\frac{\mathrm{Diameter\ (mm)}}{20}\right)^2 \times \mathrm{Height\ (cm)}$$
+$$\mathrm{Volume} = \beta_1 \left(\mathrm{Diameter\ (mm)}^2 \times \mathrm{Height\ (cm)}\right)^{\beta_2}$$
 
 Current render scenario: `r scenario_label`. Soil filtering is set to `r soil_type`, and soil is `r if (include_soil_treatment) "included as an explicit treatment contrast." else "pooled across both soils and omitted as a treatment contrast."`
 

@@ -84,6 +84,7 @@ make_temporal_sem_combo <- function(
     soil_filter = soil_type,
     include_soil_treatment = include_soil_treatment
   )
+  volume_tag <- alinv_volume_model_cache_tag(data_name = data_name, resp_var = resp_var)
   
   base_name <- paste0(
     "temporal_sem_",
@@ -93,7 +94,8 @@ make_temporal_sem_combo <- function(
     "_", soil_mode_tag,
     "_semInt-", ifelse(isTRUE(include_interaction), "yes", "no"),
     "_phase-", gsub("[^a-zA-Z0-9]+", "", tolower(sem_phase_window)),
-    "_swc-", swc_source
+    "_swc-", swc_source,
+    volume_tag
   )
   
   png_path <- file.path(outdir, paste0(base_name, ".png"))
