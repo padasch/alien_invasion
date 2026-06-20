@@ -409,22 +409,82 @@ get_growth_figure_path <- function(manifest,
     .[[1]]
 }
 
-combined_volume_sem_response_vars <- function() {
+combined_volume_sem_response_vars <- function(growth_resp_var = "volume_inc_phase_abs") {
   c(
-    "chl",
-    "condition",
-    "volume_inc_phase_abs",
     "stage",
+    "chl",
+    growth_resp_var,
+    "condition",
+    "qy",
     "remaining_green",
-    "chlavg",
-    "qy"
+    "chlavg"
   )
 }
 
-combined_volume_sem_resp_labels <- function(resp_labels = alinv_response_labels()) {
-  keep <- combined_volume_sem_response_vars()
-  out <- resp_labels[keep]
-  out[!is.na(out)]
+combined_volume_sem_active_response_vars <- function(species_name,
+                                                     growth_resp_var = "volume_inc_phase_abs") {
+  species_name <- as.character(species_name)
+  if (identical(species_name, "quercus")) {
+    c("stage", "chl", growth_resp_var, "condition", "qy")
+  } else {
+    combined_volume_sem_response_vars(growth_resp_var = growth_resp_var)
+  }
+}
+
+combined_volume_sem_resp_labels <- function(species_name = NULL,
+                                            growth_resp_var = "volume_inc_phase_abs",
+                                            resp_labels = alinv_response_labels()) {
+  keep <- combined_volume_sem_response_vars(growth_resp_var = growth_resp_var)
+  labels <- resp_labels[keep]
+
+  if (identical(as.character(species_name), "quercus")) {
+    labels[c("remaining_green", "chlavg")] <- c("__blank_visual__", "__blank_chlorophyll__")
+  }
+
+  labels[!is.na(labels)]
+}
+
+combined_volume_sem_axis_labels <- function(species_name = NULL,
+                                            growth_resp_var = "volume_inc_phase_abs") {
+  labels <- unname(combined_volume_sem_resp_labels(
+    species_name = species_name,
+    growth_resp_var = growth_resp_var
+  ))
+  names(labels) <- labels
+  labels[c("__blank_visual__", "__blank_chlorophyll__")] <- c("", "")
+  labels
+}
+
+combined_volume_sem_plot_spec <- function(resp_var = "volume_inc_phase_abs") {
+  switch(
+    as.character(resp_var),
+    volume_inc_phase_abs = list(
+      scale_divisor = 1000,
+      y_label = "Allometric volume increment (\u00d710^3)",
+      summary_title = "Phase-Wise Allometric-Volume Growth and Total SEM Effects",
+      summary_text = paste(
+        "This combined overview links the phase-based absolute increment of",
+        "`Volume` timeseries to a reduced total-effect SEM heatmap. `Volume` is",
+        "estimated from the Annighofer et al. (2016) Table 4 `RCD^2H` allometry",
+        "and shown here only as the phase-based absolute increment among the",
+        "growth metrics."
+      ),
+      file_stub = "volume-phase-sem-summary"
+    ),
+    volume_inc_phase_rel = list(
+      scale_divisor = 1,
+      y_label = "Relative volume increment",
+      summary_title = "Phase-Wise Relative Volume Growth and Total SEM Effects",
+      summary_text = paste(
+        "This combined overview links the phase-based relative `Volume` increment",
+        "timeseries to a reduced total-effect SEM heatmap. `Volume` is estimated",
+        "from the Annighofer et al. (2016) Table 4 `RCD^2H` allometry and shown",
+        "here only as the phase-based relative increment among the growth metrics."
+      ),
+      file_stub = "volume-phase-rel-sem-summary"
+    ),
+    stop("Unsupported combined volume summary response: ", resp_var, call. = FALSE)
+  )
 }
 
 compute_species_timeseries_limits <- function(df_sum,
@@ -462,15 +522,18 @@ compute_species_timeseries_limits <- function(df_sum,
 
 plot_volume_phase_species_panel <- function(species_name,
                                             robinia_level,
+                                            resp_var = "volume_inc_phase_abs",
                                             soil_type = NULL,
                                             include_soil_treatment = NULL,
                                             y_limits = NULL,
+                                            scale_divisor = 1,
+                                            y_label = "Volume increment (\u00d710^3)",
                                             drought_bars = FALSE,
                                             show_y_axis = TRUE,
                                             show_legend = TRUE,
                                             title_prefix = NULL) {
   df_metric <- prepare_growth_metric_plot_data(
-    resp_var = "volume_inc_phase_abs",
+    resp_var = resp_var,
     soil_type = soil_type,
     include_soil_treatment = include_soil_treatment
   ) %>%
@@ -485,9 +548,13 @@ plot_volume_phase_species_panel <- function(species_name,
 
   df_sum <- summarize_growth_metric_plot_data(
     df_metric = df_metric,
-    resp_var = "volume_inc_phase_abs",
+    resp_var = resp_var,
     within_phase = TRUE
-  )
+  ) %>%
+    dplyr::mutate(
+      mean = .data$mean / .env$scale_divisor,
+      se = .data$se / .env$scale_divisor
+    )
 
   title_text <- paste(
     title_prefix %||% stringr::str_to_title(species_name),
@@ -513,7 +580,7 @@ plot_volume_phase_species_panel <- function(species_name,
     ggplot2::scale_x_date(date_labels = "%b") +
     ggplot2::labs(
       x = "Date",
-      y = "Volume increment within phase (allometric proxy, g)",
+      y = y_label,
       title = title_text
     ) +
     theme_common()
@@ -539,27 +606,35 @@ plot_volume_phase_species_panel <- function(species_name,
   p
 }
 
-plot_volume_sem_species_row <- function(species_name,
-                                        matrix_df,
-                                        heatmap_limit,
-                                        soil_type = NULL,
-                                        include_soil_treatment = NULL) {
+build_volume_sem_species_panels <- function(species_name,
+                                            matrix_df,
+                                            heatmap_limit,
+                                            growth_resp_var = "volume_inc_phase_abs",
+                                            soil_type = NULL,
+                                            include_soil_treatment = NULL,
+                                            scale_divisor = 1000,
+                                            y_label = "Volume increment (\u00d710^3)") {
   df_metric <- prepare_growth_metric_plot_data(
-    resp_var = "volume_inc_phase_abs",
+    resp_var = growth_resp_var,
     soil_type = soil_type,
     include_soil_treatment = include_soil_treatment
   ) %>%
     dplyr::filter(as.character(.data$species) == .env$species_name)
 
   if (!nrow(df_metric)) {
-    return(alinv_empty_plot(paste("No volume phase data for", species_name)))
+    empty_plot <- alinv_empty_plot(paste("No volume phase data for", species_name))
+    return(list(empty_plot, empty_plot, empty_plot))
   }
 
   df_sum <- summarize_growth_metric_plot_data(
     df_metric = df_metric,
-    resp_var = "volume_inc_phase_abs",
+    resp_var = growth_resp_var,
     within_phase = TRUE
-  )
+  ) %>%
+    dplyr::mutate(
+      mean = .data$mean / .env$scale_divisor,
+      se = .data$se / .env$scale_divisor
+    )
 
   y_limit_tbl <- compute_species_timeseries_limits(df_sum)
   y_limits <- y_limit_tbl %>%
@@ -571,9 +646,12 @@ plot_volume_sem_species_row <- function(species_name,
   p_without <- plot_volume_phase_species_panel(
     species_name = species_name,
     robinia_level = "without-robinia",
+    resp_var = growth_resp_var,
     soil_type = soil_type,
     include_soil_treatment = include_soil_treatment,
     y_limits = y_limits,
+    scale_divisor = scale_divisor,
+    y_label = y_label,
     drought_bars = FALSE,
     show_y_axis = TRUE,
     show_legend = TRUE,
@@ -583,9 +661,12 @@ plot_volume_sem_species_row <- function(species_name,
   p_with <- plot_volume_phase_species_panel(
     species_name = species_name,
     robinia_level = "with-robinia",
+    resp_var = growth_resp_var,
     soil_type = soil_type,
     include_soil_treatment = include_soil_treatment,
     y_limits = y_limits,
+    scale_divisor = scale_divisor,
+    y_label = y_label,
     drought_bars = FALSE,
     show_y_axis = FALSE,
     show_legend = FALSE,
@@ -597,12 +678,18 @@ plot_volume_sem_species_row <- function(species_name,
       dplyr::filter(
         .data$species == .env$species_name,
         .data$effect_class == "main",
-        .data$response_var %in% combined_volume_sem_response_vars()
+        .data$response_var %in% combined_volume_sem_active_response_vars(
+          .env$species_name,
+          growth_resp_var = .env$growth_resp_var
+        )
       ),
     path_type = "total",
-    resp_labels = combined_volume_sem_resp_labels(),
+    resp_labels = combined_volume_sem_resp_labels(
+      species_name = species_name,
+      growth_resp_var = growth_resp_var
+    ),
     treat_labels = sem_heatmap_treatment_labels(),
-    resp_var_order = combined_volume_sem_response_vars()
+    resp_var_order = combined_volume_sem_response_vars(growth_resp_var = growth_resp_var)
   )
 
   p_heatmap <- plot_sem_heatmap_panel(
@@ -612,14 +699,24 @@ plot_volume_sem_species_row <- function(species_name,
     annotate_values = TRUE,
     value_digits = 2,
     value_text_size = 2.7
-  )
+  ) +
+    ggplot2::scale_x_discrete(labels = combined_volume_sem_axis_labels(
+      species_name = species_name,
+      growth_resp_var = growth_resp_var
+    )) +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_text(angle = 35, hjust = 1, vjust = 1, size = 9)
+    )
 
-  (p_without | p_with | p_heatmap) +
-    patchwork::plot_layout(widths = c(1, 1, 1.15), guides = "collect") &
-    ggplot2::theme(legend.position = "bottom")
+  list(
+    p_without,
+    p_with,
+    p_heatmap
+  )
 }
 
 plot_volume_sem_summary_figure <- function(matrix_df,
+                                           growth_resp_var = "volume_inc_phase_abs",
                                            soil_type = NULL,
                                            include_soil_treatment = NULL,
                                            species_vec = c("fagus", "quercus")) {
@@ -627,18 +724,26 @@ plot_volume_sem_summary_figure <- function(matrix_df,
     return(alinv_empty_plot("No SEM matrix data available for combined volume summary figure"))
   }
 
+  plot_spec <- combined_volume_sem_plot_spec(resp_var = growth_resp_var)
   heatmap_limit <- compute_shared_sem_heatmap_limit(matrix_df)
 
-  row_plots <- purrr::map(
+  panel_list <- purrr::map(
     species_vec,
-    ~ plot_volume_sem_species_row(
+    ~ build_volume_sem_species_panels(
       species_name = .x,
       matrix_df = matrix_df,
       heatmap_limit = heatmap_limit,
+      growth_resp_var = growth_resp_var,
       soil_type = soil_type,
-      include_soil_treatment = include_soil_treatment
+      include_soil_treatment = include_soil_treatment,
+      scale_divisor = plot_spec$scale_divisor,
+      y_label = plot_spec$y_label
     )
-  )
+  ) %>%
+    purrr::flatten()
 
-  patchwork::wrap_plots(row_plots, ncol = 1, guides = "collect")
+  patchwork::wrap_plots(panel_list, ncol = 3) +
+    patchwork::plot_layout(widths = c(1, 1, 1.15), guides = "collect") +
+    patchwork::plot_annotation(tag_levels = "A") &
+    ggplot2::theme(legend.position = "bottom")
 }

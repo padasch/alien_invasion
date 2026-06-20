@@ -324,7 +324,7 @@ plot_summary_total_sem_heatmaps <- function() {
   patchwork::wrap_plots(plot_list, ncol = 1)
 }
 
-plot_summary_volume_sem_combo <- function() {
+plot_summary_volume_sem_combo <- function(growth_resp_var = "volume_inc_phase_abs") {
   sem_all_species <- purrr::map_dfr(species_vec, collect_summary_sem_matrix_data)
 
   if (!nrow(sem_all_species)) {
@@ -337,6 +337,7 @@ plot_summary_volume_sem_combo <- function() {
 
   plot_volume_sem_summary_figure(
     matrix_df = sem_all_species,
+    growth_resp_var = growth_resp_var,
     soil_type = soil_type,
     include_soil_treatment = include_soil_treatment,
     species_vec = species_vec
@@ -448,12 +449,12 @@ print(plot_summary_total_sem_heatmaps())
 
 ---
 
-## Phase-Wise Volume Growth and Total SEM Effects
+## Phase-Wise Allometric-Volume Growth and Total SEM Effects
 
-This combined overview links the phase-based absolute `Volume` increment timeseries to a reduced total-effect SEM heatmap. `Volume` is estimated from the Annighöfer et al. (2016) Table 4 `RCD^2H` allometry and shown here only as the phase-based absolute increment among the growth metrics.
+This combined overview links the phase-based absolute increment of `Volume` to a reduced total-effect SEM heatmap. `Volume` is estimated from the Annighöfer et al. (2016) Table 4 `RCD^2H` allometry and shown here only as the phase-based absolute increment among the growth metrics.
 
 ```{r volume-sem-summary-combo, fig.width=16, fig.height=9}
-volume_sem_combo_plot <- plot_summary_volume_sem_combo()
+volume_sem_combo_plot <- plot_summary_volume_sem_combo(growth_resp_var = "volume_inc_phase_abs")
 print(volume_sem_combo_plot)
 
 save_growth_plot_png(
@@ -461,6 +462,27 @@ save_growth_plot_png(
   file_path = file.path(
     alinv_data_path("summary_figures", create_dir = TRUE),
     "volume-phase-sem-summary.png"
+  ),
+  width = 16,
+  height = 9
+)
+```
+
+---
+
+## Phase-Wise Relative Volume Growth and Total SEM Effects
+
+This combined overview links the phase-based relative `Volume` increment timeseries to a reduced total-effect SEM heatmap. `Volume` is estimated from the Annighöfer et al. (2016) Table 4 `RCD^2H` allometry and shown here only as the phase-based relative increment among the growth metrics.
+
+```{r volume-sem-summary-combo-relative, fig.width=16, fig.height=9}
+volume_sem_combo_rel_plot <- plot_summary_volume_sem_combo(growth_resp_var = "volume_inc_phase_rel")
+print(volume_sem_combo_rel_plot)
+
+save_growth_plot_png(
+  plot_obj = volume_sem_combo_rel_plot,
+  file_path = file.path(
+    alinv_data_path("summary_figures", create_dir = TRUE),
+    "volume-phase-rel-sem-summary.png"
   ),
   width = 16,
   height = 9
