@@ -193,6 +193,10 @@ glimpse(df)
 
 
 ## Growth (Height and Diameter) ----
+
+volume_proxy_method <- alinv_volume_proxy_method()
+message("Using volume proxy method: ", volume_proxy_method)
+
 df <- read_excel(fp, sheet = "Growth_Measurements_D_H") %>%
   dplyr::select(ID_number, starts_with("Diameter"), starts_with("Height")) %>%
   mutate(across(everything(), as.character)) %>%
@@ -223,12 +227,13 @@ df <- read_excel(fp, sheet = "Growth_Measurements_D_H") %>%
     by = "tree_id"
   ) %>%
   mutate(
-    # Annighöfer et al. (2016) Table 4 allometry based on RCD²H. The public
-    # response name stays `volume` for continuity across the analysis pipeline.
+    # Public response name stays `volume` for continuity across the analysis
+    # pipeline. Volume method is controlled by `ALINV_VOLUME_PROXY_METHOD`.
     volume = alinv_compute_volume_proxy(
       diameter_mm = diameter,
       height_cm = height,
-      species = species
+      species = species,
+      method = volume_proxy_method
     )
   ) %>%
   dplyr::select(tree_id, date, diameter, height, volume) %>%

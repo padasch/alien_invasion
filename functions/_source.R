@@ -133,7 +133,21 @@ if (file.exists(alinv_config_path)) {
   stop("Missing analysis config: ", alinv_config_path, call. = FALSE)
 }
 
-alinv_compute_volume_proxy <- function(diameter_mm, height_cm, species) {
+alinv_compute_volume_proxy <- function(diameter_mm, height_cm, species, method = NULL) {
+  method <- alinv_volume_proxy_method(method)
+  switch(
+    method,
+    "annighofer" = alinv_compute_volume_proxy_annighofer(diameter_mm, height_cm, species),
+    "zianis_2005" = alinv_compute_volume_proxy_zianis(diameter_mm, height_cm, species),
+    stop(
+      "Unsupported volume-proxy method: ", method,
+      ". Supported methods: ", paste(alinv_volume_proxy_methods(), collapse = ", "),
+      call. = FALSE
+    )
+  )
+}
+
+alinv_compute_volume_proxy_annighofer <- function(diameter_mm, height_cm, species) {
   species_chr <- as.character(species)
   out <- rep(NA_real_, length(species_chr))
 
@@ -152,6 +166,80 @@ alinv_compute_volume_proxy <- function(diameter_mm, height_cm, species) {
   }
 
   out
+}
+
+alinv_compute_volume_proxy_zianis <- function(diameter_mm, height_cm, species) {
+  species_chr <- as.character(species)
+  out <- rep(NA_real_, length(species_chr))
+
+  d_cm <- as.numeric(diameter_mm) / 10
+  h_m <- as.numeric(height_cm) / 100
+
+  species_levels <- unique(species_chr[!is.na(species_chr)])
+  for (sp in species_levels) {
+    idx <- which(species_chr == sp)
+    spec_i <- tryCatch(
+      alinv_volume_zianis_spec(sp),
+      error = function(e) NULL
+    )
+    if (is.null(spec_i) || !nrow(spec_i)) {
+      out[idx] <- NA_real_
+      next
+    }
+
+    a <- spec_i$a[[1]]
+    b <- spec_i$b[[1]]
+    c <- spec_i$c[[1]]
+    d <- spec_i$d[[1]]
+    e <- spec_i$e[[1]]
+    f <- spec_i$f[[1]]
+    formula_type <- as.character(spec_i$formula_type[[1]])
+
+    out[idx] <- switch(
+      formula_type,
+      "polynomial" = a + b * d_cm[idx] * h_m[idx]^2 + c * d_cm[idx]^3,
+      "poly6" = a + b * d_cm[idx] + c * d_cm[idx]^2 + d * d_cm[idx]^3 + e * h_m[idx] + f * d_cm[idx]^2 * h_m[idx],
+      "d2h" = a + b * d_cm[idx]^2 * h_m[idx],
+      "power_product" = (d_cm[idx]^a) * (h_m[idx]^b) * exp(c),
+      "log10_poly" = a * 10^(b * log10(d_cm[idx]) + c * log10(d_cm[idx])^2 + d * log10(h_m[idx]) + e * log10(h_m[idx])^2),
+      stop(
+        "Unsupported Zianis formula type: ", formula_type,
+        ". Supported types: polynomial, poly6, d2h, power_product, log10_poly",
+        call. = FALSE
+      )
+    )
+  }
+
+  out
+}
+
+alinv_volume_proxy_methods <- function() {
+  ALINV_VOLUME_PROXY_METHODS
+}
+
+alinv_volume_proxy_method <- function(method = NULL) {
+  if (is.null(method) || !nzchar(as.character(method))) {
+    method <- Sys.getenv("ALINV_VOLUME_PROXY_METHOD", unset = ALINV_VOLUME_PROXY_DEFAULT)
+  } else {
+    method <- as.character(method)
+  }
+
+  method <- trimws(tolower(method))
+  if (identical(method, "zianis")) {
+    method <- "zianis_2005"
+  }
+  if (!method %in% alinv_volume_proxy_methods()) {
+    stop(
+      "Unsupported volume-proxy method: ", method,
+      ". Supported methods: ", paste(alinv_volume_proxy_methods(), collapse = ", "),
+      call. = FALSE
+    )
+  }
+  method
+}
+
+alinv_volume_proxy_version <- function(method = NULL) {
+  ALINV_VOLUME_PROXY_VERSION[[alinv_volume_proxy_method(method)]]
 }
 
 alinv_volume_allometry_range_report <- function(df,
@@ -186,6 +274,30 @@ alinv_volume_allometry_range_report <- function(df,
     dplyr::ungroup()
 
   tibble::as_tibble(report)
+}
+
+alinv_volume_zianis_catalog <- function() {
+  ALINV_VOLUME_ZIANIS$specs
+}
+
+alinv_volume_zianis_source <- function() {
+  ALINV_VOLUME_ZIANIS$source
+}
+
+alinv_volume_zianis_spec <- function(repo_species) {
+  repo_species <- as.character(repo_species)
+  specs <- alinv_volume_zianis_catalog()
+
+  out <- specs[specs$repo_species == repo_species, , drop = FALSE]
+  if (nrow(out) > 1L) {
+    out <- out[1, , drop = FALSE]
+  }
+
+  if (!nrow(out)) {
+    stop("No configured Zianis volume proxy for repo species: ", repo_species, call. = FALSE)
+  }
+
+  tibble::as_tibble(out)
 }
 
 alinv_volume_model_cache_tag <- function(data_name = NULL, resp_var = NULL) {

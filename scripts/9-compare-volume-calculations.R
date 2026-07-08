@@ -36,19 +36,37 @@ comparison_dir <- alinv_data_path("diagnostics", "volume_calculation_comparison"
 comparison_interim_dir <- file.path(comparison_dir, "interim")
 dir.create(comparison_interim_dir, recursive = TRUE, showWarnings = FALSE)
 
-base_growth <- readr::read_csv(file.path(proj_root, "data", "interim", "tree_growth.csv"), show_col_types = FALSE)
+base_growth <- readr::read_csv(file.path(proj_root, "data", "interim", "tree_growth.csv"), show_col_types = FALSE) %>%
+  dplyr::mutate(tree_id = as.character(.data$tree_id)) %>%
+  dplyr::left_join(
+    get_meta("tree") %>% dplyr::transmute(tree_id = as.character(.data$tree_id), species),
+    by = "tree_id"
+  )
 
 growth_compare <- base_growth %>%
   mutate(
-    volume_allometry = .data$volume,
-    volume_allometry_inc_t0 = .data$volume_inc_t0,
-    volume_allometry_inc_phase_abs = .data$volume_inc_phase_abs,
+    volume_allometry = alinv_compute_volume_proxy(
+      diameter_mm = .data$diameter,
+      height_cm = .data$height,
+      species = .data$species,
+      method = "annighofer"
+    ),
+    volume_zianis = alinv_compute_volume_proxy(
+      diameter_mm = .data$diameter,
+      height_cm = .data$height,
+      species = .data$species,
+      method = "zianis_2005"
+    ),
+    volume_zianis_minus_allometry = .data$volume_zianis - .data$volume_allometry,
+    volume_zianis_minus_allometry_pct = 100 * (.data$volume_zianis_minus_allometry / pmax(abs(.data$volume_allometry), .Machine$double.eps)),
     volume_cylinder = pi * (.data$diameter / 20)^2 * .data$height
   ) %>%
   group_by(.data$tree_id) %>%
   arrange(.data$date, .by_group = TRUE) %>%
   mutate(
     first_volume_cylinder = first(.data$volume_cylinder),
+    first_volume_allometry = first(.data$volume_allometry),
+    first_volume_zianis = first(.data$volume_zianis),
     volume_cylinder_inc_t0 = .data$volume_cylinder - .data$first_volume_cylinder,
     phase_volume_cylinder_baseline = dplyr::case_when(
       .data$phase == "until June"  ~ .data$first_volume_cylinder,
@@ -56,7 +74,33 @@ growth_compare <- base_growth %>%
       .data$phase == "September+"  ~ dplyr::last(.data$volume_cylinder[.data$phase == "July-August" & !is.na(.data$volume_cylinder)], default = NA_real_),
       TRUE ~ NA_real_
     ),
-    volume_cylinder_inc_phase_abs = .data$volume_cylinder - .data$phase_volume_cylinder_baseline
+    volume_cylinder_inc_phase_abs = .data$volume_cylinder - .data$phase_volume_cylinder_baseline,
+    volume_allometry_inc_t0 = .data$volume_allometry - .data$first_volume_allometry,
+    phase_volume_allometry_baseline = dplyr::case_when(
+      .data$phase == "until June" ~ .data$first_volume_allometry,
+      .data$phase == "July-August" ~ dplyr::last(.data$volume_allometry[.data$phase == "until June" & !is.na(.data$volume_allometry)], default = NA_real_),
+      .data$phase == "September+" ~ dplyr::last(.data$volume_allometry[.data$phase == "July-August" & !is.na(.data$volume_allometry)], default = NA_real_),
+      TRUE ~ NA_real_
+    ),
+    volume_allometry_inc_phase_abs = .data$volume_allometry - .data$phase_volume_allometry_baseline,
+    volume_zianis_inc_t0 = .data$volume_zianis - .data$first_volume_zianis,
+    phase_volume_zianis_baseline = dplyr::case_when(
+      .data$phase == "until June" ~ .data$first_volume_zianis,
+      .data$phase == "July-August" ~ dplyr::last(.data$volume_zianis[.data$phase == "until June" & !is.na(.data$volume_zianis)], default = NA_real_),
+      .data$phase == "September+" ~ dplyr::last(.data$volume_zianis[.data$phase == "July-August" & !is.na(.data$volume_zianis)], default = NA_real_),
+      TRUE ~ NA_real_
+    ),
+    volume_zianis_inc_phase_abs = .data$volume_zianis - .data$phase_volume_zianis_baseline,
+    volume_zianis_minus_allometry_inc_t0 = dplyr::if_else(
+      !is.na(.data$first_volume_allometry),
+      (.data$volume_zianis - .data$first_volume_zianis) - (.data$volume_allometry - .data$first_volume_allometry),
+      NA_real_
+    ),
+    volume_zianis_minus_allometry_phase_inc_abs = dplyr::if_else(
+      !is.na(.data$phase_volume_allometry_baseline) & !is.na(.data$phase_volume_zianis_baseline),
+      (.data$volume_zianis - .data$phase_volume_zianis_baseline) - (.data$volume_allometry - .data$phase_volume_allometry_baseline),
+      NA_real_
+    )
   ) %>%
   ungroup()
 
@@ -96,7 +140,9 @@ comparison_metric_specs <- tibble::tribble(
   "Height", "height", "height_inc_phase_abs", "height_inc_t0", "Height", "Height inc. phase", "Height inc. t0", "Height - Absolute size", "Height - Absolute increment within phase", "Height - Absolute increment from first measurement", "Height (cm)", "Height increment within phase (cm)", "Height increment from first measurement (cm)",
   "Diameter", "diameter", "diameter_inc_phase_abs", "diameter_inc_t0", "Diameter", "Diameter inc. phase", "Diameter inc. t0", "Diameter - Absolute size", "Diameter - Absolute increment within phase", "Diameter - Absolute increment from first measurement", "Diameter (mm)", "Diameter increment within phase (mm)", "Diameter increment from first measurement (mm)",
   "Volume (cylinder)", "volume_cylinder", "volume_cylinder_inc_phase_abs", "volume_cylinder_inc_t0", "Volume cylinder", "Volume cylinder inc. phase", "Volume cylinder inc. t0", "Volume (cylinder) - Absolute size", "Volume (cylinder) - Absolute increment within phase", "Volume (cylinder) - Absolute increment from first measurement", "Volume as cylinder (cm^3)", "Cylinder volume increment within phase (cm^3)", "Cylinder volume increment from first measurement (cm^3)",
-  "Volume (allometry)", "volume_allometry", "volume_allometry_inc_phase_abs", "volume_allometry_inc_t0", "Volume allometry", "Volume allometry inc. phase", "Volume allometry inc. t0", "Volume (allometry) - Absolute size", "Volume (allometry) - Absolute increment within phase", "Volume (allometry) - Absolute increment from first measurement", "Volume from allometry (proxy, g)", "Allometric proxy increment within phase (g)", "Allometric proxy increment from first measurement (g)"
+  "Volume (allometry)", "volume_allometry", "volume_allometry_inc_phase_abs", "volume_allometry_inc_t0", "Volume allometry", "Volume allometry inc. phase", "Volume allometry inc. t0", "Volume (allometry) - Absolute size", "Volume (allometry) - Absolute increment within phase", "Volume (allometry) - Absolute increment from first measurement", "Volume from allometry (proxy, g)", "Allometric proxy increment within phase (g)", "Allometric proxy increment from first measurement (g)",
+  "Volume (Zianis)", "volume_zianis", "volume_zianis_inc_phase_abs", "volume_zianis_inc_t0", "Volume Zianis", "Volume Zianis inc. phase", "Volume Zianis inc. t0", "Volume (Zianis) - Absolute size", "Volume (Zianis) - Absolute increment within phase", "Volume (Zianis) - Absolute increment from first measurement", "Volume from Zianis (proxy, g)", "Zianis proxy increment within phase (g)", "Zianis proxy increment from first measurement (g)",
+  "Volume difference (Zianis - allometry)", "volume_zianis_minus_allometry", "volume_zianis_minus_allometry_phase_inc_abs", "volume_zianis_minus_allometry_inc_t0", "Volume difference (Zianis - allometry)", "Method difference inc. phase", "Method difference inc. t0", "Volume method difference (absolute)", "Volume method difference within phase", "Volume method difference from first measurement", "Volume difference (Zianis - allometry) (g)", "Method-difference increment within phase (g)", "Method-difference increment from first measurement (g)"
 )
 
 comparison_sections <- list(
@@ -111,7 +157,9 @@ comparison_sections <- list(
       "height", "height_inc_phase_abs",
       "diameter", "diameter_inc_phase_abs",
       "volume_cylinder", "volume_cylinder_inc_phase_abs",
-      "volume_allometry", "volume_allometry_inc_phase_abs"
+      "volume_allometry", "volume_allometry_inc_phase_abs",
+      "volume_zianis", "volume_zianis_inc_phase_abs",
+      "volume_zianis_minus_allometry", "volume_zianis_minus_allometry_phase_inc_abs"
     ),
     file_stub = "volume-calculation-comparison-phase"
   ),
@@ -126,7 +174,9 @@ comparison_sections <- list(
       "height", "height_inc_t0",
       "diameter", "diameter_inc_t0",
       "volume_cylinder", "volume_cylinder_inc_t0",
-      "volume_allometry", "volume_allometry_inc_t0"
+      "volume_allometry", "volume_allometry_inc_t0",
+      "volume_zianis", "volume_zianis_inc_t0",
+      "volume_zianis_minus_allometry", "volume_zianis_minus_allometry_inc_t0"
     ),
     file_stub = "volume-calculation-comparison-t0"
   ),
@@ -141,9 +191,21 @@ comparison_sections <- list(
       "height",
       "diameter",
       "volume_cylinder",
-      "volume_allometry"
+      "volume_allometry",
+      "volume_zianis",
+      "volume_zianis_minus_allometry"
     ),
     file_stub = "volume-calculation-comparison-absolute"
+  ),
+  difference = list(
+    key = "difference",
+    title = "Method-difference comparison",
+    subtitle = "Absolute difference between Zianis and Annighöfer methods",
+    plot_cols = c("abs_resp_var"),
+    label_cols = c("abs_label"),
+    y_cols = c("abs_y_label"),
+    heatmap_order = c("volume_zianis_minus_allometry"),
+    file_stub = "volume-calculation-method-difference"
   )
 )
 
@@ -159,7 +221,13 @@ comparison_resp_label_map <- c(
   volume_cylinder_inc_t0 = "Volume cylinder inc. t0",
   volume_allometry = "Volume allometry",
   volume_allometry_inc_phase_abs = "Volume allometry inc. phase",
-  volume_allometry_inc_t0 = "Volume allometry inc. t0"
+  volume_allometry_inc_t0 = "Volume allometry inc. t0",
+  volume_zianis = "Volume Zianis",
+  volume_zianis_inc_phase_abs = "Volume Zianis inc. phase",
+  volume_zianis_inc_t0 = "Volume Zianis inc. t0",
+  volume_zianis_minus_allometry = "Volume difference (Zianis - allometry)",
+  volume_zianis_minus_allometry_phase_inc_abs = "Volume difference inc. phase",
+  volume_zianis_minus_allometry_inc_t0 = "Volume difference inc. t0"
 )
 
 comparison_plot_data <- function(resp_var, within_phase = FALSE) {

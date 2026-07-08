@@ -1,19 +1,26 @@
 # Central analysis configuration for factor baselines, response labels, and
 # treatment display wording used across notebooks and exported outputs.
 
-# Annighöfer et al. (2016) Table 4 RCD²H allometries used for the derived
-# growth proxy currently labelled "Volume" in the analysis outputs.
+# Central growth proxy options.
 #
 # Notes:
-# - The repo keeps the public response name "volume" for continuity, but the
-#   quantity is now an allometric proxy rather than a geometric cylinder.
+# - The public response name remains `volume` for compatibility.
+# - The default method is the Annighöfer et al. (2016) Table 4 RCD²H allometry.
+# - An alternative method from Zianis et al. (2005) is available and can be
+#   selected by setting `ALINV_VOLUME_PROXY_METHOD=zianis_2005` when running
+#   the data-cleaning pipeline.
 # - The experimental oak is Quercus ilex biologically, but the repo treats the
 #   oak group generically as `quercus`. We therefore use a configurable
 #   surrogate species from Annighöfer et al.
-# - The current default surrogate is Quercus robur because its published
+# - The default surrogate for the oak proxy is Quercus robur because its published
 #   calibration range covers the observed RCD²H values in this dataset.
 
-ALINV_VOLUME_PROXY_VERSION <- "annighofer_table4_v1"
+ALINV_VOLUME_PROXY_METHODS <- c("annighofer", "zianis_2005")
+ALINV_VOLUME_PROXY_DEFAULT <- "annighofer"
+ALINV_VOLUME_PROXY_VERSION <- c(
+  annighofer = "annighofer_table4_v1",
+  zianis_2005 = "zianis_2005_v1"
+)
 
 ALINV_VOLUME_ALLOMETRY <- list(
   source = list(
@@ -32,6 +39,23 @@ ALINV_VOLUME_ALLOMETRY <- list(
     "fagus", "fagus_sylvatica", "Fagus sylvatica", 0.62342, 0.87409, 0, 132559, "Species-specific Table 4 equation.",
     "quercus", "quercus_robur", "Quercus robur", 0.67311, 0.85202, 2, 65307, "Current default surrogate for repo `quercus` because the published range covers the observed data.",
     "quercus", "quercus_petraea", "Quercus petraea", 0.52740, 0.81213, 1, 16366, "Alternative oak surrogate kept switchable in config; would require extrapolation for current larger observations."
+  )
+)
+
+ALINV_VOLUME_ZIANIS <- list(
+  source = list(
+    citation = paste(
+      "Zianis, D., Muukkonen, P., Mäkipää, R. & Mencuccini, M. (2005).",
+      "Biomass and stem volume equations for tree species in Europe.",
+      "https://w1.aua.gr/dasologia/wp-content/uploads/sites/4/2023/01/2005_Zianis_SF.pdf"
+    ),
+    formula = "Species-specific equations from the linked document."
+  ),
+  specs = tibble::tribble(
+    ~repo_species, ~source_species_key, ~source_species_label, ~equation_id, ~formula_type, ~a, ~b, ~c, ~d, ~e, ~f, ~g, ~source_page_formula, ~source_page_parameters, ~notes,
+    "fagus", "fagus_sylvatica", "Fagus sylvatica", 49L, "poly6", -0.015572, 0.00290013, -7.0476e-6, 2.393e-6, -0.0013528, 3.9837e-5, NA_real_, 53, 54, "Equation 49 (Belgium): a + b*D + c*D² + d*D³ + e*H + f*D²*H (poly6).",
+    "quercus", "quercus_ilex", "Quercus ilex", 201L, "d2h", 1.1909, 0.038639, NA_real_, NA_real_, NA_real_, NA_real_, NA_real_, 59, 60, "Equation 201 (Italy): a + b*D²*H. Using this as the default oak surrogate in this dataset.",
+    "tilia", "tilia_cordata", "Tilia cordata", 225L, "log10_poly", 0.00004124, 1.9302, 0.0209, 0.129, -0.1903, NA_real_, NA_real_, 61, 62, "Equation 225 (Romania): a * 10^(b*log10(D) + c*log10(D)^2 + d*log10(H) + e*log10(H)^2)."
   )
 )
 
@@ -128,8 +152,12 @@ alinv_treatment_label_map <- function(style = c("temporal", "heatmap", "short", 
   stats::setNames(ALINV_TREATMENT_CONFIG[[col_name]], ALINV_TREATMENT_CONFIG$effect)
 }
 
-alinv_volume_proxy_version <- function() {
-  ALINV_VOLUME_PROXY_VERSION
+alinv_volume_proxy_version <- function(method = NULL) {
+  version <- ALINV_VOLUME_PROXY_VERSION[[alinv_volume_proxy_method(method)]]
+  if (is.null(version)) {
+    version <- ALINV_VOLUME_PROXY_VERSION[[ALINV_VOLUME_PROXY_DEFAULT]]
+  }
+  version
 }
 
 alinv_volume_allometry_catalog <- function() {
