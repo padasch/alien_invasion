@@ -2,75 +2,96 @@
 
 ## Data analysis
 
-### Data preparation
+Analyses were conducted separately for *Fagus sylvatica* and *Quercus ilex*. The primary analyses included observations from both soil-inoculation treatments but did not include soil type as a predictor. Precipitation treatment (control or reduced precipitation), *Robinia* treatment (without or with *R. pseudoacacia*), and culture type (monoculture or mixed culture) were coded as categorical predictors, with control precipitation, absence of *Robinia*, and monoculture as the respective reference levels.
 
-To quantify treatment effects on tree growth, we used height and diameter measurements to calculate a simple cylindrical stem-volume proxy,
+### Derived response variables
+
+Height and basal diameter were combined into a species-specific allometric growth proxy following Annighöfer et al. (2016):
 
 $$
-V = \pi \left(\frac{d}{2}\right)^2 h,
+G = \beta_1\left(D^2H\right)^{\beta_2},
 $$
 
-where $d$ is stem diameter (mm) and $h$ is height (mm). For all three metrics, we further derived the absolute increment relative to the first measurement, the relative increment relative to the first measurement, the absolute increment within phase, and the relative increment within phase. Phase-specific increments were referenced to the first measurement in phase 1 and to the last measurement of the previous phase in later phases.
+where $D$ is basal diameter (mm), $H$ is height (cm), and $G$ is the estimated allometric proxy (g). We used the published coefficients for *F. sylvatica* ($\beta_1 = 0.62342$, $\beta_2 = 0.87409$). Because an equation for *Q. ilex* was unavailable in the selected source, the *Q. robur* coefficients ($\beta_1 = 0.67311$, $\beta_2 = 0.85202$) were used as a surrogate. The analysis code and current figures refer to $G$ as a volume proxy for continuity, although it should be interpreted as an allometric biomass or size proxy rather than geometric stem volume.
 
-Leaf senescence was retained in its measured form as senesced canopy area (%) for shown timeseries. For analyses, however, we modelled remaining green canopy as "100 - senescence (%)", so that negative treatment effects represent earlier or faster senescence progression.
+For height, diameter, and the allometric proxy, we calculated absolute and relative increments from the first measurement. We additionally calculated phase-specific increments for spring (up to and including June), summer (July-August), and autumn (September onward). The spring baseline was the first measurement, whereas summer and autumn increments were referenced to the final measurement of the preceding phase. Phase-specific trajectories therefore restart at zero at each phase boundary.
 
+Leaf-senescence analyses used remaining green canopy, calculated as $100 -$ visually estimated senesced canopy area (%), so that negative coefficients denote less remaining green canopy and hence earlier or faster senescence. Vitality was analysed in the orientation used by the analysis data, in which higher values denote better condition; this orientation should be kept consistent with the measurement-scale description elsewhere in the manuscript.
 
-TODO:
-To analyse phenology, we used two complementary approaches because treatment effects can be expressed either as developmental status at a given date or as shifts in the timing of specific stage transitions. The first data set retained the repeated stage observations for each tree and was used in the same temporal mixed-model framework described above, thereby testing whether trees were more or less developmentally advanced at a given date.
-
-The second data set contained the cleaned transition dates at which stages 2-4 were reached. These transitions were modelled directly as day of year, first in separate stage-specific mixed-effects models and then in a pooled model across stages with stage as a fixed effect and tree identity retained as a random intercept. In these transition-timing models, negative coefficients indicate earlier attainment of a phenological stage and positive coefficients indicate delayed attainment.
-
-- Any other wrangling steps needed to describe here?
-    -   For example, minor cleaning steps, for example where a tree was noted to "have gone back" in phenology from (eg: 1 - 2 - 3 - 2 - 3 was cleaned into 1 - 2 - 3 - 3 - 3).
+For spring phenology, non-monotonic stage sequences were corrected before determining the first date on which each tree reached stages 2–4. Transition dates were expressed as day of year (DOY). On this natural scale, negative treatment coefficients indicate earlier and positive coefficients later leaf development. For presentation alongside the other response variables, the signs of phenology effects were reversed so that negative displayed values indicate delayed or slower development; this reorientation did not affect model fitting or inference.
 
 ### Temporal mixed-effects models
 
-To test how treatment effects changed through the season, we fitted species-specific mixed-effects models to repeated measurements of each response variable. The data were structured as repeated observations per tree, linked to box identity and sampling date. Before fitting, each response was standardized to a $z$-score within the analysed subset so that effect sizes were comparable across traits.
-
-The temporal model for each trait $y$ was
+Seasonal treatment effects on repeated responses were estimated with species-specific Gaussian linear mixed-effects models. Each response was standardized to a $z$ score within the analysed species-trait subset. Sampling date was treated as a categorical fixed effect and was allowed to modify the effect of each treatment:
 
 $$
-y = \mathrm{date} + \mathrm{date}:\mathrm{precipitation} + \mathrm{date}:\mathrm{Robinia} + \mathrm{date}:\mathrm{culture} + (1 | \mathrm{box}) + (1 | \mathrm{tree}).
+y_z = \mathrm{date} + \mathrm{date}:\mathrm{precipitation}
++ \mathrm{date}:\mathrm{Robinia}
++ \mathrm{date}:\mathrm{culture}
++ (1\mid\mathrm{container}) + (1\mid\mathrm{tree}).
 $$
 
-Date-specific treatment effects were extracted as treatment minus baseline contrasts, such that the plotted coefficients describe the change from control to drought, from without *Robinia* to with *Robinia*, from monoculture to mixture, and, where shown separately (Figures TODO). Negative coefficients therefore indicate reduced performance relative to the corresponding reference level.
+Container and tree identity were included as random intercepts to account for the experimental-unit and repeated-measure structure, respectively. Models were fitted by restricted maximum likelihood. For each date, treatment-minus-reference contrasts were extracted as reduced minus control precipitation, with minus without *Robinia*, and mixed culture minus monoculture. Pointwise 95% confidence intervals and two-sided probabilities were obtained by block-stratified container-cluster bootstrapping as described below. No multiplicity adjustment was applied to the date-specific contrasts. These models were additive across treatments and did not test precipitation × *Robinia*, culture × *Robinia*, or other treatment-by-treatment interactions.
 
-Endpoint biomass traits were analysed separately from the repeated trajectories because they were measured only once at harvest. Shoot biomass, root biomass, and root:shoot ratio were fitted as species-specific mixed-effects models with precipitation, *Robinia*, and culture treatments as fixed effects and box identity as a random intercept.
+### Phenological transition models
 
-### Structural equation modelling
-
-To separate direct treatment effects from effects mediated through soil moisture, we fitted species- and trait-specific piecewise structural equation models (SEMs). The data were structured at the tree-observation level, with each response matched to the nearest measured SWC value within a $\pm 7$ d window, giving preference to the most recent preceding SWC observation. We also interpolated SWC measurements to daily conditions using climate and soil water potential sensor data, however results did not change substantially and we therefore kept using actual measured SWC data (see Supplementary Information, TOOD). All continuous variables used in the SEMs, including SWC, the focal response, and centred day-of-year terms, were standardized before fitting. We included both linear and quadratic day-of-year terms to account for non-linear seasonal trajectories in soil moisture and tree responses over the course of the growing season. Each SEM consisted of two mixed-effects submodels:
+For each species, the DOY at which trees reached stages 2–4 was analysed jointly using a Gaussian linear mixed-effects model:
 
 $$
-\mathrm{SWC} = \mathrm{DOY} + \mathrm{DOY}^2 + \mathrm{precipitation} + \mathrm{Robinia} + \mathrm{soil} + \mathrm{culture} + \mathrm{extreme\ event} + (1 | \mathrm{box}),
+\mathrm{DOY} = \mathrm{stage} + \mathrm{precipitation} + \mathrm{Robinia}
++ \mathrm{culture} + \mathrm{block}
++ (1\mid\mathrm{container}) + (1\mid\mathrm{tree}).
 $$
 
-and
+Phenological stage, precipitation treatment, *Robinia* treatment, culture type, and experimental block were included as fixed effects. Container and tree identity were included as random intercepts to account for the experimental-unit structure and the repeated transition dates from each tree, respectively. The primary model assumes that each treatment produces a common shift in the timing of stages 2–4; the stage effect accounts for their different mean dates. Models were fitted by restricted maximum likelihood, and treatment contrasts were estimated in days with bootstrap confidence intervals and probabilities.
+
+As a sensitivity analysis, interactions between phenological stage and each treatment were added to determine whether treatment effects varied among stages. Stage-specific contrasts and their uncertainty were estimated by the same bootstrap procedure. Interaction terms were additionally evaluated by likelihood-ratio comparisons of models fitted by maximum likelihood. As a secondary measure of developmental rate, the elapsed time from stage 2 to stage 4 was calculated for trees with both transition dates and analysed with an additive Gaussian mixed-effects model containing precipitation, *Robinia*, culture, and block as fixed effects and container as a random intercept. Positive duration coefficients denote a longer, and hence slower, progression from stage 2 to stage 4; confidence intervals and probabilities were obtained by bootstrapping.
+
+### Harvest biomass
+
+Shoot biomass, root biomass, and root:shoot ratio were analysed separately for each species. Each response was standardized within species and fitted with a Gaussian linear mixed-effects model containing the additive main effects of precipitation, *Robinia*, and culture and a random intercept for container:
 
 $$
-y = \mathrm{SWC} + \mathrm{DOY} + \mathrm{DOY}^2 + \mathrm{precipitation} + \mathrm{Robinia} + \mathrm{soil} + \mathrm{culture} + \mathrm{extreme\ event} + (1 | \mathrm{box}) + (1 | \mathrm{tree}).
+y_z = \mathrm{precipitation} + \mathrm{Robinia} + \mathrm{culture}
++ (1\mid\mathrm{container}).
 $$
 
-For each treatment, we decomposed the standardized effect into a direct path ($c'$), an indirect path through SWC ($a \times b$), and a total effect ($c' + a \times b$). Direct-path uncertainty was taken from the fitted mixed-model coefficients, whereas indirect and total-effect uncertainty was propagated from the component path variances. To summarize these results across traits, we converted the SEM outputs into heatmaps of direct, indirect, and total effects, together with complementary matrices of "treatment $\rightarrow$ SWC" and "SWC $\rightarrow$ response" (Figures TODO).
+Models were fitted by restricted maximum likelihood. Fixed-effect estimates are presented with bootstrap 95% confidence intervals and two-sided bootstrap probabilities. The biomass models did not include treatment interactions.
 
-- Probably more for the figure caption: "All heatmaps use a shared diverging colour scale so that effect magnitudes were directly comparable across responses. Cells were blanked when the corresponding effect was not significant at $P \geq 0.05$."
+### Piecewise structural equation models
 
-- We can show either total effect of treatments (which includes the SWC-pathway), the direct effect (not including SWC-pathway), or both.
+We used species- and trait-specific piecewise structural equation models (SEMs) to distinguish treatment-response associations represented as direct paths from associations statistically transmitted through soil water content (SWC). For the repeatedly measured physiological responses, each tree observation was matched to the most recent SWC measurement from the same container within the preceding seven days; when none was available, the earliest following observation within seven days was used. All observations retained in these SEMs had an SWC match within this $\pm7$-day window. Spring phenology was analysed using the separate procedure described below.
 
-### Sensitivity analyses
+The extreme-event indicator identified measurements made during either summer drought event or its 14-day post-event window. In the implemented analysis, these windows were 20 June-17 July and 12 August-3 September 2025. The indicator is consequently a time-window contrast rather than an experimentally randomized treatment.
 
-We carried out two sensitivity analyses to test whether the main conclusions depended on presentation choices. First, because SWC was not measured daily, we compared the measured SWC series against a treatment-agnostic daily interpolation fitted with a generalized additive model using day of year, soil water potential, air temperature, vapour pressure deficit, precipitation, radiation, and box identity. Re-fitting the SEMs with interpolated SWC did not materially alter the qualitative pattern of direct versus SWC-mediated treatment effects.
+The response, SWC, and centred DOY were standardized before model fitting. Linear and quadratic DOY terms were included to represent nonlinear seasonal trajectories. For each response, the SEM consisted of an SWC submodel and a response submodel:
 
-Second, the main figures pool both soil types and omit soil as a treatment factor to simplify interpretation. To test whether this masked important legacy effects, we repeated the analyses with soil type separated or modelled explicitly. These analyses showed that one soil type was consistently somewhat drier and amplified the negative effects of drought and *Robinia*, but they did not alter the overall direction of the main treatment responses. These soil-specific results are therefore best presented as supplementary sensitivity figures (Supplementary Fig. Sx-Sy).
+$$
+\mathrm{SWC}_z = \mathrm{DOY}_z + \mathrm{DOY}_z^2
++ \mathrm{precipitation} + \mathrm{Robinia} + \mathrm{culture}
++ \mathrm{event} + (1\mid\mathrm{container}),
+$$
 
-Note that data was pooled across both soil types due increase sample size for analysis. In the Supporting Information, we present equivalent results as described below, using soil type as another treatment factor alongside the others. Overall, soil type had a comparatively small influence, primarily through one being sandier and less water-retaining than the other, which intensified drought-stress induced by the precipitation treatment and robinia presence (TODO, not sure if we have the data to proof the soil texture difference).
+$$
+y_z = \mathrm{SWC}_z + \mathrm{DOY}_z + \mathrm{DOY}_z^2
++ \mathrm{precipitation} + \mathrm{Robinia} + \mathrm{culture}
++ \mathrm{event} + (1\mid\mathrm{container}) + (1\mid\mathrm{tree}).
+$$
 
+The repeatedly measured response SEMs were additive and did not include treatment interactions. Candidate treatment terms were subjected separately in the two submodels to backward AIC selection fitted by maximum likelihood. A term was removed only when doing so reduced AIC by at least two units; linear and quadratic DOY were retained in both submodels, and SWC was retained in the response submodel. Selected models were then refitted by restricted maximum likelihood.
 
-### Software
+For the repeatedly measured responses and treatment $x$, the direct association was the coefficient $c'$ from the response submodel, the SWC-mediated component was the product $ab$, where $a$ is the $x\rightarrow$ SWC coefficient and $b$ is the SWC $\rightarrow y$ coefficient, and the total association was $c' + ab$. The selected submodel formulas were held fixed during bootstrapping. Direct, indirect, and total associations were recalculated after every refit, and uncertainty was estimated from their bootstrap distributions. Because SWC and the responses were observationally aligned in time, these path decompositions describe statistical associations and do not alone establish causal mediation.
 
-All analyses were performed in R using packages from the `tidyverse`; mixed-effects models were fitted with `lme4`, temporal contrasts were extracted with `emmeans`, piecewise SEMs were assembled with `piecewiseSEM`, and SWC interpolation was fitted with `mgcv`.
+The phenology SEM used a stage-centred overall timing index. Within each species, transition DOY was centred on the mean date of its respective stage, and each tree's mean deviation was calculated from the available transitions; trees were retained when at least two of stages 2–4 had been observed. The index was standardized within species and sign-reversed for presentation, such that negative effects denote delayed overall phenological timing.
 
-## Notes for manuscript placement
+To ensure that SWC preceded the phenological transitions, pre-leaf-out SWC was calculated as the mean measured SWC in each container during a fixed window from 4 March to 2 April 2025, which ended before the earliest focal transition. The SWC submodel was fitted to one observation per container and included precipitation, *Robinia*, culture, and block as additive fixed effects. The phenology submodel was fitted at tree level and included standardized SWC and the same treatment and block terms as fixed effects, with a random intercept for container. Direct, indirect ($ab$), and path-summed total ($c' + ab$) associations were calculated without model selection and were bootstrapped using the same design-aligned procedure. These paths describe conditional associations and should not be interpreted as evidence of causal mediation.
 
-- Some of the variable-derivation details in the `Data preparation` section, especially the growth-derived variables and the remaining-green transformation, could be shortened further by moving them into the corresponding measurement subsections.
-- Supplementary figure placeholders (`Fig. Sx-Sy`) should be replaced once the soil-separated and SWC-sensitivity panels are finalized.
+### Bootstrap uncertainty
+
+For inferential mixed models and SEM paths, uncertainty was estimated using 1,000 successful nonparametric bootstrap refits. Whole containers were sampled with replacement within experimental block, and all trees, measurement dates, or transition records belonging to a selected container were retained together. Repeatedly selected containers and their trees received unique synthetic identifiers before model refitting. Response standardization was calculated once from the original species-specific analysis sample and held fixed across bootstrap samples, so all refits estimated effects on the same scale. Nonconverged or incomplete refits were rejected and repeated until 1,000 successful estimates were obtained; converged singular fits were retained and counted because a variance component on the boundary is an admissible model result. Confidence intervals were the 2.5th and 97.5th percentiles of the successful estimates. Two-sided probabilities were calculated from the smaller empirical tail proportion with a plus-one correction. Descriptive time-series summaries that do not represent fitted model effects are shown separately as means with either standard errors or design-aligned bootstrap intervals, as stated in their captions.
+
+### Statistical interpretation and software
+
+Unless stated otherwise, treatment estimates are expressed in within-species standard-deviation units. Coefficients standardized separately by species should therefore not be interpreted as direct tests of between-species differences. Statistical evidence was evaluated from effect estimates, 95% confidence intervals, and two-sided $P$ values, with $P<0.05$ used for the significance labels in the figures. The primary analyses did not adjust for the number of traits, dates, or SEM paths and should be interpreted together with effect magnitude, consistency, and sensitivity analyses.
+
+Analyses were conducted in R. Mixed-effects models were fitted with `lme4`, piecewise SEM objects were assembled with `piecewiseSEM`, and data processing, bootstrap resampling, and figures used packages from the `tidyverse`, including `dplyr`, `tidyr`, and `ggplot2`.

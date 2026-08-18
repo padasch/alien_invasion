@@ -1,0 +1,7 @@
+species,metric,target_successful,successful,attempts,failed,singular_successful,seed,n_trees,n_containers,n_blocks,point_model_singular,formula,workbook
+fagus,shoot_biomass,1000,1000,1000,0,973,2026081805,128,32,2,TRUE,y_z ~ precipitation + culture + robinia + (1 | boxlabel),/Users/pascal/2 Work/projects/2025 ALINV/repository/alien_invasion/data/raw/data_20260309.xlsx
+fagus,root_biomass,1000,1000,1000,0,814,2026081805,128,32,2,TRUE,y_z ~ precipitation + culture + robinia + (1 | boxlabel),/Users/pascal/2 Work/projects/2025 ALINV/repository/alien_invasion/data/raw/data_20260309.xlsx
+fagus,root_shoot_biomass,1000,1000,1000,0,721,2026081805,128,32,2,TRUE,y_z ~ precipitation + culture + robinia + (1 | boxlabel),/Users/pascal/2 Work/projects/2025 ALINV/repository/alien_invasion/data/raw/data_20260309.xlsx
+quercus,shoot_biomass,1000,1000,1000,0,872,2026081805,127,32,2,TRUE,y_z ~ precipitation + culture + robinia + (1 | boxlabel),/Users/pascal/2 Work/projects/2025 ALINV/repository/alien_invasion/data/raw/data_20260309.xlsx
+quercus,root_biomass,1000,1000,1000,0,784,2026081805,127,32,2,TRUE,y_z ~ precipitation + culture + robinia + (1 | boxlabel),/Users/pascal/2 Work/projects/2025 ALINV/repository/alien_invasion/data/raw/data_20260309.xlsx
+quercus,root_shoot_biomass,1000,1000,1000,0,295,2026081805,127,32,2,FALSE,y_z ~ precipitation + culture + robinia + (1 | boxlabel),/Users/pascal/2 Work/projects/2025 ALINV/repository/alien_invasion/data/raw/data_20260309.xlsx

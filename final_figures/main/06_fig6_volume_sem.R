@@ -69,8 +69,9 @@ build_fig6_volume_panel <- function(summary_df, species_key, robinia_key, y_limi
     dplyr::filter(.data$species == .env$species_key, .data$robinia == .env$robinia_key)
   phase_windows <- prepare_fig6_phase_windows(summary_df)
   phase_transitions <- phase_windows$start[-1]
+  drought_y <- y_limits[[1]] + diff(y_limits) * 0.025
 
-  ggplot2::ggplot(
+  p <- ggplot2::ggplot(
     df_plot,
     ggplot2::aes(
       x = .data$date,
@@ -148,93 +149,22 @@ build_fig6_volume_panel <- function(summary_df, species_key, robinia_key, y_limi
       legend.margin = ggplot2::margin(0, 0, 0, 0),
       plot.margin = ggplot2::margin(2, 2.5, 2, 2.5)
     )
-}
 
-find_sem_matrix_file <- function(species, resp_var) {
-  root <- file.path(ALINV_PROJECT_ROOT, "output")
-  pattern <- paste0(
-    "sem-tree-.*-", resp_var, "-", species,
-    "-soil-both_without_soil_treatment-noInt-scaled-.*-all-swcMeas.*-matrix_data[.]csv$"
-  )
-  files <- list.files(root, pattern = pattern, recursive = TRUE, full.names = TRUE)
-  files <- files[file.exists(files)]
-  if (!length(files)) return(NA_character_)
-
-  date_part <- stringr::str_extract(files, "[0-9]{4}-[0-9]{2}-[0-9]{2}")
-  prefer_rfe <- grepl("rfeAIC2", files)
-  ord <- order(as.Date(date_part), prefer_rfe, file.info(files)$mtime, decreasing = TRUE, na.last = TRUE)
-  files <- files[ord]
-
-  for (file in files) {
-    cols <- tryCatch(
-      names(readr::read_csv(file, show_col_types = FALSE, n_max = 0)),
-      error = function(e) character()
-    )
-    if ("path_type" %in% cols) {
-      return(normalizePath(file, winslash = "/", mustWork = TRUE))
-    }
-  }
-
-  NA_character_
-}
-
-read_sem_total_for_response <- function(species, resp_var, response_label) {
-  file <- find_sem_matrix_file(species, resp_var)
-  if (is.na(file)) {
-    return(tibble::tibble())
-  }
-
-  readr::read_csv(file, show_col_types = FALSE) %>%
-    dplyr::filter(.data$path_type == "total", .data$treatment != "swc") %>%
-    dplyr::transmute(
-      species = .data$species,
-      treatment = .data$treatment,
-      response_label = response_label,
-      estimate = .data$estimate,
-      p_value = .data$p_value,
-      source_file = file
-    )
-}
-
-ensure_phenology_average_transition_sem <- function() {
-  file <- find_latest_file("phenology-average-transition-sem-matrix-data[.]csv$")
-  if (!is.na(file)) {
-    cols <- tryCatch(
-      names(readr::read_csv(file, show_col_types = FALSE, n_max = 0)),
-      error = function(e) character()
-    )
-    if ("effect_scale" %in% cols) {
-      scale_values <- tryCatch(
-        readr::read_csv(file, show_col_types = FALSE, col_select = "effect_scale") %>%
-          dplyr::pull(.data$effect_scale) %>%
-          unique(),
-        error = function(e) character()
-      )
-      if ("standardized_y_swc" %in% scale_values) {
-        return(file)
-      }
-    }
-  }
-
-  source(file.path(ALINV_PROJECT_ROOT, "scripts", "10-plot-phenology-average-transition-sem.R"), local = new.env(parent = globalenv()))
-  file <- find_latest_file("phenology-average-transition-sem-matrix-data[.]csv$")
-  if (!is.na(file)) {
-    return(file)
-  }
-  stop("Phenology average-transition SEM did not create matrix data.", call. = FALSE)
+  add_drought_segments(p, drought_y)
 }
 
 read_phenology_transition_sem_totals <- function() {
-  file <- ensure_phenology_average_transition_sem()
-  readr::read_csv(file, show_col_types = FALSE) %>%
-    dplyr::filter(.data$path_type == "total", .data$treatment != "swc") %>%
+  alinv_read_phenology_bootstrap_totals(ALINV_PROJECT_ROOT) %>%
     dplyr::transmute(
       species = .data$species,
-      treatment = .data$treatment,
+      treatment = .data$effect,
       response_label = "Phenology timing",
       estimate = .data$estimate,
-      p_value = .data$p_value,
-      source_file = file
+      p_value = .data$p_boot,
+      lower = .data$lower_95,
+      upper = .data$upper_95,
+      n_boot_success = .data$n_boot_success,
+      source_file = .data$source_file
     )
 }
 
@@ -250,11 +180,8 @@ prepare_fig6_sem_data <- function() {
     "chlavg", "Senescence (Chl)"
   )
 
-  standard <- purrr::map_dfr(c("fagus", "quercus"), function(species_i) {
-    purrr::pmap_dfr(response_specs, function(resp_var, response_label) {
-      read_sem_total_for_response(species_i, resp_var, response_label)
-    })
-  })
+  standard <- alinv_read_repeated_sem_bootstrap_totals(ALINV_PROJECT_ROOT) %>%
+    dplyr::semi_join(response_specs, by = c("resp_var", "response_label"))
 
   sem_df <- dplyr::bind_rows(read_phenology_transition_sem_totals(), standard)
 

@@ -44,6 +44,7 @@ suppressMessages(suppressPackageStartupMessages({
   source(file.path(ALINV_PROJECT_ROOT, "functions", "4-structural-equation-model.R"))
   source(file.path(ALINV_PROJECT_ROOT, "functions", "7-phenology-transition-models.R"))
   source(file.path(ALINV_PROJECT_ROOT, "functions", "8-size-trajectories.R"))
+  source(file.path(ALINV_PROJECT_ROOT, "functions", "11-bootstrap-inference.R"))
 }))
 
 alinv_set_analysis_context(
@@ -169,43 +170,13 @@ summary_se <- function(data, group_cols, value_col) {
     )
 }
 
-find_latest_file <- function(pattern, root = file.path(ALINV_PROJECT_ROOT, "output")) {
-  files <- list.files(root, pattern = pattern, recursive = TRUE, full.names = TRUE)
-  files <- files[file.exists(files)]
-  if (!length(files)) {
-    return(NA_character_)
-  }
-
-  date_part <- stringr::str_extract(files, "[0-9]{4}-[0-9]{2}-[0-9]{2}")
-  ord <- order(as.Date(date_part), file.info(files)$mtime, decreasing = TRUE, na.last = TRUE)
-  normalizePath(files[ord][[1]], winslash = "/", mustWork = TRUE)
-}
-
 read_latest_temporal_effects <- function(data_name, resp_var, species) {
-  pattern <- paste0(
-    "effect-tree-", data_name, "-", resp_var, "-", species,
-    "-soil-both_without_soil_treatment-noCovars-swcMeas.*-effects[.]csv$"
+  alinv_read_temporal_bootstrap_effects(
+    data_name = data_name,
+    resp_var = resp_var,
+    species = species,
+    project_root = ALINV_PROJECT_ROOT
   )
-  file <- find_latest_file(pattern)
-
-  if (is.na(file)) {
-    res <- make_effect_figure_generic(
-      type = "tree",
-      data_name = data_name,
-      resp_var = resp_var,
-      target_species = species,
-      soil_type = "both",
-      include_soil_treatment = FALSE,
-      add_covars = FALSE,
-      swc_source = "measured",
-      force_run = FALSE
-    )
-    return(res$effects)
-  }
-
-  readr::read_csv(file, show_col_types = FALSE) %>%
-    normalize_temporal_contrasts() %>%
-    dplyr::mutate(species = species, source_file = file)
 }
 
 compute_symmetric_limits <- function(df, cols = c("lower", "upper", "estimate"), pad = 0.08, floor = 0.5) {
@@ -276,7 +247,7 @@ build_temporal_effect_panel <- function(effects_df, panel_title, y_limits, show_
     ggplot2::coord_cartesian(ylim = y_limits) +
     ggplot2::labs(
       x = NULL,
-      y = if (isTRUE(show_y)) "Effect size (SD units)" else NULL,
+      y = if (isTRUE(show_y)) "Effect size (SD units; 95% bootstrap CI)" else NULL,
       title = panel_title
     ) +
     theme_alinv_pub(base_size = 7) +
@@ -286,7 +257,7 @@ build_temporal_effect_panel <- function(effects_df, panel_title, y_limits, show_
       axis.text.y = if (isTRUE(show_y)) ggplot2::element_text() else ggplot2::element_blank(),
       axis.ticks.y = if (isTRUE(show_y)) ggplot2::element_line(linewidth = 0.25) else ggplot2::element_blank(),
       legend.position = "bottom",
-      plot.margin = ggplot2::margin(2, 4, 2, 4)
+      plot.margin = ggplot2::margin(2, 4, 2, 16)
     )
 
   add_drought_segments(p, drought_y)

@@ -1,31 +1,5 @@
-latest_biomass_workbook <- function() {
-  candidates <- list.files(
-    file.path(ALINV_PROJECT_ROOT, "data", "raw"),
-    pattern = "^data_[0-9]+[.]xlsx$",
-    full.names = TRUE
-  )
-  if (!length(candidates)) {
-    stop("No biomass workbook matching data_*.xlsx found under data/raw.", call. = FALSE)
-  }
-  candidates[order(basename(candidates), decreasing = TRUE)][[1]]
-}
-
 prepare_fig5_effects <- function() {
-  biomass <- suppressWarnings(wrangle_tree_biomass(latest_biomass_workbook()))
-  effects <- dplyr::bind_rows(
-    suppressMessages(run_biomass_glmm_species(
-      biomass,
-      species_keep = "fagus",
-      soil_type = "both",
-      include_soil_treatment = FALSE
-    )$effects),
-    suppressMessages(run_biomass_glmm_species(
-      biomass,
-      species_keep = "quercus",
-      soil_type = "both",
-      include_soil_treatment = FALSE
-    )$effects)
-  )
+  effects <- alinv_read_biomass_bootstrap_effects(ALINV_PROJECT_ROOT)
 
   term_labels <- c(
     `robiniawith-robinia` = "Robinia: without -> with",
@@ -57,7 +31,9 @@ prepare_fig5_effects <- function() {
         dplyr::recode(.data$species, !!!SPECIES_LABELS),
         levels = c("Fagus", "Quercus")
       ),
-      significant = factor(.data$significant, levels = c(FALSE, TRUE))
+      ci_lo = .data$ci_lo_boot,
+      ci_hi = .data$ci_hi_boot,
+      significant = factor(!.data$boot_ci_includes_zero, levels = c(FALSE, TRUE))
     )
 }
 
@@ -85,17 +61,18 @@ make_fig5 <- function() {
     ggplot2::scale_x_continuous(breaks = scales::breaks_pretty(n = 5)) +
     ggplot2::scale_color_manual(
       values = c(`FALSE` = "#7A7A7A", `TRUE` = "#D65F5F"),
-      labels = c(`FALSE` = "95% CI includes 0", `TRUE` = "95% CI excludes 0"),
+      labels = c(`FALSE` = "95% bootstrap CI includes 0", `TRUE` = "95% bootstrap CI excludes 0"),
       name = NULL,
       drop = FALSE
     ) +
-    ggplot2::labs(x = "Standardized effect size (SD units, 95% CI)", y = NULL) +
+    ggplot2::labs(x = "Standardized effect size (SD units, 95% bootstrap CI)", y = NULL) +
     theme_alinv_pub(base_size = 7) +
     ggplot2::theme(
       legend.position = "bottom",
       panel.grid.major.y = ggplot2::element_blank(),
       strip.text.y = ggplot2::element_text(angle = 90),
       axis.text.y = ggplot2::element_text(size = 6.7),
+      panel.spacing.x = grid::unit(3, "mm"),
       plot.margin = ggplot2::margin(3, 5, 3, 4)
     )
 
