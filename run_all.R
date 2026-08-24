@@ -16,6 +16,7 @@ source("functions/_source.R")
 # do not need to run these lines. Uncomment them only when you want to
 # recreate the tracked cleaned data from the raw source files.
 # source("scripts/1-data-cleaning.R")
+# source("scripts/3-cleaning-sensor-data.R")
 # source("scripts/4-impute-swc-gam.R")
 
 analysis_date <- as.character(Sys.Date())

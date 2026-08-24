@@ -142,30 +142,10 @@ build_fig2_response_panel <- function(summary_obj, species_key = NULL, y_lab, ti
   format_fig2_axis(p, show_x = show_x)
 }
 
-read_daily_temperature <- function() {
-  meteo_file <- file.path(ALINV_PROJECT_ROOT, "data", "raw", "sensor_data", "meteo_10min.dat")
-  readr::read_csv(
-    meteo_file,
-    skip = 4,
-    col_names = c("timestamp", "record", "ta", "rh", "ap", "vpd", "globrad"),
-    show_col_types = FALSE
-  ) %>%
-    dplyr::mutate(
-      timestamp = lubridate::ymd_hms(.data$timestamp, quiet = TRUE),
-      date = as.Date(.data$timestamp)
-    ) %>%
-    dplyr::filter(lubridate::year(.data$date) == 2025) %>%
-    dplyr::group_by(.data$date) %>%
-    dplyr::summarise(ta = mean(.data$ta, na.rm = TRUE), .groups = "drop")
-}
-
 build_fig2_weather_panel <- function() {
-  ta <- read_daily_temperature()
-  precip <- readr::read_csv(file.path(ALINV_PROJECT_ROOT, "data", "interim", "site_precipitation_daily.csv"), show_col_types = FALSE) %>%
+  weather <- get_climate(c("air_temp", "precip_mm")) %>%
     dplyr::filter(lubridate::year(.data$date) == 2025) %>%
-    dplyr::select(date, precip_mm)
-
-  weather <- dplyr::full_join(ta, precip, by = "date") %>%
+    dplyr::rename(ta = "air_temp") %>%
     dplyr::arrange(.data$date)
 
   y_min <- -10

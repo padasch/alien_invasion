@@ -32,7 +32,7 @@ output/          # Model caches and figures (not tracked)
 |------|-------------|
 | `1-data-cleaning.R` | Excel → CSV pipeline |
 | `2-competition-on-growth.R` | Phenology and SLA exploratory analysis |
-| `3-cleaning-sensor-data.R` | Sensor data processing |
+| `3-cleaning-sensor-data.R` | Build the shared daily climate table from 10-minute sensor and precipitation data |
 | `4-impute-swc-gam.R` | Standalone SWC GAM imputation |
 | `5-render-analysis-scenarios.R` | Render all notebooks across all soil scenarios |
 | `6-plot-sem-heatmaps-from-csv.R` | Rebuild SEM heatmaps from exported CSV files |
@@ -53,6 +53,15 @@ This project uses [`renv`](https://rstudio.github.io/renv/) to manage R package 
 4. **Run data cleaning** to regenerate interim CSVs (if needed):
    ```r
    source("scripts/1-data-cleaning.R")
+   source("scripts/3-cleaning-sensor-data.R")
+   ```
+
+   The climate step writes `data/interim/site_climate_daily.csv`. Load the
+   complete table or a selected set of variables with:
+   ```r
+   source("functions/_source.R")
+   climate <- get_climate()
+   weather <- get_climate(c("air_temp", "vpd", "precip_mm"))
    ```
 5. **Render the default analysis path**:
    ```r

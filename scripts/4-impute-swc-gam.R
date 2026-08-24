@@ -2,11 +2,10 @@
 #
 # Goal:
 # - Build daily SWC estimates for all boxes without treatment predictors.
-# - Use only measured SWC, measured SWP (sensor subset), site-level climate,
-#   and corrected site-level precipitation.
+# - Use only measured SWC, measured SWP (sensor subset), and the shared
+#   site-level daily climate product.
 #
 # Output:
-# - data/interim/site_precipitation_daily.csv
 # - data/interim/box_soilwater_daily_gam_agnostic.csv
 
 source("./functions/_source.R")
@@ -16,32 +15,9 @@ library(lubridate)
 library(mgcv)
 
 # -----------------------------------------------------------------------------
-# 1) Load and wrangle daily climate (site-level)
+# 1) Load daily climate (site-level)
 # -----------------------------------------------------------------------------
-meteo_file <- .resolve_path("data/raw/sensor_data/meteo_10min.dat")
-meteo_raw <- read.table(
-  meteo_file,
-  sep = ",",
-  header = FALSE,
-  skip = 4,
-  stringsAsFactors = FALSE,
-  col.names = c("datetime", "id", "air_temp", "rh", "patm", "vpd", "radiation")
-)
-
-meteo_daily <- meteo_raw %>%
-  mutate(
-    datetime = ymd_hms(datetime),
-    date = as.Date(datetime)
-  ) %>%
-  mutate(across(c(air_temp, rh, vpd, radiation), as.numeric)) %>%
-  group_by(date) %>%
-  summarise(
-    air_temp = mean(air_temp, na.rm = TRUE),
-    rh = mean(rh, na.rm = TRUE),
-    vpd = mean(vpd, na.rm = TRUE),
-    radiation = mean(radiation, na.rm = TRUE),
-    .groups = "drop"
-  )
+climate_daily <- get_climate()
 
 # -----------------------------------------------------------------------------
 # 2) Load and wrangle daily SWP signal (site-level aggregate from sensor subset)
@@ -84,14 +60,7 @@ swp_site_daily <- soil_daily %>%
   )
 
 # -----------------------------------------------------------------------------
-# 3) Build corrected daily precipitation (MS + LWF fallback on corrupted dates)
-# -----------------------------------------------------------------------------
-precip_daily <- get_site_precipitation_daily(
-  export_path = "data/interim/site_precipitation_daily.csv"
-)
-
-# -----------------------------------------------------------------------------
-# 4) Load observed SWC and create full box x date panel
+# 3) Load observed SWC and create full box x date panel
 # -----------------------------------------------------------------------------
 swc_obs <- readr::read_csv(
   .resolve_path("data/interim/box_soilwater.csv"),
@@ -104,16 +73,15 @@ swc_obs <- readr::read_csv(
 )
 
 # Keep only the date window where all site-level predictors are available.
-date_min <- max(min(meteo_daily$date), min(swp_site_daily$date), min(precip_daily$date))
-date_max <- min(max(meteo_daily$date), max(swp_site_daily$date), max(precip_daily$date))
+date_min <- max(min(climate_daily$date), min(swp_site_daily$date))
+date_max <- min(max(climate_daily$date), max(swp_site_daily$date))
 
 all_boxes <- swc_obs %>% distinct(boxlabel)
 all_dates <- tibble(date = seq.Date(date_min, date_max, by = "day"))
 
 panel_daily <- tidyr::expand_grid(all_boxes, all_dates) %>%
   left_join(swc_obs, by = c("boxlabel", "date")) %>%
-  left_join(meteo_daily, by = "date") %>%
-  left_join(precip_daily, by = "date") %>%
+  left_join(climate_daily, by = "date") %>%
   left_join(swp_site_daily %>% select(date, swp_site), by = "date") %>%
   mutate(
     date_num = as.numeric(date),
@@ -133,7 +101,7 @@ if (nrow(fit_data) < 200) {
 }
 
 # -----------------------------------------------------------------------------
-# 5) Fit agnostic GAM (no treatment covariates)
+# 4) Fit agnostic GAM (no treatment covariates)
 # -----------------------------------------------------------------------------
 gam_swc <- mgcv::gam(
   swc_obs ~
@@ -151,13 +119,13 @@ gam_swc <- mgcv::gam(
 cat("\nGAM fitted. Adjusted R2:", round(summary(gam_swc)$r.sq, 3), "\n")
 
 # -----------------------------------------------------------------------------
-# 6) Predict daily SWC for all boxes and export
+# 5) Predict daily SWC for all boxes and export
 # -----------------------------------------------------------------------------
 pred_data <- panel_daily %>%
   filter(!is.na(swp_site), !is.na(air_temp), !is.na(vpd), !is.na(radiation), !is.na(precip_mm)) %>%
   select(
     boxlabel, date, swc_obs, air_temp, rh, vpd, radiation,
-    precip_mm, precip_mm_2d, precip_source, swp_site, date_num
+    precip_mm, swp_site, date_num
   )
 
 pred <- predict(gam_swc, newdata = pred_data, se.fit = TRUE, type = "response")
