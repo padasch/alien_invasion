@@ -12,7 +12,12 @@ script_file <- normalizePath(
   winslash = "/",
   mustWork = TRUE
 )
-project_root <- normalizePath(file.path(dirname(script_file), "..", ".."), winslash = "/", mustWork = TRUE)
+project_root_override <- Sys.getenv("ALINV_PROJECT_ROOT_OVERRIDE", unset = "")
+project_root <- if (nzchar(project_root_override)) {
+  normalizePath(project_root_override, winslash = "/", mustWork = TRUE)
+} else {
+  normalizePath(file.path(dirname(script_file), "..", ".."), winslash = "/", mustWork = TRUE)
+}
 setwd(project_root)
 
 renv_lib <- Sys.glob(file.path(project_root, "renv", "library", "*", "R-*", "*"))
@@ -29,8 +34,16 @@ suppressMessages(suppressPackageStartupMessages({
   source(file.path(project_root, "functions", "11-bootstrap-inference.R"))
 }))
 
-output_dir <- file.path(project_root, "supplementary_information", "output", "v1")
+output_dir <- Sys.getenv(
+  "ALINV_SUPPLEMENTARY_SEM_OUTPUT_DIR",
+  unset = file.path(project_root, "supplementary_information", "output", "v1")
+)
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+output_filename <- Sys.getenv(
+  "ALINV_SUPPLEMENTARY_SEM_OUTPUT_FILENAME",
+  unset = "figure-s3-sem-path-decomposition.pdf"
+)
+repeated_effects_file <- Sys.getenv("ALINV_REPEATED_SEM_EFFECTS_FILE", unset = "")
 
 species_order <- c("fagus", "quercus")
 species_labels <- c(fagus = "Fagus", quercus = "Quercus")
@@ -47,7 +60,8 @@ response_order <- c(
 )
 component_order <- c("Direct", "Indirect via SWC", "Treatment to SWC")
 
-standard <- alinv_read_repeated_sem_bootstrap_effects(project_root) %>%
+format_standard_effects <- function(x) {
+  x %>%
   dplyr::filter(.data$component %in% c("direct", "indirect", "treatment_to_swc")) %>%
   dplyr::transmute(
     species = .data$species,
@@ -65,6 +79,20 @@ standard <- alinv_read_repeated_sem_bootstrap_effects(project_root) %>%
     p_boot = .data$p_boot,
     n_boot_success = .data$n_boot
   )
+}
+
+baseline_standard <- alinv_read_repeated_sem_bootstrap_effects(project_root) %>%
+  format_standard_effects()
+
+standard <- if (nzchar(repeated_effects_file)) {
+  if (!file.exists(repeated_effects_file)) {
+    stop("Configured repeated-response SEM effects file does not exist: ", repeated_effects_file)
+  }
+  readr::read_csv(repeated_effects_file, show_col_types = FALSE) %>%
+    format_standard_effects()
+} else {
+  baseline_standard
+}
 
 phenology_bundle <- alinv_read_phenology_sem_bootstrap_effects(project_root)
 phenology_di <- phenology_bundle$effects %>%
@@ -122,7 +150,12 @@ plot_data <- tidyr::expand_grid(
     label = dplyr::if_else(.data$significant, sprintf("%.2f", .data$estimate), "")
   )
 
-fill_limit <- max(abs(plot_data$estimate), na.rm = TRUE)
+fill_reference <- if (nzchar(repeated_effects_file)) {
+  dplyr::bind_rows(baseline_standard, phenology_di, phenology_swc)
+} else {
+  observed
+}
+fill_limit <- max(abs(fill_reference$estimate), na.rm = TRUE)
 fill_limit <- ceiling(fill_limit * 10) / 10
 
 theme_sem <- function(show_y = TRUE) {
@@ -206,7 +239,7 @@ figure <- patchwork::wrap_plots(panels, ncol = 3, guides = "collect") +
   patchwork::plot_layout(heights = c(1, 1.16)) &
   ggplot2::theme(legend.position = "bottom")
 
-pdf_file <- file.path(output_dir, "figure-s3-sem-path-decomposition.pdf")
+pdf_file <- file.path(output_dir, output_filename)
 ggplot2::ggsave(
   pdf_file,
   figure,

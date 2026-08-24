@@ -1,0 +1,29 @@
+species,resp_var,response_label,model_id,method,window_days,status,n_baseline_rows,n_antecedent_rows,coverage_proportion,n_containers,n_trees,baseline_swc_mean,baseline_swc_sd,scale_reconstruction_max_abs_error
+fagus,chl,Chlorophyll,fagus__chl,antecedent_7d,7,available,1680,1680,1,47,140,10.95607142857143,6.62602383208544,2.220446049250313e-15
+fagus,chl,Chlorophyll,fagus__chl,antecedent_14d,14,available,1680,1680,1,47,140,10.95607142857143,6.62602383208544,2.220446049250313e-15
+fagus,chlavg,Senescence (Chl),fagus__chlavg,antecedent_7d,7,available,1561,1561,1,38,194,13.406726457399097,5.1487314452201165,2.220446049250313e-14
+fagus,chlavg,Senescence (Chl),fagus__chlavg,antecedent_14d,14,available,1561,1561,1,38,194,13.406726457399097,5.1487314452201165,2.220446049250313e-14
+fagus,condition,Vitality,fagus__condition,antecedent_7d,7,available,3080,3080,1,47,280,11.753246753246755,6.326144669247434,1.509903313490213e-14
+fagus,condition,Vitality,fagus__condition,antecedent_14d,14,available,3080,3080,1,47,280,11.753246753246755,6.326144669247434,1.509903313490213e-14
+fagus,qy,Quantum yield,fagus__qy,antecedent_7d,7,available,1524,1524,1,47,140,10.839698162729663,6.656742308538131,1.1102230246251565e-15
+fagus,qy,Quantum yield,fagus__qy,antecedent_14d,14,available,1524,1524,1,47,140,10.839698162729663,6.656742308538131,1.1102230246251565e-15
+fagus,remaining_green,Senescence (%),fagus__remaining_green,antecedent_7d,7,available,3640,3640,1,47,280,13.95076923076923,5.509151442302349,6.217248937900877e-15
+fagus,remaining_green,Senescence (%),fagus__remaining_green,antecedent_14d,14,available,3640,3640,1,47,280,13.95076923076923,5.509151442302349,6.217248937900877e-15
+fagus,volume,Volume (total),fagus__volume,antecedent_7d,7,available,2240,2240,1,47,280,14.68285714285714,6.24287863031174,1.1102230246251565e-14
+fagus,volume,Volume (total),fagus__volume,antecedent_14d,14,available,2240,2240,1,47,280,14.68285714285714,6.24287863031174,1.1102230246251565e-14
+fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,antecedent_7d,7,available,2240,2240,1,47,280,14.68285714285714,6.24287863031174,1.1102230246251565e-14
+fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,antecedent_14d,14,available,2240,2240,1,47,280,14.68285714285714,6.24287863031174,1.1102230246251565e-14
+quercus,chl,Chlorophyll,quercus__chl,antecedent_7d,7,available,1776,1776,1,49,148,12.262725225225225,7.157026387390827,3.1086244689504383e-15
+quercus,chl,Chlorophyll,quercus__chl,antecedent_14d,14,available,1776,1776,1,49,148,12.262725225225225,7.157026387390827,3.1086244689504383e-15
+quercus,chlavg,Senescence (Chl),quercus__chlavg,antecedent_7d,7,unavailable,0,0,NA,0,0,NA,NA,NA
+quercus,chlavg,Senescence (Chl),quercus__chlavg,antecedent_14d,14,unavailable,0,0,NA,0,0,NA,NA,NA
+quercus,condition,Vitality,quercus__condition,antecedent_7d,7,available,3255,3255,1,49,296,13.064331797235019,6.855127622058385,1.021405182655144e-14
+quercus,condition,Vitality,quercus__condition,antecedent_14d,14,available,3255,3255,1,49,296,13.064331797235019,6.855127622058385,1.021405182655144e-14
+quercus,qy,Quantum yield,quercus__qy,antecedent_7d,7,available,1628,1628,1,49,148,12.243243243243242,7.130360292973035,5.551115123125783e-15
+quercus,qy,Quantum yield,quercus__qy,antecedent_14d,14,available,1628,1628,1,49,148,12.243243243243242,7.130360292973035,5.551115123125783e-15
+quercus,remaining_green,Senescence (%),quercus__remaining_green,antecedent_7d,7,unavailable,0,0,NA,0,0,NA,NA,NA
+quercus,remaining_green,Senescence (%),quercus__remaining_green,antecedent_14d,14,unavailable,0,0,NA,0,0,NA,NA,NA
+quercus,volume,Volume (total),quercus__volume,antecedent_7d,7,available,2368,2368,1,49,296,15.586824324324322,6.7675356700019025,8.43769498715119e-15
+quercus,volume,Volume (total),quercus__volume,antecedent_14d,14,available,2368,2368,1,49,296,15.586824324324322,6.7675356700019025,8.43769498715119e-15
+quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,antecedent_7d,7,available,2368,2368,1,49,296,15.586824324324322,6.7675356700019025,8.43769498715119e-15
+quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,antecedent_14d,14,available,2368,2368,1,49,296,15.586824324324322,6.7675356700019025,8.43769498715119e-15

@@ -1,0 +1,4 @@
+method,n,median_indirect_share,mean_indirect_share,n_indirect_larger_than_direct
+fuzzy_baseline,48,0.14062323681834388,0.22924363732264766,6
+antecedent_14d,48,0.07271332638888814,0.15069897856930098,2
+antecedent_7d,48,0.1960095332010007,0.2153013518276637,2

@@ -1,0 +1,5 @@
+method,window_days,level,n_checks,max_abs_identity_error,n_above_tolerance_1e12
+antecedent_7d,7,point,48,1.1102230246251565e-16,0
+antecedent_14d,14,point,48,5.551115123125783e-17,0
+antecedent_7d,7,bootstrap,48000,1.1102230246251565e-16,0
+antecedent_14d,14,bootstrap,48000,1.1102230246251565e-16,0

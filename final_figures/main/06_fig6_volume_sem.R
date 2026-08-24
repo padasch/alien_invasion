@@ -168,7 +168,7 @@ read_phenology_transition_sem_totals <- function() {
     )
 }
 
-prepare_fig6_sem_data <- function() {
+prepare_fig6_sem_data <- function(repeated_sem_totals = NULL) {
   response_specs <- tibble::tribble(
     ~resp_var, ~response_label,
     "volume", "Volume (total)",
@@ -180,7 +180,11 @@ prepare_fig6_sem_data <- function() {
     "chlavg", "Senescence (Chl)"
   )
 
-  standard <- alinv_read_repeated_sem_bootstrap_totals(ALINV_PROJECT_ROOT) %>%
+  if (is.null(repeated_sem_totals)) {
+    repeated_sem_totals <- alinv_read_repeated_sem_bootstrap_totals(ALINV_PROJECT_ROOT)
+  }
+
+  standard <- repeated_sem_totals %>%
     dplyr::semi_join(response_specs, by = c("resp_var", "response_label"))
 
   sem_df <- dplyr::bind_rows(read_phenology_transition_sem_totals(), standard)
@@ -307,6 +311,7 @@ build_fig6_sem_heatmap <- function(sem_df,
       high = "#3C6E8F",
       midpoint = 0,
       limits = c(-fill_limit, fill_limit),
+      oob = scales::squish,
       na.value = "white",
       name = "Standardized Effect",
       guide = ggplot2::guide_colorbar(
@@ -486,7 +491,10 @@ build_fig6_heatmap_legend <- function(fill_limit) {
 }
 
 make_fig6 <- function(nonsignificant_mode = FIG6_HEATMAP_NONSIGNIFICANT_MODE,
-                      axis_layout = FIG6_HEATMAP_AXIS_LAYOUT) {
+                      axis_layout = FIG6_HEATMAP_AXIS_LAYOUT,
+                      repeated_sem_totals = NULL,
+                      heatmap_fill_limit = NULL,
+                      output_file = "fig6_volume_sem.pdf") {
   nonsignificant_mode <- match.arg(nonsignificant_mode, FIG6_HEATMAP_NONSIGNIFICANT_MODES)
   axis_layout <- match.arg(axis_layout, FIG6_HEATMAP_AXIS_LAYOUTS)
   volume_summary <- prepare_fig6_volume_summary()
@@ -498,8 +506,11 @@ make_fig6 <- function(nonsignificant_mode = FIG6_HEATMAP_NONSIGNIFICANT_MODE,
     floor = 0.15
   )
 
-  sem_df <- prepare_fig6_sem_data()
-  fill_limit <- max(abs(sem_df$estimate), na.rm = TRUE)
+  sem_df <- prepare_fig6_sem_data(repeated_sem_totals = repeated_sem_totals)
+  fill_limit <- heatmap_fill_limit
+  if (is.null(fill_limit)) {
+    fill_limit <- max(abs(sem_df$estimate), na.rm = TRUE)
+  }
   if (!is.finite(fill_limit) || fill_limit <= 0) fill_limit <- 1
 
   p_a <- build_fig6_volume_panel(volume_summary, "fagus", "without-robinia", y_limits, show_y = TRUE, show_legend = FALSE)
@@ -532,5 +543,5 @@ GGHH
       heights = c(1, 1, 0.13)
     )
 
-  alinv_save_pdf(fig, "fig6_volume_sem.pdf", height_mm = FIG6_HEIGHT_MM)
+  alinv_save_pdf(fig, output_file, height_mm = FIG6_HEIGHT_MM)
 }

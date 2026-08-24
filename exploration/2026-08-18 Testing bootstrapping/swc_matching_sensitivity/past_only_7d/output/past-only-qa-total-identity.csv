@@ -1,0 +1,13 @@
+species,resp_var,model_id,n_checks,n_failures,max_abs_difference
+fagus,chl,fagus__chl,4000,0,3.469446951953614e-16
+fagus,chlavg,fagus__chlavg,4000,0,4.0722633598555547e-16
+fagus,condition,fagus__condition,4000,0,2.7755575615628914e-16
+fagus,qy,fagus__qy,4000,0,5.551115123125783e-16
+fagus,remaining_green,fagus__remaining_green,4000,0,5.490399801466594e-16
+fagus,volume,fagus__volume,4000,0,1.1796119636642288e-16
+fagus,volume_inc_phase_rel,fagus__volume_inc_phase_rel,4000,0,2.7755575615628914e-16
+quercus,chl,quercus__chl,4000,0,8.500145032286355e-17
+quercus,condition,quercus__condition,4000,0,9.020562075079397e-17
+quercus,qy,quercus__qy,4000,0,1.1102230246251565e-16
+quercus,volume,quercus__volume,4000,0,2.749536709423239e-16
+quercus,volume_inc_phase_rel,quercus__volume_inc_phase_rel,4000,0,3.885780586188048e-16

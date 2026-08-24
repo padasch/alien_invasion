@@ -1,0 +1,15 @@
+species,resp_var,model_id,status,n_baseline_rows,n_exact_daily_rows,n_exact_measured,n_daily_gam,exact_date_coverage,baseline_swc_mean,baseline_swc_sd,scale_reconstruction_max_abs_error
+fagus,chl,fagus__chl,available,1680,1680,1120,560,1,10.95607142857143,6.62602383208544,2.220446049250313e-15
+fagus,chlavg,fagus__chlavg,available,1561,1561,344,1217,1,13.406726457399097,5.1487314452201165,2.220446049250313e-14
+fagus,condition,fagus__condition,available,3080,3080,0,3080,1,11.753246753246755,6.326144669247434,1.509903313490213e-14
+fagus,qy,fagus__qy,available,1524,1524,839,685,1,10.839698162729663,6.656742308538131,1.1102230246251565e-15
+fagus,remaining_green,fagus__remaining_green,available,3640,3640,560,3080,1,13.95076923076923,5.509151442302349,6.217248937900877e-15
+fagus,volume,fagus__volume,available,2240,2240,280,1960,1,14.68285714285714,6.24287863031174,1.1102230246251565e-14
+fagus,volume_inc_phase_rel,fagus__volume_inc_phase_rel,available,2240,2240,280,1960,1,14.68285714285714,6.24287863031174,1.1102230246251565e-14
+quercus,chl,quercus__chl,available,1776,1776,1184,592,1,12.262725225225225,7.157026387390827,3.1086244689504383e-15
+quercus,chlavg,quercus__chlavg,unavailable,0,0,0,0,NA,NA,NA,NA
+quercus,condition,quercus__condition,available,3255,3255,0,3255,1,13.064331797235019,6.855127622058385,1.021405182655144e-14
+quercus,qy,quercus__qy,available,1628,1628,888,740,1,12.243243243243242,7.130360292973035,5.551115123125783e-15
+quercus,remaining_green,quercus__remaining_green,unavailable,0,0,0,0,NA,NA,NA,NA
+quercus,volume,quercus__volume,available,2368,2368,296,2072,1,15.586824324324322,6.7675356700019025,8.43769498715119e-15
+quercus,volume_inc_phase_rel,quercus__volume_inc_phase_rel,available,2368,2368,296,2072,1,15.586824324324322,6.7675356700019025,8.43769498715119e-15

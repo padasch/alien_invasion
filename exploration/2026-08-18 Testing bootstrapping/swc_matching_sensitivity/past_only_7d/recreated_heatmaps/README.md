@@ -1,0 +1,10 @@
+# Past-only SWC heatmap comparison
+
+These PDFs replace only the repeated-response SEM input with the past-only measured-SWC sensitivity (same-day or latest preceding SWC within seven days). All available models use 1,000 successful block-stratified container-cluster bootstrap replicates.
+
+- `fig6-volume-sem-past-only-swc.pdf` should be compared with `final_figures/main/output/fig6_volume_sem.pdf`.
+- `figure-s3-sem-path-decomposition-past-only-swc.pdf` should be compared with the current bootstrap version at `supplementary_information/output/v1/figure-s3-sem-path-decomposition.pdf`.
+
+The phenology/leaf-out SEM is unchanged because it does not use the repeated-response fuzzy-matching rule. Both past-only variants retain the baseline heatmap color limits so color intensity is directly comparable. Coefficients are printed only where the relevant 1,000-replicate bootstrap p-value is below 0.05; grey cells are unavailable.
+
+The older `supplementary_information/output/sem/figure-s3-sem-path-decomposition.pdf` predates the current repeated-response bootstrap source and should not be used for the uncertainty-consistent comparison.

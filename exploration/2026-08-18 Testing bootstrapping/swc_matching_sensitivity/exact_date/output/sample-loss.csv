@@ -1,0 +1,15 @@
+model_id,n_rows_baseline,n_rows_exact,retained_fraction,n_containers_baseline,n_containers_exact,n_trees_baseline,n_trees_exact,n_dates_baseline,n_dates_exact,max_abs_swc_exact_difference
+fagus__chl,1680,1120,0.6666666666666666,47,47,140,140,12,8,0
+fagus__chlavg,1561,344,0.22037155669442665,38,36,194,184,12,2,0
+fagus__condition,3080,0,0,47,0,280,0,11,0,NA
+fagus__qy,1524,839,0.550524934383202,47,47,140,140,11,6,0
+fagus__remaining_green,3640,560,0.15384615384615385,47,47,280,280,13,2,0
+fagus__volume,2240,280,0.125,47,47,280,280,8,1,0
+fagus__volume_inc_phase_rel,2240,280,0.125,47,47,280,280,8,1,0
+quercus__chl,1776,1184,0.6666666666666666,49,49,148,148,12,8,0
+quercus__chlavg,0,0,NA,0,0,0,0,0,0,NA
+quercus__condition,3255,0,0,49,0,296,0,11,0,NA
+quercus__qy,1628,888,0.5454545454545454,49,49,148,148,11,6,0
+quercus__remaining_green,0,0,NA,0,0,0,0,0,0,NA
+quercus__volume,2368,296,0.125,49,49,296,296,8,1,0
+quercus__volume_inc_phase_rel,2368,296,0.125,49,49,296,296,8,1,0
