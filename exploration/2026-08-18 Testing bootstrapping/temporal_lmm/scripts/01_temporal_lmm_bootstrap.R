@@ -291,7 +291,17 @@ find_current_asymptotic <- function(data_name, resp_var, species) {
     "effect-tree-", data_name, "-", resp_var, "-", species,
     "-soil-both_without_soil_treatment-noCovars-swcMeas-effects.csv"
   )
-  files <- list.files(file.path(PROJECT_ROOT, "output"), recursive = TRUE, full.names = TRUE)
+  search_roots <- c(
+    file.path(PROJECT_ROOT, "output"),
+    file.path(PROJECT_ROOT, "_archive", "model-caches", "dated-output")
+  )
+  search_roots <- search_roots[dir.exists(search_roots)]
+  files <- unlist(lapply(
+    search_roots,
+    list.files,
+    recursive = TRUE,
+    full.names = TRUE
+  ), use.names = FALSE)
   files <- files[basename(files) == basename_target]
   if (!length(files)) stop("No current asymptotic effects file found: ", basename_target, call. = FALSE)
   date_match <- stringr::str_extract(files, "[0-9]{4}-[0-9]{2}-[0-9]{2}")

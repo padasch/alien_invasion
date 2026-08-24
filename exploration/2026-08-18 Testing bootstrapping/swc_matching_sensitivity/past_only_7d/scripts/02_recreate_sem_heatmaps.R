@@ -85,7 +85,7 @@ on.exit(
 )
 source(file.path(
   project_root, "scripts", "supplementary_figures",
-  "03-sem-path-decomposition-heatmaps.R"
+  "fig_s17.R"
 ))
 
 s3_file <- file.path(output_dir, "figure-s3-sem-path-decomposition-past-only-swc.pdf")

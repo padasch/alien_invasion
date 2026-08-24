@@ -464,7 +464,7 @@ build_fig6_heatmap_legend <- function(fill_limit) {
       "text",
       x = 0,
       y = 1.36,
-      label = "Standardized treatment effect",
+      label = "Effect size",
       size = 2.05,
       color = "black"
     ) +

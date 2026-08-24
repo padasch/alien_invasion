@@ -412,7 +412,10 @@ figure6_ready <- sem_effects %>% filter(.data$component == "Path-summed total") 
   mutate(bootstrap_design = "container resampling within block", bootstrap_replicates = n_boot)
 
 # Comparisons with the current manuscript outputs.
-current_dir <- file.path(project_root, "output", "2026-08-18", "phenology-overall-timing-analysis")
+current_dir <- file.path(
+  project_root, "_archive", "model-caches", "dated-output", "2026-08-18",
+  "phenology-overall-timing-analysis"
+)
 compare_effects <- function(current_file, new_df, keys, old_method, new_method,
                             old_lower, old_upper, old_p, new_lower, new_upper, new_p) {
   old <- read_csv(current_file, show_col_types = FALSE) %>%

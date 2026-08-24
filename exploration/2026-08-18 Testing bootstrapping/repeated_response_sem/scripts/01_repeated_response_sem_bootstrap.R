@@ -58,12 +58,22 @@ model_grid <- tidyr::crossing(
   )
 
 find_current_sem_source <- function(species, resp_var) {
-  root <- file.path(project_root, "output")
+  roots <- c(
+    file.path(project_root, "output"),
+    file.path(project_root, "_archive", "model-caches", "dated-output")
+  )
+  roots <- roots[dir.exists(roots)]
   pattern <- paste0(
     "sem-tree-.*-", resp_var, "-", species,
     "-soil-both_without_soil_treatment-noInt-scaled-.*-all-swcMeas.*-matrix_data[.]csv$"
   )
-  files <- list.files(root, pattern = pattern, recursive = TRUE, full.names = TRUE)
+  files <- unlist(lapply(
+    roots,
+    list.files,
+    pattern = pattern,
+    recursive = TRUE,
+    full.names = TRUE
+  ), use.names = FALSE)
   if (!length(files)) return(list(matrix_file = NA_character_, rds_file = NA_character_))
 
   date_part <- stringr::str_extract(files, "[0-9]{4}-[0-9]{2}-[0-9]{2}")

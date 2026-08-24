@@ -24,9 +24,9 @@ docs/                    # Local manuscript files; intentionally not version con
 _archive/                # Local historical material; intentionally not version controlled
 ```
 
-The dated directories directly under `output/` contain model caches used by
-some bootstrap workflows. They are ignored by Git and should not be treated as
-publication deliverables.
+Historical dated model caches are stored locally under
+`_archive/model-caches/dated-output/`. They are ignored by Git and are retained
+only for legacy method comparisons; `output/` contains publication PDFs only.
 
 ## Rebuilding the publication figures
 

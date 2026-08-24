@@ -82,9 +82,9 @@ supp_theme <- function(base_size = 7) {
       strip.background = element_rect(fill = "grey12", color = "grey12"),
       strip.text = element_text(color = "white", face = "bold"),
       legend.position = "bottom",
-      plot.title.position = "plot",
-      plot.title = element_text(face = "bold", size = base_size + 1),
-      plot.subtitle = element_text(size = base_size)
+      plot.title = element_blank(),
+      plot.subtitle = element_blank(),
+      plot.caption = element_blank()
     )
 }
 
@@ -163,7 +163,7 @@ supp_timeseries_figure <- function(figure_id, data_name, value_col, species, y_l
     scale_fill_manual(values = SUPP_PRECIP_COLORS, guide = "none") +
     scale_linetype_manual(values = c(mono = "solid", mixed = "42"), labels = c(mono = "mono", mixed = "mixed"), name = "Culture") +
     scale_x_date(date_breaks = "3 months", date_labels = "%m/%y") +
-    labs(x = "Date", y = y_label, subtitle = "Means and 95% block-stratified container-bootstrap intervals (1,000 replicates)") +
+    labs(x = "Date", y = y_label) +
     supp_theme(7)
   yr <- range(c(src$lower, src$upper), na.rm = TRUE)
   if (!is.null(limits)) { p <- p + coord_cartesian(ylim = limits); ybar <- limits[1] + diff(limits) * .02 } else ybar <- yr[1] - diff(yr) * .03
@@ -171,7 +171,7 @@ supp_timeseries_figure <- function(figure_id, data_name, value_col, species, y_l
   supp_save(p, figure_id, height_mm = if (length(species) == 3) 145 else if (length(species) == 1) 78 else 112)
 }
 
-supp_soil_elemental <- function(figure_id = "fig-s1-1-soil-elemental", seed = 2026082101L) {
+supp_soil_elemental <- function(figure_id = "fig_s1", seed = 2026082101L) {
   df <- get_data("box", "cn_isotopes") %>%
     mutate(block = supp_block(.data$boxlabel), soiltype = factor(gsub("-", "_", .data$soiltype), levels = c("inoc_beech", "inoc_robinia")), cn_ratio = .data$c_perc / .data$n_perc) %>%
     select(boxlabel, block, soiltype, c_perc, n_perc, cn_ratio)
@@ -190,16 +190,16 @@ supp_soil_elemental <- function(figure_id = "fig-s1-1-soil-elemental", seed = 20
   ypos <- long %>% group_by(metric) %>% summarise(y = max(value, na.rm = TRUE) + .08 * diff(range(value, na.rm = TRUE)), .groups = "drop") %>% left_join(tests, by = "metric")
   p <- ggplot(filter(long, is.finite(.data$value)), aes(soiltype, value, fill = soiltype, color = soiltype)) +
     geom_boxplot(alpha = .65, outlier.shape = NA, width = .62) + geom_jitter(width = .12, alpha = .65, size = .9) +
-    geom_text(data = ypos, aes(x = 1.5, y = y, label = sprintf("bootstrap P = %.3f", p_boot)), inherit.aes = FALSE, size = 2.3) +
+    geom_text(data = ypos, aes(x = 1.5, y = y, label = sprintf("P = %.3f", p_boot)), inherit.aes = FALSE, size = 2.3) +
     facet_wrap(~metric, scales = "free_y", nrow = 1, labeller = labeller(metric = labels)) +
     scale_fill_manual(values = c(inoc_beech = "#B35CFF", inoc_robinia = "#8DD3F5"), labels = c(inoc_beech = "beech-inoculated", inoc_robinia = "Robinia-inoculated"), name = "Soil type") +
     scale_color_manual(values = c(inoc_beech = "#B35CFF", inoc_robinia = "#8DD3F5"), guide = "none") +
     scale_x_discrete(labels = c(inoc_beech = "Beech", inoc_robinia = "Robinia")) +
-    labs(x = "Soil inoculum", y = NULL, subtitle = "Block-stratified container bootstrap (1,000 replicates)") + supp_theme(7)
+    labs(x = "Soil inoculum", y = NULL) + supp_theme(7)
   supp_save(p, figure_id, height_mm = 82)
 }
 
-supp_measurement_schedule <- function(figure_id = "fig-s1-2-measurement-schedule") {
+supp_measurement_schedule <- function(figure_id = "fig_s2") {
   src <- build_measurement_table(get_measurement_schedule_grid(), file.path(PROJECT_ROOT, "data", "interim"))
   p <- plot_measurement_schedule(
     src,
@@ -210,7 +210,7 @@ supp_measurement_schedule <- function(figure_id = "fig-s1-2-measurement-schedule
   supp_save(p, figure_id, width_mm = 180, height_mm = 80, width_limit_mm = 180)
 }
 
-supp_phenology_progression <- function(figure_id = "fig-s2-6-spring-phenology") {
+supp_phenology_progression <- function(figure_id = "fig_s8") {
   species <- c("fagus", "quercus", "robinia")
   d <- get_data("tree", "phenology_transitions") %>% filter(.data$species %in% species, .data$stage %in% 1:4, !is.na(.data$doy)) %>%
     mutate(species = factor(.data$species, levels = species, labels = unname(SUPP_SPECIES_LABELS[species])),
@@ -250,7 +250,7 @@ supp_biomass <- function(figure_id, species) {
     scale_fill_manual(values = c(control = "grey50", drought = "indianred"), name = "Precipitation") +
     scale_color_manual(values = c(control = "grey50", drought = "indianred"), guide = "none") +
     scale_alpha_manual(values = c(mono = .55, mixed = .9), guide = "none") +
-    labs(title = paste("Tree biomass by treatments -", species), x = "Culture", y = NULL) +
+    labs(x = "Culture", y = NULL) +
     theme_bw(base_size = 9) +
     theme(
       strip.background.x = element_rect(fill = "black", color = "black"),
@@ -258,7 +258,6 @@ supp_biomass <- function(figure_id, species) {
       strip.background.y = element_blank(),
       strip.text.y.left = element_text(color = "black", face = "plain", angle = 90),
       strip.placement = "outside", legend.position = "bottom",
-      plot.title.position = "plot", plot.title = element_text(face = "bold"),
       plot.margin = margin(5, 5, 5, 10)
     )
   supp_save(p, figure_id, height_mm = 145)
@@ -342,7 +341,7 @@ supp_temporal_effect_figure <- function(figure_id, data_name, resp_var, species,
     scale_color_manual(values = SUPP_EFFECT_COLORS, labels = SUPP_EFFECT_LABELS, breaks = SUPP_TREATMENTS, name = NULL) +
     scale_fill_manual(values = SUPP_EFFECT_COLORS, labels = SUPP_EFFECT_LABELS, breaks = SUPP_TREATMENTS, name = NULL) +
     scale_x_date(date_breaks = "1 month", date_labels = "%b") + coord_cartesian(ylim = lim) +
-    labs(x = NULL, y = "Effect size (SD units)", subtitle = "95% container-bootstrap intervals; 1,000 successful block-stratified replicates") +
+    labs(x = NULL, y = "Effect size") +
     supp_theme(7) + theme(plot.margin = margin(4, 4, 4, 10))
   supp_save(fig, figure_id, height_mm = if (length(species) == 1) 82 else 125)
 }

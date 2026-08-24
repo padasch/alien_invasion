@@ -50,7 +50,7 @@ alinv_set_analysis_context(
   include_soil_treatment = FALSE,
   analysis_date = Sys.Date(),
   output_root = file.path(ALINV_PROJECT_ROOT, "output"),
-  create_dirs = TRUE
+  create_dirs = FALSE
 )
 
 FIG_WIDTH_MM <- 160
@@ -244,7 +244,7 @@ build_temporal_effect_panel <- function(effects_df, panel_title, y_limits, show_
     ggplot2::coord_cartesian(ylim = y_limits) +
     ggplot2::labs(
       x = NULL,
-      y = if (isTRUE(show_y)) "Effect size (SD units; 95% bootstrap CI)" else NULL,
+      y = if (isTRUE(show_y)) "Effect size" else NULL,
       title = panel_title
     ) +
     theme_alinv_pub(base_size = 7) +

@@ -57,9 +57,9 @@ theme_supplement <- function(base_size = 8) {
       panel.grid.minor = ggplot2::element_blank(),
       strip.background = ggplot2::element_rect(fill = "grey12", color = "grey12", linewidth = 0.25),
       strip.text = ggplot2::element_text(color = "white", face = "bold"),
-      plot.title = ggplot2::element_text(face = "bold", size = base_size + 1),
-      plot.subtitle = ggplot2::element_text(size = base_size),
-      plot.caption = ggplot2::element_text(size = base_size - 1, color = "grey30"),
+      plot.title = ggplot2::element_blank(),
+      plot.subtitle = ggplot2::element_blank(),
+      plot.caption = ggplot2::element_blank(),
       legend.position = "bottom"
     )
 }

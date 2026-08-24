@@ -62,15 +62,8 @@ figure_s2 <- ggplot2::ggplot(
   ggplot2::scale_color_manual(values = TREATMENT_COLORS, guide = "none") +
   ggplot2::scale_shape_manual(values = c(`FALSE` = 1, `TRUE` = 16), guide = "none") +
   ggplot2::labs(
-    title = "Overall shift of the stage-2–4 transition profile",
-    subtitle = paste(
-      "Treatment contrasts from one additive Gaussian LMM per species;",
-      "95% intervals from 1,000 block-stratified container bootstrap refits",
-      sep = "\n"
-    ),
-    x = "Oriented timing effect (days): negative = delayed, positive = earlier",
-    y = NULL,
-    caption = "Open points indicate intervals overlapping zero; filled points indicate intervals excluding zero."
+    x = "Timing effect (days; negative = delayed, positive = earlier)",
+    y = NULL
   ) +
   theme_supplement(base_size = 8) +
   ggplot2::theme(
@@ -80,10 +73,10 @@ figure_s2 <- ggplot2::ggplot(
 
 save_supplementary_plot(
   figure_s2,
-  stem = "figure-s2-phenology-overall-timing-effects",
+  stem = "fig_s16",
   width_mm = 160,
   height_mm = 82
 )
 
 print(tibble::as_tibble(primary_effects), n = Inf)
-message("Saved bootstrap Figure S2 in: ", normalizePath(SUPP_OUTPUT_DIR, winslash = "/", mustWork = TRUE))
+message("Saved Figure S16 in: ", normalizePath(SUPP_OUTPUT_DIR, winslash = "/", mustWork = TRUE))

@@ -65,7 +65,7 @@ make_fig5 <- function() {
       name = NULL,
       drop = FALSE
     ) +
-    ggplot2::labs(x = "Standardized effect size (SD units, 95% bootstrap CI)", y = NULL) +
+    ggplot2::labs(x = "Effect size", y = NULL) +
     theme_alinv_pub(base_size = 7) +
     ggplot2::theme(
       legend.position = "bottom",

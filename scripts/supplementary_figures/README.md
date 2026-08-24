@@ -5,8 +5,8 @@ including phenology, temporal responses, biomass, and SEM decompositions. Run
 the scripts from the repository root:
 
 ```sh
-Rscript --vanilla scripts/supplementary_figures/02-phenology-overall-timing-lmm.R
-Rscript --vanilla scripts/supplementary_figures/03-sem-path-decomposition-heatmaps.R
+Rscript --vanilla scripts/supplementary_figures/fig_s16.R
+Rscript --vanilla scripts/supplementary_figures/fig_s17.R
 ```
 
 The scripts locate the repository root automatically and use the project
@@ -16,7 +16,7 @@ figure-specific subdirectories, PNGs, CSVs, reports, or model objects.
 
 ## Reconstruction of `Supplementary_v1.pdf`
 
-The 15 figures in `Supplementary_v1.pdf` each have a dedicated entry script.
+The first 15 reconstructed figures each have a dedicated numbered entry script.
 Shared data preparation, bootstrap, modelling, plotting, and export code is in
 `scripts/supplementary_figures/_v1-figure-helpers.R`; the figure scripts only specify the relevant
 dataset, response, species, and labels. Run the complete collection with:
@@ -26,30 +26,32 @@ ALINV_SUPP_BOOT_B=1000 ALINV_SUPP_BOOT_CORES=4 \
   Rscript --vanilla scripts/supplementary_figures/make-v1-figures.R
 ```
 
-All 15 outputs are written as PDFs directly to
+All 17 outputs are written as `fig_s1.pdf` through `fig_s17.pdf` directly to
 `output/supplementary/`. No figure-specific subdirectories,
 PNGs, CSVs, reports, or model objects are written there. During a run, fitted
 bootstrap objects may be cached only in the R session's temporary directory;
 `ALINV_SUPP_MODEL_CACHE` can optionally point to a cache outside the
 supplementary output directory.
 
-| Figure | Entry script | Analysis shown |
+| PDF | Entry script | Analysis shown |
 |---|---|---|
-| S1.1 | `fig-s1-1-soil-elemental.R` | Soil C, N, and C:N; block-stratified container bootstrap contrasts |
-| S1.2 | `fig-s1-2-measurement-schedule.R` | Measurement schedule (descriptive) |
-| S2.1 | `fig-s2-1-diameter-timeseries.R` | Diameter-increment group means and container-bootstrap intervals |
-| S2.2 | `fig-s2-2-height-timeseries.R` | Height-increment group means and container-bootstrap intervals |
-| S2.3 | `fig-s2-3-quantum-yield-timeseries.R` | Fv/Fm group means and container-bootstrap intervals |
-| S2.4 | `fig-s2-4-chlorophyll-timeseries.R` | Chlorophyll group means and container-bootstrap intervals |
-| S2.5 | `fig-s2-5-vitality-timeseries.R` | Vitality group means and container-bootstrap intervals |
-| S2.6 | `fig-s2-6-spring-phenology.R` | Spring phenology progression (mean +/- SE, descriptive) |
-| S2.7 | `fig-s2-7-autumn-senescence-timeseries.R` | Senesced-crown group means and container-bootstrap intervals |
-| S3.1 | `fig-s3-1-height-effects-bootstrap.R` | Height temporal LMM effects with bootstrap intervals |
-| S3.2 | `fig-s3-2-vitality-effects-bootstrap.R` | Vitality temporal LMM effects with bootstrap intervals |
-| S3.3 | `fig-s3-3-senescence-effects-bootstrap.R` | Remaining-green temporal LMM effects with bootstrap intervals |
-| S4.1 | `fig-s4-1-chlorophyll-effects-bootstrap.R` | Chlorophyll temporal LMM effects with bootstrap intervals |
-| S5.1 | `fig-s5-1-biomass-fagus.R` | Fagus biomass distributions (descriptive) |
-| S5.2 | `fig-s5-2-biomass-quercus.R` | Quercus biomass distributions (descriptive) |
+| `fig_s1.pdf` | `fig_s1.R` | Soil C, N, and C:N contrasts |
+| `fig_s2.pdf` | `fig_s2.R` | Measurement schedule |
+| `fig_s3.pdf` | `fig_s3.R` | Diameter-increment time series |
+| `fig_s4.pdf` | `fig_s4.R` | Height-increment time series |
+| `fig_s5.pdf` | `fig_s5.R` | Quantum-yield time series |
+| `fig_s6.pdf` | `fig_s6.R` | Chlorophyll time series |
+| `fig_s7.pdf` | `fig_s7.R` | Vitality time series |
+| `fig_s8.pdf` | `fig_s8.R` | Spring phenology progression |
+| `fig_s9.pdf` | `fig_s9.R` | Autumn-senescence time series |
+| `fig_s10.pdf` | `fig_s10.R` | Height temporal-LMM effects |
+| `fig_s11.pdf` | `fig_s11.R` | Vitality temporal-LMM effects |
+| `fig_s12.pdf` | `fig_s12.R` | Remaining-green temporal-LMM effects |
+| `fig_s13.pdf` | `fig_s13.R` | Chlorophyll temporal-LMM effects |
+| `fig_s14.pdf` | `fig_s14.R` | *Fagus* biomass distributions |
+| `fig_s15.pdf` | `fig_s15.R` | *Quercus* biomass distributions |
+| `fig_s16.pdf` | `fig_s16.R` | Overall phenology timing effects |
+| `fig_s17.pdf` | `fig_s17.R` | Exploratory SWC-path decomposition |
 
 ### Bootstrap used for the reconstructed figures
 
@@ -74,19 +76,19 @@ estimates.
 The descriptive time-series figures do not fit the LMM. Their uncertainty bands
 use the same design-aligned, block-stratified container resampling principle on
 container-level group means. Figure S2.6 retains mean +/- SE to match the
-phenology-progression description, and Figures S1.2 and S5.1-S5.2 are purely
+phenology-progression description, and Figures S2 and S14-S15 are purely
 descriptive.
 
 ## Figures
 
-- `figure-s1-phenology-progression`: observed treatment-group mean transition
+- `fig_s8.pdf`: observed treatment-group mean transition
   day of year (DOY) with standard errors. Stages 1–4 are shown to describe the
   complete spring progression; stage 1 is not included in the inferential
   model.
-- `figure-s2-phenology-overall-timing-effects`: treatment contrasts from the
+- `fig_s16.pdf`: treatment contrasts from the
   primary common-shift phenology model, with 95% block-stratified
   container-bootstrap intervals.
-- `figure-s3-sem-path-decomposition`: exploratory small-multiple heatmaps of
+- `fig_s17.pdf`: exploratory small-multiple heatmaps of
   SWC-adjusted treatment-response associations, SWC-associated indirect paths,
   and treatment-to-SWC paths. Repeated responses use same-day or latest
   preceding measured SWC within seven days; future SWC is never assigned to an

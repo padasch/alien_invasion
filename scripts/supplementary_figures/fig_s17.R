@@ -42,7 +42,7 @@ output_dir <- Sys.getenv(
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 output_filename <- Sys.getenv(
   "ALINV_SUPPLEMENTARY_SEM_OUTPUT_FILENAME",
-  unset = "figure-s3-sem-path-decomposition.pdf"
+  unset = "fig_s17.pdf"
 )
 preferred_effects_file <- file.path(
   project_root, "exploration", "2026-08-18 Testing bootstrapping",
@@ -222,7 +222,7 @@ build_panel <- function(species_i, component_i, show_y = TRUE) {
       midpoint = 0,
       limits = c(-fill_limit, fill_limit),
       oob = scales::squish,
-      name = "Standardized effect",
+      name = "Effect size",
       guide = ggplot2::guide_colorbar(
         title.position = "top",
         title.hjust = 0.5,

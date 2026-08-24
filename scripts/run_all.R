@@ -48,11 +48,11 @@ run_script(
 )
 run_script(file.path(
   project_root, "scripts", "supplementary_figures",
-  "02-phenology-overall-timing-lmm.R"
+  "fig_s16.R"
 ))
 run_script(file.path(
   project_root, "scripts", "supplementary_figures",
-  "03-sem-path-decomposition-heatmaps.R"
+  "fig_s17.R"
 ))
 
 message("Publication figures rebuilt under output/main_figures and output/supplementary.")
