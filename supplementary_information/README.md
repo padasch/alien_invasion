@@ -87,12 +87,15 @@ descriptive.
 - `figure-s2-phenology-overall-timing-effects`: treatment contrasts from the
   primary common-shift phenology model, with 95% block-stratified
   container-bootstrap intervals.
-- `figure-s3-sem-path-decomposition`: small-multiple heatmaps of the direct
-  treatment-to-response paths, SWC-mediated indirect paths, and
-  treatment-to-SWC paths underlying Figure 6. All components use one shared
-  diverging scale. The figure is an associative decomposition and is not, by
-  itself, evidence of causal mediation. Its cell intervals and probabilities
-  use the same 1,000-replicate bootstrap as Figure 6.
+- `figure-s3-sem-path-decomposition`: exploratory small-multiple heatmaps of
+  SWC-adjusted treatment-response associations, SWC-associated indirect paths,
+  and treatment-to-SWC paths. Repeated responses use same-day or latest
+  preceding measured SWC within seven days; future SWC is never assigned to an
+  earlier response. All components use one shared diverging scale. The figure
+  is an associative decomposition and is not evidence of causal mediation.
+  Cell intervals and probabilities use a 1,000-replicate block-stratified
+  container-cluster bootstrap. Figure 6 instead reports directly fitted
+  reduced-form treatment effects without SWC.
 
 ## Statistical model
 

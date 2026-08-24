@@ -58,9 +58,21 @@ $$
 
 Models were fitted by restricted maximum likelihood. Fixed-effect estimates are presented with bootstrap 95% confidence intervals and two-sided bootstrap probabilities. The biomass models did not include treatment interactions.
 
-### Piecewise structural equation models
+### Standardized treatment-effect summary
 
-We used species- and trait-specific piecewise structural equation models (SEMs) to distinguish treatment-response associations represented as direct paths from associations statistically transmitted through soil water content (SWC). For the repeatedly measured physiological responses, each tree observation was matched to the most recent SWC measurement from the same container within the preceding seven days; when none was available, the earliest following observation within seven days was used. All observations retained in these SEMs had an SWC match within this $\pm7$-day window. Spring phenology was analysed using the separate procedure described below.
+To compare overall treatment responses among repeatedly measured traits, we fitted a reduced-form Gaussian mixed-effects model separately for each species and trait. The standardized response was modelled as a function of centred linear and quadratic DOY, precipitation, *Robinia*, culture, and the extreme-event time-window indicator, with random intercepts for container and tree. These models used the response-model analysis samples and covariate structures of the corresponding pathway analyses but omitted SWC:
+
+$$
+y_z = \mathrm{DOY}_z + \mathrm{DOY}_z^2
++ \mathrm{precipitation} + \mathrm{Robinia} + \mathrm{culture}
++ \mathrm{event} + (1\mid\mathrm{container}) + (1\mid\mathrm{tree}).
+$$
+
+Treatment coefficients were therefore estimated directly rather than reconstructed by summing SEM paths. For leaf-out, treatment shifts from the primary common-shift phenology model were divided by the species-specific standard deviation of the stage-centred tree timing index. All estimates were oriented such that negative values indicate delayed phenology or deterioration of plant performance. These directly fitted standardized treatment effects and their bootstrap uncertainty are summarized in Figure 6.
+
+### Exploratory SWC pathway analysis
+
+We used species- and trait-specific piecewise path models as an exploratory analysis to distinguish SWC-adjusted treatment-response associations from associations statistically transmitted through soil water content (SWC). For the repeatedly measured physiological responses, each tree observation was matched to SWC measured on the same day or, when unavailable, to the most recent preceding measurement from the same container within seven days. Future SWC measurements were not assigned to earlier response observations. Spring phenology was analysed using the separate procedure described below.
 
 The extreme-event indicator identified measurements made during either summer drought event or its 14-day post-event window. In the implemented analysis, these windows were 20 June-17 July and 12 August-3 September 2025. The indicator is consequently a time-window contrast rather than an experimentally randomized treatment.
 
@@ -78,9 +90,9 @@ y_z = \mathrm{SWC}_z + \mathrm{DOY}_z + \mathrm{DOY}_z^2
 + \mathrm{event} + (1\mid\mathrm{container}) + (1\mid\mathrm{tree}).
 $$
 
-The repeatedly measured response SEMs were additive and did not include treatment interactions. Candidate treatment terms were subjected separately in the two submodels to backward AIC selection fitted by maximum likelihood. A term was removed only when doing so reduced AIC by at least two units; linear and quadratic DOY were retained in both submodels, and SWC was retained in the response submodel. Selected models were then refitted by restricted maximum likelihood.
+The repeatedly measured response pathway models were additive and did not include treatment interactions. Candidate treatment terms had previously been subjected separately in the two submodels to backward AIC selection fitted by maximum likelihood. A term was removed only when doing so reduced AIC by at least two units; linear and quadratic DOY were retained in both submodels, and SWC was retained in the response submodel. For the temporally restricted analysis, these selected formulas were held fixed and refitted by restricted maximum likelihood.
 
-For the repeatedly measured responses and treatment $x$, the direct association was the coefficient $c'$ from the response submodel, the SWC-mediated component was the product $ab$, where $a$ is the $x\rightarrow$ SWC coefficient and $b$ is the SWC $\rightarrow y$ coefficient, and the total association was $c' + ab$. The selected submodel formulas were held fixed during bootstrapping. Direct, indirect, and total associations were recalculated after every refit, and uncertainty was estimated from their bootstrap distributions. Because SWC and the responses were observationally aligned in time, these path decompositions describe statistical associations and do not alone establish causal mediation.
+For the repeatedly measured responses and treatment $x$, the SWC-adjusted association was the coefficient $c'$ from the response submodel, the SWC-associated indirect component was the product $ab$, where $a$ is the $x\rightarrow$ SWC coefficient and $b$ is the SWC $\rightarrow y$ coefficient, and the path-summed association was $c' + ab$. The selected submodel formulas were held fixed during bootstrapping. SWC-adjusted, indirect, and path-summed associations were recalculated after every refit, and uncertainty was estimated from their bootstrap distributions. Because SWC and the responses were observationally aligned in time, these decompositions describe conditional associations and do not establish causal mediation. Alternative exact-date, interpolated daily, and 7- and 14-day antecedent SWC definitions were examined as sensitivity analyses; they supported the stability of overall treatment associations but showed that pathway allocation was sensitive to temporal alignment.
 
 The phenology SEM used a stage-centred overall timing index. Within each species, transition DOY was centred on the mean date of its respective stage, and each tree's mean deviation was calculated from the available transitions; trees were retained when at least two of stages 2–4 had been observed. The index was standardized within species and sign-reversed for presentation, such that negative effects denote delayed overall phenological timing.
 

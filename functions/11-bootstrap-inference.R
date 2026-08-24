@@ -23,9 +23,13 @@ alinv_bootstrap_paths <- function(project_root = .alinv_project_root()) {
     repeated_sem_totals = file.path(root, "repeated_response_sem", "output", "figure6-ready-repeated-response-sem-path-summed-total.csv"),
     repeated_sem_effects = file.path(root, "repeated_response_sem", "output", "repeated-response-sem-bootstrap-effects.csv"),
     repeated_sem_status = file.path(root, "repeated_response_sem", "output", "repeated-response-sem-bootstrap-status.csv"),
+    reduced_response_script = file.path(root, "reduced_response_lmm", "scripts", "01_reduced_response_bootstrap.R"),
+    reduced_response_effects = file.path(root, "reduced_response_lmm", "output", "reduced-response-bootstrap-effects.csv"),
+    reduced_response_status = file.path(root, "reduced_response_lmm", "output", "reduced-response-bootstrap-status.csv"),
     phenology_script = file.path(root, "phenology", "run_phenology_bootstrap.R"),
     phenology_totals = file.path(root, "phenology", "output", "figure6-ready-phenology-path-summed-total.csv"),
     phenology_primary = file.path(root, "phenology", "output", "primary-common-shift-bootstrap-effects.csv"),
+    phenology_timing_index = file.path(root, "phenology", "output", "stage-centred-timing-index.csv"),
     phenology_sem_effects = file.path(root, "phenology", "output", "sem-effect-decomposition-block-stratified.csv"),
     phenology_sem_paths = file.path(root, "phenology", "output", "sem-constituent-paths-block-stratified.csv"),
     phenology_status = file.path(root, "phenology", "output", "phenology-bootstrap-model-status.csv")
@@ -62,7 +66,7 @@ alinv_bootstrap_read_csv <- function(path, required_cols = character()) {
 
 alinv_bootstrap_valid <- function(family, project_root = .alinv_project_root(), target = ALINV_BOOTSTRAP_TARGET) {
   paths <- alinv_bootstrap_paths(project_root)
-  family <- match.arg(family, c("temporal", "biomass", "repeated_sem", "phenology"))
+  family <- match.arg(family, c("temporal", "biomass", "repeated_sem", "reduced_response", "phenology"))
 
   if (family == "temporal") {
     effects <- alinv_bootstrap_read_csv(paths$temporal_effects, c("model_id", "bootstrap_replicates", "lower", "upper", "p_boot"))
@@ -83,10 +87,25 @@ alinv_bootstrap_valid <- function(family, project_root = .alinv_project_root(), 
     return(!is.null(effects) && !is.null(status) &&
       all(effects$n_boot >= target) && all(status$n_boot_success[estimable] >= target))
   }
+  if (family == "reduced_response") {
+    effects <- alinv_bootstrap_read_csv(
+      paths$reduced_response_effects,
+      c("species", "resp_var", "treatment", "estimate", "lower", "upper", "p_boot", "n_boot")
+    )
+    status <- alinv_bootstrap_read_csv(
+      paths$reduced_response_status,
+      c("species", "resp_var", "status", "n_boot_success")
+    )
+    estimable <- if (is.null(status)) logical() else status$status == "complete"
+    return(!is.null(effects) && !is.null(status) &&
+      all(effects$n_boot >= target) && all(status$n_boot_success[estimable] >= target))
+  }
 
   totals <- alinv_bootstrap_read_csv(paths$phenology_totals, c("species", "effect", "lower_95", "upper_95", "p_boot", "n_boot_success"))
   primary <- alinv_bootstrap_read_csv(paths$phenology_primary, c("species", "effect", "lower_95_oriented", "upper_95_oriented", "p_boot", "n_boot_success"))
-  !is.null(totals) && !is.null(primary) && nrow(totals) == 6L && nrow(primary) == 6L &&
+  timing <- alinv_bootstrap_read_csv(paths$phenology_timing_index, c("species", "timing_index_days"))
+  !is.null(totals) && !is.null(primary) && !is.null(timing) &&
+    nrow(totals) == 6L && nrow(primary) == 6L &&
     all(totals$n_boot_success >= target) && all(primary$n_boot_success >= target)
 }
 
@@ -95,12 +114,13 @@ alinv_run_bootstrap_family <- function(family,
                                        target = ALINV_BOOTSTRAP_TARGET,
                                        cores = 4L) {
   paths <- alinv_bootstrap_paths(project_root)
-  family <- match.arg(family, c("temporal", "biomass", "repeated_sem", "phenology"))
+  family <- match.arg(family, c("temporal", "biomass", "repeated_sem", "reduced_response", "phenology"))
   script <- switch(
     family,
     temporal = paths$temporal_script,
     biomass = paths$biomass_script,
     repeated_sem = paths$repeated_sem_script,
+    reduced_response = paths$reduced_response_script,
     phenology = paths$phenology_script
   )
   if (!file.exists(script)) stop("Missing bootstrap analysis script: ", script, call. = FALSE)
@@ -112,7 +132,7 @@ alinv_run_bootstrap_family <- function(family,
       paste0("ALINV_TEMPORAL_BOOT_B=", as.integer(target)),
       paste0("ALINV_TEMPORAL_BOOT_CORES=", as.integer(cores))
     )
-  } else if (family %in% c("repeated_sem", "phenology")) {
+  } else if (family %in% c("repeated_sem", "reduced_response", "phenology")) {
     args <- c(args, paste0("--bootstrap=", as.integer(target)), paste0("--cores=", as.integer(cores)))
   } else if (target != 1000L) {
     stop("The promoted biomass script currently supports 1,000 replicates.", call. = FALSE)
@@ -187,6 +207,66 @@ alinv_read_repeated_sem_bootstrap_totals <- function(project_root = .alinv_proje
     )
 }
 
+alinv_read_reduced_response_bootstrap_effects <- function(project_root = .alinv_project_root()) {
+  paths <- alinv_ensure_bootstrap_family("reduced_response", project_root)
+  readr::read_csv(paths$reduced_response_effects, show_col_types = FALSE) |>
+    dplyr::mutate(
+      source_file = paths$reduced_response_effects,
+      uncertainty_method = "block-stratified container-cluster bootstrap percentile"
+    )
+}
+
+alinv_factor_main_effect_coef <- function(model, factor_name) {
+  hits <- grep(factor_name, names(lme4::fixef(model)), fixed = TRUE, value = TRUE)
+  hits <- hits[!grepl(":", hits, fixed = TRUE)]
+  if (length(hits) != 1L) return(NA_character_)
+  hits[[1]]
+}
+
+alinv_resample_containers_within_block <- function(data, replicate_id,
+                                                    container = "boxlabel",
+                                                    tree = "tree_id") {
+  dat <- data |>
+    dplyr::mutate(
+      .container_original = as.character(.data[[container]]),
+      .tree_original = as.character(.data[[tree]]),
+      .block = sub("-.*$", "", .data$.container_original)
+    )
+  containers <- dat |>
+    dplyr::distinct(.data$.block, .data$.container_original) |>
+    dplyr::arrange(.data$.block, .data$.container_original)
+  selected <- containers |>
+    dplyr::group_by(.data$.block) |>
+    dplyr::group_modify(~tibble::tibble(
+      .container_original = sample(
+        .x$.container_original,
+        size = nrow(.x),
+        replace = TRUE
+      ),
+      .draw = seq_len(nrow(.x))
+    )) |>
+    dplyr::ungroup()
+
+  pieces <- purrr::pmap(selected, function(.block, .container_original, .draw) {
+    new_container <- paste0(
+      "boot", replicate_id, "_", .block, "_", sprintf("%02d", .draw)
+    )
+    dat |>
+      dplyr::filter(.data$.container_original == .env$.container_original) |>
+      dplyr::mutate(
+        "{container}" := new_container,
+        "{tree}" := paste(new_container, .data$.tree_original, sep = "__")
+      )
+  })
+
+  dplyr::bind_rows(pieces) |>
+    dplyr::select(-.data$.container_original, -.data$.tree_original, -.data$.block) |>
+    dplyr::mutate(
+      "{container}" := factor(.data[[container]]),
+      "{tree}" := factor(.data[[tree]])
+    )
+}
+
 alinv_read_phenology_bootstrap_totals <- function(project_root = .alinv_project_root()) {
   paths <- alinv_ensure_bootstrap_family("phenology", project_root)
   readr::read_csv(paths$phenology_totals, show_col_types = FALSE) |>
@@ -202,6 +282,24 @@ alinv_read_phenology_bootstrap_primary <- function(project_root = .alinv_project
     dplyr::mutate(
       source_file = paths$phenology_primary,
       uncertainty_method = "block-stratified container-cluster bootstrap percentile"
+    )
+}
+
+alinv_read_phenology_bootstrap_primary_standardized <- function(project_root = .alinv_project_root()) {
+  paths <- alinv_ensure_bootstrap_family("phenology", project_root)
+  scales <- readr::read_csv(paths$phenology_timing_index, show_col_types = FALSE) |>
+    dplyr::group_by(.data$species) |>
+    dplyr::summarise(
+      timing_index_sd_days = stats::sd(.data$timing_index_days, na.rm = TRUE),
+      .groups = "drop"
+    )
+  alinv_read_phenology_bootstrap_primary(project_root) |>
+    dplyr::left_join(scales, by = "species") |>
+    dplyr::mutate(
+      estimate = .data$estimate_oriented / .data$timing_index_sd_days,
+      lower = .data$lower_95_oriented / .data$timing_index_sd_days,
+      upper = .data$upper_95_oriented / .data$timing_index_sd_days,
+      response_scale = "species-specific SD of the stage-centred tree timing index"
     )
 }
 

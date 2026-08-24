@@ -153,16 +153,16 @@ build_fig6_volume_panel <- function(summary_df, species_key, robinia_key, y_limi
   add_drought_segments(p, drought_y)
 }
 
-read_phenology_transition_sem_totals <- function() {
-  alinv_read_phenology_bootstrap_totals(ALINV_PROJECT_ROOT) %>%
+read_phenology_treatment_effects <- function() {
+  alinv_read_phenology_bootstrap_primary_standardized(ALINV_PROJECT_ROOT) %>%
     dplyr::transmute(
       species = .data$species,
       treatment = .data$effect,
       response_label = "Phenology timing",
       estimate = .data$estimate,
       p_value = .data$p_boot,
-      lower = .data$lower_95,
-      upper = .data$upper_95,
+      lower = .data$lower,
+      upper = .data$upper,
       n_boot_success = .data$n_boot_success,
       source_file = .data$source_file
     )
@@ -181,13 +181,25 @@ prepare_fig6_sem_data <- function(repeated_sem_totals = NULL) {
   )
 
   if (is.null(repeated_sem_totals)) {
-    repeated_sem_totals <- alinv_read_repeated_sem_bootstrap_totals(ALINV_PROJECT_ROOT)
+    repeated_sem_totals <- alinv_read_reduced_response_bootstrap_effects(ALINV_PROJECT_ROOT) %>%
+      dplyr::transmute(
+        species = .data$species,
+        treatment = .data$treatment,
+        response_label = .data$response_label,
+        resp_var = .data$resp_var,
+        estimate = .data$estimate,
+        lower = .data$lower,
+        upper = .data$upper,
+        p_value = .data$p_boot,
+        n_boot_success = .data$n_boot,
+        source_file = .data$source_file
+      )
   }
 
   standard <- repeated_sem_totals %>%
     dplyr::semi_join(response_specs, by = c("resp_var", "response_label"))
 
-  sem_df <- dplyr::bind_rows(read_phenology_transition_sem_totals(), standard)
+  sem_df <- dplyr::bind_rows(read_phenology_treatment_effects(), standard)
 
   treatment_order <- c("extreme_event", "culture", "robinia", "precipitation")
   response_order <- c(
@@ -324,7 +336,11 @@ build_fig6_sem_heatmap <- function(sem_df,
     ) +
     ggplot2::scale_x_discrete(limits = x_limits, drop = FALSE) +
     ggplot2::scale_y_discrete(limits = y_limits, drop = FALSE) +
-    ggplot2::labs(x = NULL, y = NULL, title = paste0(SPECIES_LABELS[[species_key]], ": total SEM effects")) +
+    ggplot2::labs(
+      x = NULL,
+      y = NULL,
+      title = paste0(SPECIES_LABELS[[species_key]], ": treatment effects")
+    ) +
     theme_alinv_pub(base_size = 6.2) +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = x_angle, hjust = 1, vjust = 1, size = x_size),
@@ -448,7 +464,7 @@ build_fig6_heatmap_legend <- function(fill_limit) {
       "text",
       x = 0,
       y = 1.36,
-      label = "Standardized Effect",
+      label = "Standardized treatment effect",
       size = 2.05,
       color = "black"
     ) +

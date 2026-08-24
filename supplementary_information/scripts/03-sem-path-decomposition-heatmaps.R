@@ -1,7 +1,8 @@
 #!/usr/bin/env Rscript
 
-# Supplementary SEM path decomposition. All inferential cells use the same
-# 1,000-replicate block-stratified container-cluster bootstrap as Figure 6.
+# Exploratory supplementary SWC path decomposition. Repeated-response models
+# use same-day or latest preceding measured SWC within seven days. All
+# inferential cells use a block-stratified container-cluster bootstrap.
 
 options(stringsAsFactors = FALSE)
 
@@ -43,7 +44,15 @@ output_filename <- Sys.getenv(
   "ALINV_SUPPLEMENTARY_SEM_OUTPUT_FILENAME",
   unset = "figure-s3-sem-path-decomposition.pdf"
 )
-repeated_effects_file <- Sys.getenv("ALINV_REPEATED_SEM_EFFECTS_FILE", unset = "")
+preferred_effects_file <- file.path(
+  project_root, "exploration", "2026-08-18 Testing bootstrapping",
+  "swc_matching_sensitivity", "past_only_7d", "output",
+  "past-only-sem-bootstrap-effects.csv"
+)
+repeated_effects_file <- Sys.getenv(
+  "ALINV_REPEATED_SEM_EFFECTS_FILE",
+  unset = preferred_effects_file
+)
 
 species_order <- c("fagus", "quercus")
 species_labels <- c(fagus = "Fagus", quercus = "Quercus")
@@ -58,7 +67,7 @@ response_order <- c(
   "Leaf-out", "Volume (total)", "Volume (incr.)", "Chlorophyll",
   "Vitality", "Quantum yield", "Senescence (%)", "Senescence (Chl)"
 )
-component_order <- c("Direct", "Indirect via SWC", "Treatment to SWC")
+component_order <- c("SWC-adjusted", "Indirect via SWC", "Treatment to SWC")
 
 format_standard_effects <- function(x) {
   x %>%
@@ -69,7 +78,7 @@ format_standard_effects <- function(x) {
     treatment = .data$treatment,
     component = dplyr::recode(
       .data$component,
-      direct = "Direct",
+      direct = "SWC-adjusted",
       indirect = "Indirect via SWC",
       treatment_to_swc = "Treatment to SWC"
     ),
@@ -103,7 +112,7 @@ phenology_di <- phenology_bundle$effects %>%
     treatment = .data$effect,
     component = dplyr::recode(
       .data$metric,
-      direct = "Direct",
+      direct = "SWC-adjusted",
       indirect = "Indirect via SWC"
     ),
     estimate = .data$estimate,
@@ -229,7 +238,7 @@ build_panel <- function(species_i, component_i, show_y = TRUE) {
 
 panels <- unlist(lapply(species_order, function(species_i) {
   list(
-    build_panel(species_i, "Direct", TRUE),
+    build_panel(species_i, "SWC-adjusted", TRUE),
     build_panel(species_i, "Indirect via SWC", FALSE),
     build_panel(species_i, "Treatment to SWC", FALSE)
   )
