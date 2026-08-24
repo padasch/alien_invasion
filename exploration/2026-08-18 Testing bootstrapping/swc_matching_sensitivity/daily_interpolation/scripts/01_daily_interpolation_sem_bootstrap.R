@@ -82,7 +82,7 @@ if (!all(needed_daily_cols %in% names(daily))) {
 }
 
 # Source metadata are read without modifying shared functions or data.
-source(file.path(project_root, "functions", "_source.R"), local = TRUE)
+source(file.path(project_root, "scripts", "auxiliary", "functions", "_source.R"), local = TRUE)
 box_meta <- get_meta("box") %>%
   transmute(
     boxlabel = as.character(boxlabel), precipitation, robinia, culture, soiltype
@@ -241,7 +241,7 @@ audit <- tibble(
   ),
   value = c(
     daily_file,
-    "notebooks/2-swc-interpolation.Rmd and scripts/4-impute-swc-gam.R",
+    "archived SWC notebook and scripts/auxiliary/4-impute-swc-gam.R",
     "date smooth + site SWP + ambient air temperature + VPD + ambient precipitation + radiation + container random intercept",
     "No treatment predictor or treatment-specific temporal smooth; ambient climate cannot encode manipulated water additions/exclusions",
     as.character(n_distinct(daily$boxlabel)), as.character(nrow(daily)),

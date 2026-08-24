@@ -49,10 +49,17 @@ po/*~
 rsconnect/
 
 # Mine
-_archive/*
-notebooks/*.html
-/output
+/_archive/
+/tmp/
+/output/*
+!/output/main_figures/
+!/output/supplementary/
 *.xlsx
 *.dat
 *.pdf
-notebooks/output/
+!/output/main_figures/*.pdf
+!/output/supplementary/*.pdf
+/exploration/**/output/
+/exploration/**/figures/
+/exploration/**/recreated_figures/
+**/.DS_Store

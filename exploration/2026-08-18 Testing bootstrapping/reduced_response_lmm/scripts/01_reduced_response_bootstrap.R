@@ -39,8 +39,8 @@ project_root <- normalizePath(file.path(analysis_dir, "..", "..", ".."), winslas
 output_dir <- file.path(analysis_dir, "output")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
-source(file.path(project_root, "functions", "_source.R"))
-source(file.path(project_root, "functions", "11-bootstrap-inference.R"))
+source(file.path(project_root, "scripts", "auxiliary", "functions", "_source.R"))
+source(file.path(project_root, "scripts", "auxiliary", "functions", "11-bootstrap-inference.R"))
 
 paths <- alinv_ensure_bootstrap_family("repeated_sem", project_root, target = 1000L)
 sem_status <- readr::read_csv(paths$repeated_sem_status, show_col_types = FALSE)

@@ -27,8 +27,8 @@ if (!file.exists(past_effects_file) || !file.exists(past_totals_file)) {
 }
 
 # Load the publication Figure 6 functions and defaults.
-source(file.path(project_root, "final_figures", "main", "00_setup.R"))
-source(file.path(project_root, "final_figures", "main", "06_fig6_volume_sem.R"))
+source(file.path(project_root, "scripts", "main_figures", "00_setup.R"))
+source(file.path(project_root, "scripts", "main_figures", "06_fig6_volume_sem.R"))
 
 past_effects <- readr::read_csv(past_effects_file, show_col_types = FALSE)
 past_totals <- readr::read_csv(past_totals_file, show_col_types = FALSE)
@@ -84,7 +84,7 @@ on.exit(
   add = TRUE
 )
 source(file.path(
-  project_root, "supplementary_information", "scripts",
+  project_root, "scripts", "supplementary_figures",
   "03-sem-path-decomposition-heatmaps.R"
 ))
 

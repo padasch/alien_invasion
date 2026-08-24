@@ -22,7 +22,7 @@ same container on the exact same date.
   new container and tree IDs.
 - Each estimable SEM uses 1,000 successful container-cluster bootstrap
   replicates. Percentile intervals and empirical two-sided bootstrap
-  probabilities use the shared functions in `functions/11-bootstrap-inference.R`.
+  probabilities use the shared functions in `scripts/auxiliary/functions/11-bootstrap-inference.R`.
 
 ## Reproduce
 

@@ -25,13 +25,13 @@ script_file <- normalizePath(script_path_arg, winslash = "/", mustWork = TRUE)
 analysis_dir <- normalizePath(file.path(dirname(script_file), ".."), winslash = "/")
 find_root <- function(x) {
   repeat {
-    if (file.exists(file.path(x, "functions", "11-bootstrap-inference.R"))) return(x)
+    if (file.exists(file.path(x, "scripts", "auxiliary", "functions", "11-bootstrap-inference.R"))) return(x)
     parent <- dirname(x); if (identical(parent, x)) stop("Project root not found."); x <- parent
   }
 }
 project_root <- find_root(analysis_dir)
 out <- file.path(analysis_dir, "output"); dir.create(out, recursive = TRUE, showWarnings = FALSE)
-source(file.path(project_root, "functions", "11-bootstrap-inference.R"), local = TRUE)
+source(file.path(project_root, "scripts", "auxiliary", "functions", "11-bootstrap-inference.R"), local = TRUE)
 started <- Sys.time()
 
 baseline_out <- file.path(project_root, "exploration", "2026-08-18 Testing bootstrapping",

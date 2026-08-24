@@ -2,7 +2,7 @@
 
 This exploration compares the manuscript's current analytical results with
 non-parametric container-cluster bootstrap uncertainty estimates. It does not
-replace or overwrite files under `final_figures/`, `supplementary_information/`,
+replace or overwrite files under `scripts/main_figures/`, `scripts/supplementary_figures/`,
 or the dated `output/` analysis directories.
 
 ## Shared bootstrap conventions

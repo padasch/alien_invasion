@@ -33,8 +33,8 @@ suppressPackageStartupMessages({
   library(scales)
 })
 suppressMessages(suppressPackageStartupMessages({
-  source(file.path(project_root, "functions", "_source.R"))
-  source(file.path(project_root, "functions", "2-biomass.R"))
+  source(file.path(project_root, "scripts", "auxiliary", "functions", "_source.R"))
+  source(file.path(project_root, "scripts", "auxiliary", "functions", "2-biomass.R"))
 }))
 
 bootstrap_target <- 1000L

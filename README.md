@@ -1,73 +1,70 @@
-# ALINV – Alien Invasion Experiment
+# ALINV - Alien Invasion Experiment
 
-Analysis code for the Alien Invasion experiment of the Ecosystem Ecology Group. The experiment investigates how drought, species mixing, *Robinia* presence, and legacy soil type affect tree physiology and growth in a full-factorial mesocosm design with *Fagus sylvatica* and *Quercus petraea*.
+Analysis and publication-figure code for the Alien Invasion experiment of the
+Ecosystem Ecology Group. The experiment tests the effects of reduced
+precipitation, species mixing, *Robinia* presence, and legacy soil type on
+*Fagus sylvatica* and *Quercus ilex*.
 
-## Project Structure
+## Repository structure
 
-```
-config/          # Shared analysis config (factor baselines, labels, scenarios)
-functions/       # Reusable function libraries (sourced by notebooks)
-scripts/         # Standalone executable scripts (data cleaning, model fitting)
-notebooks/       # R Markdown analysis notebooks
+```text
+scripts/
+  main_figures/          # One script per main figure and the main runner
+  supplementary_figures/# One script per supplementary figure and its runner
+  auxiliary/             # Shared config, functions, and data-processing scripts
+  run_all.R              # Rebuild both publication figure collections
 data/
-  raw/           # Raw data (not tracked – see data/raw/README.md)
-  interim/       # Cleaned CSV files (tracked)
-output/          # Model caches and figures (not tracked)
+  raw/                   # Raw inputs; see data/raw/README.md
+  interim/               # Cleaned analysis-ready CSV files
+exploration/             # Reproducible model-development and sensitivity analyses
+output/
+  main_figures/          # Final main-figure PDFs
+  supplementary/         # Final supplementary-figure PDFs
+docs/                    # Local manuscript files; intentionally not version controlled
+_archive/                # Local historical material; intentionally not version controlled
 ```
 
-### Notebooks
+The dated directories directly under `output/` contain model caches used by
+some bootstrap workflows. They are ignored by Git and should not be treated as
+publication deliverables.
 
-| File | Description |
-|------|-------------|
-| `1-treatment-effects.Rmd` | Main analysis: summary figures, biomass GLMMs, temporal GLMMs, and direct-effect SEMs |
-| `2-swc-interpolation.Rmd` | SWC GAM imputation and SEM sensitivity comparison (measured vs. imputed SWC) |
-| `3-sem-aggregation.Rmd` | SEM effect heatmaps and CSV exports |
-| `4-data-qc.Rmd` | Data-quality and metadata checks |
-| `5-size-trajectories.Rmd` | Growth-only notebook for height, diameter, and volume trajectories plus model panels |
-| `6-swp-provenance.Rmd` | Provenance notebook for the SWP/SWC derived product |
+## Rebuilding the publication figures
 
-### Scripts
+The project uses [`renv`](https://rstudio.github.io/renv/) for package
+dependencies.
 
-| File | Description |
-|------|-------------|
-| `1-data-cleaning.R` | Excel → CSV pipeline |
-| `2-competition-on-growth.R` | Phenology and SLA exploratory analysis |
-| `3-cleaning-sensor-data.R` | Build the shared daily climate table from 10-minute sensor and precipitation data |
-| `4-impute-swc-gam.R` | Standalone SWC GAM imputation |
-| `5-render-analysis-scenarios.R` | Render all notebooks across all soil scenarios |
-| `6-plot-sem-heatmaps-from-csv.R` | Rebuild SEM heatmaps from exported CSV files |
-| `7-plot-temporal-models-from-csv.R` | Rebuild temporal GLMM plots from exported CSV files |
-| `8-plot-sem-models-from-csv.R` | Rebuild SEM path plots from exported CSV files |
-| `run_all.R` | Convenience entry point for the default scenario plus the global SWP notebook |
+```r
+renv::restore()
+```
 
-## Reproducing Results
+From the project root, rebuild both collections with:
 
-This project uses [`renv`](https://rstudio.github.io/renv/) to manage R package dependencies.
+```sh
+Rscript --vanilla scripts/run_all.R
+```
 
-1. **Clone** the repository and open `alien_invasion.Rproj` in RStudio.
-2. **Obtain raw data** from the shared Microsoft Teams folder and place the files in `data/raw/` (see `data/raw/README.md`).
-3. **Restore packages:**
-   ```r
-   renv::restore()
-   ```
-4. **Run data cleaning** to regenerate interim CSVs (if needed):
-   ```r
-   source("scripts/1-data-cleaning.R")
-   source("scripts/3-cleaning-sensor-data.R")
-   ```
+Run a collection separately with:
 
-   The climate step writes `data/interim/site_climate_daily.csv`. Load the
-   complete table or a selected set of variables with:
-   ```r
-   source("functions/_source.R")
-   climate <- get_climate()
-   weather <- get_climate(c("air_temp", "vpd", "precip_mm"))
-   ```
-5. **Render the default analysis path**:
-   ```r
-   source("run_all.R")
-   ```
-6. **Or render all scenarios**:
-   ```r
-   source("scripts/5-render-analysis-scenarios.R")
-   ```
+```sh
+Rscript --vanilla scripts/main_figures/make_all_figures.R
+ALINV_SUPP_BOOT_B=1000 ALINV_SUPP_BOOT_CORES=4 \
+  Rscript --vanilla scripts/supplementary_figures/make-v1-figures.R
+```
+
+The supplementary runner creates the 15 reconstructed supplementary figures.
+`scripts/run_all.R` additionally creates the overall phenology-effect and
+exploratory SWC-pathway figures.
+
+## Rebuilding cleaned data
+
+Cleaned interim files are tracked, so this is normally unnecessary. To rebuild
+them from the raw inputs, run:
+
+```sh
+Rscript --vanilla scripts/auxiliary/1-data-cleaning.R
+Rscript --vanilla scripts/auxiliary/3-cleaning-sensor-data.R
+Rscript --vanilla scripts/auxiliary/4-impute-swc-gam.R
+```
+
+Shared data access, bootstrap readers, plotting utilities, factor definitions,
+and volume-proxy configuration are under `scripts/auxiliary/`.
