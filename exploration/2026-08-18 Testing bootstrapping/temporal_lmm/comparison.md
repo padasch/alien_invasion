@@ -7,7 +7,7 @@ The comparison uses 1000 successful non-parametric container-cluster bootstrap r
 - Successful models: 4/4.
 - Successful replicates: 4000; failed attempts: 16; singular successful fits: 345.
 - Maximum absolute difference between refitted and saved current point estimates: 0.000000000040631942 SD.
-- Point-estimate sign disagreements: 0.
+- Point-estimate sign disagreements: NA.
 - CI-based significance classifications changed for 10 of 120 date-specific contrasts.
 - Among those changes, 5 bootstrap intervals newly excluded zero and 5 no longer excluded zero.
 
@@ -15,8 +15,8 @@ The comparison uses 1000 successful non-parametric container-cluster bootstrap r
 
 | Response | Species | Contrasts | Median width ratio | Width-ratio range | Significance flips |
 |---|---:|---:|---:|---:|---:|
-| diameter_inc_t0 | fagus | 27 | 1.20 | 0.107–1.45 | 1 |
-| diameter_inc_t0 | quercus | 27 | 0.875 | 0.0247–1.58 | 3 |
+| diameter_inc_t0 | fagus | 27 | 1.12 | 0.107–1.45 | NA |
+| diameter_inc_t0 | quercus | 27 | 0.833 | 0.0247–1.58 | NA |
 | qy | fagus | 33 | 1.17 | 0.424–1.49 | 1 |
 | qy | quercus | 33 | 1.00 | 0.611–1.25 | 5 |
 

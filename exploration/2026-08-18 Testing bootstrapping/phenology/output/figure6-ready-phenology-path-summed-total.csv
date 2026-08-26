@@ -1,7 +1,7 @@
 species,effect,treatment_label,plot_order,lower_95,upper_95,p_boot,n_boot_success,estimate,component,metric,bootstrap_design,bootstrap_replicates
-fagus,culture,Mixed culture,3,-0.4805799580993464,0.03392303409165609,0.0919080919080919,1000,-0.2321724312548912,Path-summed total,total_path,container resampling within block,1000
-fagus,precipitation,Drought,1,-0.15718948621064652,0.3029107775884362,0.5494505494505495,1000,0.0736889542774774,Path-summed total,total_path,container resampling within block,1000
-fagus,robinia,With robinia,2,-0.04701293904092131,0.47077410172965456,0.11788211788211789,1000,0.21781046134227805,Path-summed total,total_path,container resampling within block,1000
-quercus,culture,Mixed culture,3,-0.06964415712146162,0.5625706329327241,0.13786213786213786,1000,0.2531189015426356,Path-summed total,total_path,container resampling within block,1000
-quercus,precipitation,Drought,1,-0.445354506782845,0.2593631125189891,0.6333666333666333,1000,-0.09570213672608896,Path-summed total,total_path,container resampling within block,1000
-quercus,robinia,With robinia,2,-0.6158308960008156,0.09918943632538908,0.15384615384615385,1000,-0.2670410567471928,Path-summed total,total_path,container resampling within block,1000
+fagus,culture,Mixed culture,3,-0.5112632502870604,0.05700896276932677,0.12787212787212787,1000,-0.2265583910163503,Path-summed total,total_path,container resampling within block,1000
+fagus,precipitation,Drought,1,-0.180392478204086,0.3304173806912273,0.5734265734265734,1000,0.07300064012881363,Path-summed total,total_path,container resampling within block,1000
+fagus,robinia,With robinia,2,-0.05037086440781022,0.4763913526844763,0.14185814185814186,1000,0.20781928376447717,Path-summed total,total_path,container resampling within block,1000
+quercus,culture,Mixed culture,3,-0.05615511041583614,0.5523895928644466,0.12387612387612387,1000,0.2582977969675013,Path-summed total,total_path,container resampling within block,1000
+quercus,precipitation,Drought,1,-0.435560844159411,0.26833122248754104,0.6413586413586414,1000,-0.09205383837678927,Path-summed total,total_path,container resampling within block,1000
+quercus,robinia,With robinia,2,-0.6056521370526324,0.08422808540529744,0.12987012987012986,1000,-0.2714876623062491,Path-summed total,total_path,container resampling within block,1000

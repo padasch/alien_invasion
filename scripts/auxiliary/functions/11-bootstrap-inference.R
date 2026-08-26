@@ -112,7 +112,7 @@ alinv_bootstrap_valid <- function(family, project_root = .alinv_project_root(), 
 alinv_run_bootstrap_family <- function(family,
                                        project_root = .alinv_project_root(),
                                        target = ALINV_BOOTSTRAP_TARGET,
-                                       cores = 4L) {
+                                       cores = 8L) {
   paths <- alinv_bootstrap_paths(project_root)
   family <- match.arg(family, c("temporal", "biomass", "repeated_sem", "reduced_response", "phenology"))
   script <- switch(
@@ -132,10 +132,8 @@ alinv_run_bootstrap_family <- function(family,
       paste0("ALINV_TEMPORAL_BOOT_B=", as.integer(target)),
       paste0("ALINV_TEMPORAL_BOOT_CORES=", as.integer(cores))
     )
-  } else if (family %in% c("repeated_sem", "reduced_response", "phenology")) {
+  } else if (family %in% c("biomass", "repeated_sem", "reduced_response", "phenology")) {
     args <- c(args, paste0("--bootstrap=", as.integer(target)), paste0("--cores=", as.integer(cores)))
-  } else if (target != 1000L) {
-    stop("The promoted biomass script currently supports 1,000 replicates.", call. = FALSE)
   }
 
   status <- system2(file.path(R.home("bin"), "Rscript"), args = args, env = env)
@@ -148,7 +146,7 @@ alinv_run_bootstrap_family <- function(family,
 alinv_ensure_bootstrap_family <- function(family,
                                           project_root = .alinv_project_root(),
                                           target = ALINV_BOOTSTRAP_TARGET,
-                                          cores = 4L) {
+                                          cores = 8L) {
   if (!alinv_bootstrap_valid(family, project_root, target)) {
     alinv_run_bootstrap_family(family, project_root, target, cores)
   }
@@ -186,6 +184,68 @@ alinv_read_repeated_sem_bootstrap_effects <- function(project_root = .alinv_proj
     dplyr::mutate(
       source_file = paths$repeated_sem_effects,
       uncertainty_method = "block-stratified container-cluster bootstrap percentile"
+    )
+}
+
+alinv_past_only_7d_sem_paths <- function(project_root = .alinv_project_root()) {
+  output_dir <- file.path(
+    alinv_bootstrap_analysis_root(project_root),
+    "swc_matching_sensitivity", "past_only_7d", "output"
+  )
+  list(
+    effects = file.path(output_dir, "past-only-sem-bootstrap-effects.csv"),
+    status = file.path(output_dir, "past-only-sem-bootstrap-status.csv")
+  )
+}
+
+alinv_read_past_only_7d_sem_bootstrap_effects <- function(project_root = .alinv_project_root(),
+                                                          target = ALINV_BOOTSTRAP_TARGET) {
+  paths <- alinv_past_only_7d_sem_paths(project_root)
+  effects <- alinv_bootstrap_read_csv(
+    paths$effects,
+    c(
+      "species", "resp_var", "response_label", "treatment", "component",
+      "estimate", "lower", "upper", "p_boot", "n_boot"
+    )
+  )
+  status <- alinv_bootstrap_read_csv(
+    paths$status,
+    c("species", "resp_var", "status", "n_boot_success")
+  )
+  if (is.null(effects) || is.null(status)) {
+    stop(
+      "Missing or invalid past-only seven-day SEM bootstrap results. Re-run the corresponding SWC-matching sensitivity analysis.",
+      call. = FALSE
+    )
+  }
+  estimable <- status$status == "complete"
+  if (any(effects$n_boot < target) || any(status$n_boot_success[estimable] < target)) {
+    stop("Past-only seven-day SEM results have fewer than the required bootstrap refits.", call. = FALSE)
+  }
+  effects |>
+    dplyr::mutate(
+      source_file = paths$effects,
+      swc_definition = "same-day or latest preceding measured SWC within seven days",
+      uncertainty_method = "block-stratified container-cluster bootstrap percentile"
+    )
+}
+
+alinv_read_past_only_7d_sem_bootstrap_totals <- function(project_root = .alinv_project_root()) {
+  alinv_read_past_only_7d_sem_bootstrap_effects(project_root) |>
+    dplyr::filter(.data$component == "total") |>
+    dplyr::transmute(
+      species = .data$species,
+      treatment = .data$treatment,
+      response_label = .data$response_label,
+      resp_var = .data$resp_var,
+      estimate = .data$estimate,
+      lower = .data$lower,
+      upper = .data$upper,
+      p_value = .data$p_boot,
+      n_boot_success = .data$n_boot,
+      source_file = .data$source_file,
+      swc_definition = .data$swc_definition,
+      uncertainty_method = .data$uncertainty_method
     )
 }
 

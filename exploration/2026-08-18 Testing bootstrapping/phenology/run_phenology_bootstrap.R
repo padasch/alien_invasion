@@ -100,11 +100,11 @@ transition_data <- setNames(lapply(species_vec, function(sp) {
   ) %>% add_block()
 }), species_vec)
 
-primary_formula <- doy ~ stage_label + precipitation + robinia + culture + block +
+primary_formula <- doy ~ stage_label + precipitation + robinia + culture +
   (1 | boxlabel) + (1 | tree_id)
-interaction_formula <- doy ~ stage_label * (precipitation + robinia + culture) + block +
+interaction_formula <- doy ~ stage_label * (precipitation + robinia + culture) +
   (1 | boxlabel) + (1 | tree_id)
-duration_formula <- duration_days ~ precipitation + robinia + culture + block + (1 | boxlabel)
+duration_formula <- duration_days ~ precipitation + robinia + culture + (1 | boxlabel)
 
 make_duration_data <- function(df) {
   df %>%
@@ -314,12 +314,12 @@ prepare_sem_data <- function(sp) {
   list(box = boxes, tree = trees)
 }
 sem_data <- setNames(lapply(species_vec, prepare_sem_data), species_vec)
-mediator_formula <- swc_z ~ precipitation + robinia + culture + block
+mediator_formula <- swc_z ~ precipitation + robinia + culture
 
 fit_sem_paths <- function(data_i, box_group = "boxlabel") {
-  outcome_formula <- as.formula(paste("phenology_oriented_z ~ swc_z + precipitation + robinia + culture + block +",
+  outcome_formula <- as.formula(paste("phenology_oriented_z ~ swc_z + precipitation + robinia + culture +",
                                       paste0("(1 | ", box_group, ")")))
-  total_formula <- as.formula(paste("phenology_oriented_z ~ precipitation + robinia + culture + block +",
+  total_formula <- as.formula(paste("phenology_oriented_z ~ precipitation + robinia + culture +",
                                     paste0("(1 | ", box_group, ")")))
   med <- lm(mediator_formula, data_i$box)
   outcome <- suppressWarnings(lmer(outcome_formula, data_i$tree, REML = TRUE, control = model_control))
@@ -472,7 +472,7 @@ sem_comparison <- old_sem %>%
 
 # Figures: S1 is descriptive; S2 and all exploratory inferential panels use bootstrap intervals.
 theme_supp <- function(base_size = 8) theme_classic(base_size = base_size) + theme(
-  text = element_text(family = "Helvetica", color = "black"), axis.text = element_text(color = "black"),
+  text = element_text(color = "black"), axis.text = element_text(color = "black"),
   axis.line = element_line(linewidth = 0.25), axis.ticks = element_line(linewidth = 0.25),
   panel.grid.major = element_line(color = "grey90", linewidth = 0.2), panel.grid.minor = element_blank(),
   strip.background = element_rect(fill = "grey12", color = "grey12"),
@@ -482,7 +482,7 @@ save_pair <- function(plot, stem, width_mm, height_mm, dpi = 600) {
   ggsave(file.path(figure_dir, paste0(stem, ".png")), plot, width = width_mm, height = height_mm,
          units = "mm", dpi = dpi, bg = "white", limitsize = FALSE)
   ggsave(file.path(figure_dir, paste0(stem, ".pdf")), plot, width = width_mm, height = height_mm,
-         units = "mm", device = cairo_pdf, bg = "white", limitsize = FALSE)
+         units = "mm", bg = "white", limitsize = FALSE)
 }
 figure_s1 <- ggplot(progression_data, aes(.data$mean_doy, .data$stage, color = .data$precipitation,
                                          linetype = .data$culture,
@@ -587,7 +587,7 @@ sem_heatmap <- ggplot(heatmap_data, aes(.data$component, .data$treatment_label, 
                        limits = c(-heat_limit, heat_limit), name = "Std. effect") +
   labs(title = "Associative phenology SEM heatmap",
        subtitle = "Negative values indicate delayed timing; * marks a bootstrap interval excluding zero.",
-       x = NULL, y = NULL) + theme_minimal(base_size = 8) +
+       x = NULL, y = NULL) + theme_classic(base_size = 8) +
   theme(panel.grid = element_blank(), strip.background = element_rect(fill = "grey12"),
         strip.text = element_text(color = "white", face = "bold"), axis.text.x = element_text(angle = 20, hjust = 1))
 

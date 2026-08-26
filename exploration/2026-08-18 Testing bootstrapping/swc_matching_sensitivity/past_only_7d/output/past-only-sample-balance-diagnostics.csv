@@ -25,8 +25,7 @@ n_lost,pct_lost,dimension,level,species,resp_var,response_label,model_id,n_basel
 339,25.39325842696629,robinia,without-robinia,fagus,chlavg,Senescence (Chl),fagus__chlavg,1335,996
 133,25,culture,mixed,fagus,chlavg,Senescence (Chl),fagus__chlavg,532,399
 248,24.101068999028183,culture,mono,fagus,chlavg,Senescence (Chl),fagus__chlavg,1029,781
-381,27.87125091441112,extreme_event,no,fagus,chlavg,Senescence (Chl),fagus__chlavg,1367,986
-0,0,extreme_event,yes,fagus,chlavg,Senescence (Chl),fagus__chlavg,194,194
+381,24.407431133888533,extreme_event,no,fagus,chlavg,Senescence (Chl),fagus__chlavg,1561,1180
 0,0,date,2025-09-03,fagus,chlavg,Senescence (Chl),fagus__chlavg,194,194
 0,0,date,2025-09-10,fagus,chlavg,Senescence (Chl),fagus__chlavg,184,184
 0,0,date,2025-09-17,fagus,chlavg,Senescence (Chl),fagus__chlavg,172,172
@@ -45,8 +44,8 @@ n_lost,pct_lost,dimension,level,species,resp_var,response_label,model_id,n_basel
 864,54.54545454545455,robinia,without-robinia,fagus,condition,Vitality,fagus__condition,1584,720
 576,54.54545454545455,culture,mixed,fagus,condition,Vitality,fagus__condition,1056,480
 1104,54.54545454545455,culture,mono,fagus,condition,Vitality,fagus__condition,2024,920
-1400,62.5,extreme_event,no,fagus,condition,Vitality,fagus__condition,2240,840
-280,33.333333333333336,extreme_event,yes,fagus,condition,Vitality,fagus__condition,840,560
+1400,71.42857142857143,extreme_event,no,fagus,condition,Vitality,fagus__condition,1960,560
+280,25,extreme_event,yes,fagus,condition,Vitality,fagus__condition,1120,840
 0,0,date,2025-06-13,fagus,condition,Vitality,fagus__condition,280,280
 0,0,date,2025-06-26,fagus,condition,Vitality,fagus__condition,280,280
 0,0,date,2025-07-10,fagus,condition,Vitality,fagus__condition,280,280
@@ -83,8 +82,7 @@ n_lost,pct_lost,dimension,level,species,resp_var,response_label,model_id,n_basel
 720,38.46153846153846,robinia,without-robinia,fagus,remaining_green,Senescence (%),fagus__remaining_green,1872,1152
 480,38.46153846153846,culture,mixed,fagus,remaining_green,Senescence (%),fagus__remaining_green,1248,768
 920,38.46153846153846,culture,mono,fagus,remaining_green,Senescence (%),fagus__remaining_green,2392,1472
-1400,41.666666666666664,extreme_event,no,fagus,remaining_green,Senescence (%),fagus__remaining_green,3360,1960
-0,0,extreme_event,yes,fagus,remaining_green,Senescence (%),fagus__remaining_green,280,280
+1400,38.46153846153846,extreme_event,no,fagus,remaining_green,Senescence (%),fagus__remaining_green,3640,2240
 0,0,date,2025-09-03,fagus,remaining_green,Senescence (%),fagus__remaining_green,280,280
 0,0,date,2025-09-10,fagus,remaining_green,Senescence (%),fagus__remaining_green,280,280
 0,0,date,2025-09-17,fagus,remaining_green,Senescence (%),fagus__remaining_green,280,280
@@ -98,35 +96,37 @@ n_lost,pct_lost,dimension,level,species,resp_var,response_label,model_id,n_basel
 0,0,date,2025-11-12,fagus,remaining_green,Senescence (%),fagus__remaining_green,280,280
 280,100,date,2025-11-19,fagus,remaining_green,Senescence (%),fagus__remaining_green,280,0
 280,100,date,2025-11-25,fagus,remaining_green,Senescence (%),fagus__remaining_green,280,0
-272,25,precipitation,control,fagus,volume,Volume (total),fagus__volume,1088,816
-288,25,precipitation,drought,fagus,volume,Volume (total),fagus__volume,1152,864
-272,25,robinia,with-robinia,fagus,volume,Volume (total),fagus__volume,1088,816
-288,25,robinia,without-robinia,fagus,volume,Volume (total),fagus__volume,1152,864
-192,25,culture,mixed,fagus,volume,Volume (total),fagus__volume,768,576
-368,25,culture,mono,fagus,volume,Volume (total),fagus__volume,1472,1104
-560,28.571428571428573,extreme_event,no,fagus,volume,Volume (total),fagus__volume,1960,1400
-0,0,extreme_event,yes,fagus,volume,Volume (total),fagus__volume,280,280
+272,22.22222222222222,precipitation,control,fagus,volume,Volume (total),fagus__volume,1224,952
+288,22.22222222222222,precipitation,drought,fagus,volume,Volume (total),fagus__volume,1296,1008
+272,22.22222222222222,robinia,with-robinia,fagus,volume,Volume (total),fagus__volume,1224,952
+288,22.22222222222222,robinia,without-robinia,fagus,volume,Volume (total),fagus__volume,1296,1008
+192,22.22222222222222,culture,mixed,fagus,volume,Volume (total),fagus__volume,864,672
+368,22.22222222222222,culture,mono,fagus,volume,Volume (total),fagus__volume,1656,1288
+560,33.333333333333336,extreme_event,no,fagus,volume,Volume (total),fagus__volume,1680,1120
+0,0,extreme_event,yes,fagus,volume,Volume (total),fagus__volume,840,840
 0,0,date,2025-03-07,fagus,volume,Volume (total),fagus__volume,280,280
 280,100,date,2025-05-08,fagus,volume,Volume (total),fagus__volume,280,0
 0,0,date,2025-06-11,fagus,volume,Volume (total),fagus__volume,280,280
 0,0,date,2025-07-09,fagus,volume,Volume (total),fagus__volume,280,280
 0,0,date,2025-08-05,fagus,volume,Volume (total),fagus__volume,280,280
+0,0,date,2025-09-01,fagus,volume,Volume (total),fagus__volume,280,280
 0,0,date,2025-09-29,fagus,volume,Volume (total),fagus__volume,280,280
 280,100,date,2025-11-05,fagus,volume,Volume (total),fagus__volume,280,0
 0,0,date,2025-12-02,fagus,volume,Volume (total),fagus__volume,280,280
-272,25,precipitation,control,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,1088,816
-288,25,precipitation,drought,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,1152,864
-272,25,robinia,with-robinia,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,1088,816
-288,25,robinia,without-robinia,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,1152,864
-192,25,culture,mixed,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,768,576
-368,25,culture,mono,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,1472,1104
-560,28.571428571428573,extreme_event,no,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,1960,1400
-0,0,extreme_event,yes,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,280,280
+272,22.22222222222222,precipitation,control,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,1224,952
+288,22.22222222222222,precipitation,drought,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,1296,1008
+272,22.22222222222222,robinia,with-robinia,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,1224,952
+288,22.22222222222222,robinia,without-robinia,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,1296,1008
+192,22.22222222222222,culture,mixed,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,864,672
+368,22.22222222222222,culture,mono,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,1656,1288
+560,33.333333333333336,extreme_event,no,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,1680,1120
+0,0,extreme_event,yes,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,840,840
 0,0,date,2025-03-07,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,280,280
 280,100,date,2025-05-08,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,280,0
 0,0,date,2025-06-11,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,280,280
 0,0,date,2025-07-09,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,280,280
 0,0,date,2025-08-05,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,280,280
+0,0,date,2025-09-01,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,280,280
 0,0,date,2025-09-29,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,280,280
 280,100,date,2025-11-05,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,280,0
 0,0,date,2025-12-02,fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,280,280
@@ -156,8 +156,8 @@ n_lost,pct_lost,dimension,level,species,resp_var,response_label,model_id,n_basel
 863,54.51674036639292,robinia,without-robinia,quercus,condition,Vitality,quercus__condition,1583,720
 575,54.502369668246445,culture,mixed,quercus,condition,Vitality,quercus__condition,1055,480
 1200,54.54545454545455,culture,mono,quercus,condition,Vitality,quercus__condition,2200,1000
-1479,62.48415716096324,extreme_event,no,quercus,condition,Vitality,quercus__condition,2367,888
-296,33.333333333333336,extreme_event,yes,quercus,condition,Vitality,quercus__condition,888,592
+1479,71.41477547078706,extreme_event,no,quercus,condition,Vitality,quercus__condition,2071,592
+296,25,extreme_event,yes,quercus,condition,Vitality,quercus__condition,1184,888
 0,0,date,2025-06-13,quercus,condition,Vitality,quercus__condition,296,296
 0,0,date,2025-06-26,quercus,condition,Vitality,quercus__condition,296,296
 0,0,date,2025-07-10,quercus,condition,Vitality,quercus__condition,296,296
@@ -188,35 +188,37 @@ n_lost,pct_lost,dimension,level,species,resp_var,response_label,model_id,n_basel
 0,0,date,2025-10-07,quercus,qy,Quantum yield,quercus__qy,148,148
 148,100,date,2025-10-20,quercus,qy,Quantum yield,quercus__qy,148,0
 0,0,date,2025-11-12,quercus,qy,Quantum yield,quercus__qy,148,148
-304,25,precipitation,control,quercus,volume,Volume (total),quercus__volume,1216,912
-288,25,precipitation,drought,quercus,volume,Volume (total),quercus__volume,1152,864
-304,25,robinia,with-robinia,quercus,volume,Volume (total),quercus__volume,1216,912
-288,25,robinia,without-robinia,quercus,volume,Volume (total),quercus__volume,1152,864
-192,25,culture,mixed,quercus,volume,Volume (total),quercus__volume,768,576
-400,25,culture,mono,quercus,volume,Volume (total),quercus__volume,1600,1200
-592,28.571428571428573,extreme_event,no,quercus,volume,Volume (total),quercus__volume,2072,1480
-0,0,extreme_event,yes,quercus,volume,Volume (total),quercus__volume,296,296
+304,22.22222222222222,precipitation,control,quercus,volume,Volume (total),quercus__volume,1368,1064
+288,22.22222222222222,precipitation,drought,quercus,volume,Volume (total),quercus__volume,1296,1008
+304,22.22222222222222,robinia,with-robinia,quercus,volume,Volume (total),quercus__volume,1368,1064
+288,22.22222222222222,robinia,without-robinia,quercus,volume,Volume (total),quercus__volume,1296,1008
+192,22.22222222222222,culture,mixed,quercus,volume,Volume (total),quercus__volume,864,672
+400,22.22222222222222,culture,mono,quercus,volume,Volume (total),quercus__volume,1800,1400
+592,33.333333333333336,extreme_event,no,quercus,volume,Volume (total),quercus__volume,1776,1184
+0,0,extreme_event,yes,quercus,volume,Volume (total),quercus__volume,888,888
 0,0,date,2025-03-07,quercus,volume,Volume (total),quercus__volume,296,296
 296,100,date,2025-05-08,quercus,volume,Volume (total),quercus__volume,296,0
 0,0,date,2025-06-11,quercus,volume,Volume (total),quercus__volume,296,296
 0,0,date,2025-07-09,quercus,volume,Volume (total),quercus__volume,296,296
 0,0,date,2025-08-05,quercus,volume,Volume (total),quercus__volume,296,296
+0,0,date,2025-09-01,quercus,volume,Volume (total),quercus__volume,296,296
 0,0,date,2025-09-29,quercus,volume,Volume (total),quercus__volume,296,296
 296,100,date,2025-11-05,quercus,volume,Volume (total),quercus__volume,296,0
 0,0,date,2025-12-02,quercus,volume,Volume (total),quercus__volume,296,296
-304,25,precipitation,control,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,1216,912
-288,25,precipitation,drought,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,1152,864
-304,25,robinia,with-robinia,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,1216,912
-288,25,robinia,without-robinia,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,1152,864
-192,25,culture,mixed,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,768,576
-400,25,culture,mono,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,1600,1200
-592,28.571428571428573,extreme_event,no,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,2072,1480
-0,0,extreme_event,yes,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,296,296
+304,22.22222222222222,precipitation,control,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,1368,1064
+288,22.22222222222222,precipitation,drought,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,1296,1008
+304,22.22222222222222,robinia,with-robinia,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,1368,1064
+288,22.22222222222222,robinia,without-robinia,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,1296,1008
+192,22.22222222222222,culture,mixed,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,864,672
+400,22.22222222222222,culture,mono,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,1800,1400
+592,33.333333333333336,extreme_event,no,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,1776,1184
+0,0,extreme_event,yes,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,888,888
 0,0,date,2025-03-07,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,296,296
 296,100,date,2025-05-08,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,296,0
 0,0,date,2025-06-11,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,296,296
 0,0,date,2025-07-09,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,296,296
 0,0,date,2025-08-05,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,296,296
+0,0,date,2025-09-01,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,296,296
 0,0,date,2025-09-29,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,296,296
 296,100,date,2025-11-05,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,296,0
 0,0,date,2025-12-02,quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,296,296

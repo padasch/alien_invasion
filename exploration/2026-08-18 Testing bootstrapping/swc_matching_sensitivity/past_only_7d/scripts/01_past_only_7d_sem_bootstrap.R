@@ -573,7 +573,7 @@ if (nrow(plot_data)) {
       x = NULL, y = NULL,
       caption = "Cell = past-only 7-day estimate minus current fuzzy-match estimate."
     ) +
-    theme_bw(base_size = 9) +
+    theme_classic(base_size = 9) +
     theme(
       panel.grid = element_blank(), strip.background = element_rect(fill = "grey92"),
       axis.text.x = element_text(angle = 35, hjust = 1),

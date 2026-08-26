@@ -204,7 +204,7 @@ p <- ggplot(plot_data, aes(treatment, response, fill = estimate_delta)) +
 
 ggsave(
   file.path(output_dir, "swc-matching-sensitivity-summary.pdf"), p,
-  width = 210, height = 285, units = "mm", device = cairo_pdf,
+  width = 210, height = 285, units = "mm",
   bg = "white", limitsize = FALSE
 )
 

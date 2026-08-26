@@ -6,6 +6,13 @@
 
 options(stringsAsFactors = FALSE)
 
+args <- commandArgs(trailingOnly = TRUE)
+arg_value <- function(flag, default) {
+  hit <- grep(paste0("^", flag, "="), args, value = TRUE)
+  if (!length(hit)) return(default)
+  sub(paste0("^", flag, "="), "", hit[[1]])
+}
+
 script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 if (!length(script_arg)) stop("Run this file with Rscript.", call. = FALSE)
 script_file_arg <- sub("^--file=", "", script_arg[[1]])
@@ -37,7 +44,17 @@ suppressMessages(suppressPackageStartupMessages({
   source(file.path(project_root, "scripts", "auxiliary", "functions", "2-biomass.R"))
 }))
 
-bootstrap_target <- 1000L
+bootstrap_target <- as.integer(arg_value("--bootstrap", "1000"))
+n_cores <- as.integer(arg_value(
+  "--cores",
+  as.character(min(8L, parallel::detectCores(logical = FALSE)))
+))
+if (!is.finite(bootstrap_target) || bootstrap_target < 1L) {
+  stop("--bootstrap must be a positive integer.", call. = FALSE)
+}
+if (!is.finite(n_cores) || n_cores < 1L) {
+  stop("--cores must be a positive integer.", call. = FALSE)
+}
 max_attempts_per_model <- 5000L
 bootstrap_seed <- 2026081805L
 metrics <- c("shoot_biomass", "root_biomass", "root_shoot_biomass")
@@ -139,7 +156,8 @@ resample_containers_within_block <- function(data, replicate_id) {
     )
 }
 
-bootstrap_one_model <- function(data, species, metric, target, max_attempts) {
+bootstrap_one_model <- function(data, species, metric, target, max_attempts, seed) {
+  set.seed(seed)
   successful <- vector("list", target)
   success_n <- 0L
   attempts <- 0L
@@ -213,7 +231,7 @@ bootstrap_one_model <- function(data, species, metric, target, max_attempts) {
       attempts = attempts,
       failed = attempts - success_n,
       singular_successful = singular_n,
-      seed = bootstrap_seed
+      seed = seed
     ),
     failures = failure_table %>% mutate(species = species, metric = metric, .before = 1)
   )
@@ -271,7 +289,7 @@ make_comparison <- function(point_results, boot_results) {
 theme_alinv_pub <- function(base_size = 7) {
   theme_classic(base_size = base_size) +
     theme(
-      text = element_text(family = "Helvetica", color = "black"),
+      text = element_text(color = "black"),
       axis.text = element_text(color = "black"),
       axis.ticks = element_line(linewidth = 0.25, color = "black"),
       axis.line = element_line(linewidth = 0.25, color = "black"),
@@ -416,29 +434,32 @@ write_comparison_markdown <- function(comparison, status, path) {
   writeLines(lines, path, useBytes = TRUE)
 }
 
-set.seed(bootstrap_seed)
 workbook <- latest_biomass_workbook()
 biomass <- suppressWarnings(wrangle_tree_biomass(workbook))
 
-point_models <- list()
-point_results <- list()
-bootstrap_results <- list()
-status_results <- list()
-failure_results <- list()
+model_specs <- tidyr::crossing(species = species_levels, metric = metrics) %>%
+  mutate(
+    key = paste(.data$species, .data$metric, sep = "__"),
+    seed = bootstrap_seed + row_number() * 100003L
+  )
 
-for (species_i in species_levels) {
-  for (metric_i in metrics) {
-    message("Fitting ", species_i, " / ", metric_i)
-    model_data_i <- prepare_model_data(biomass, species_i, metric_i)
-    point_model_i <- fit_model(model_data_i)
-    key_i <- paste(species_i, metric_i, sep = "__")
-    point_models[[key_i]] <- point_model_i
-    point_results[[key_i]] <- extract_point(point_model_i, species_i, metric_i, model_data_i)
-    bootstrap_i <- bootstrap_one_model(
-      model_data_i, species_i, metric_i, bootstrap_target, max_attempts_per_model
-    )
-    bootstrap_results[[key_i]] <- bootstrap_i$estimates
-    status_results[[key_i]] <- bootstrap_i$status %>%
+fit_and_bootstrap <- function(spec) {
+  species_i <- spec$species[[1]]
+  metric_i <- spec$metric[[1]]
+  seed_i <- spec$seed[[1]]
+  message("Fitting ", species_i, " / ", metric_i)
+  model_data_i <- prepare_model_data(biomass, species_i, metric_i)
+  point_model_i <- fit_model(model_data_i)
+  bootstrap_i <- bootstrap_one_model(
+    model_data_i, species_i, metric_i, bootstrap_target,
+    max_attempts_per_model, seed_i
+  )
+  list(
+    key = spec$key[[1]],
+    model = point_model_i,
+    point = extract_point(point_model_i, species_i, metric_i, model_data_i),
+    estimates = bootstrap_i$estimates,
+    status = bootstrap_i$status %>%
       mutate(
         n_trees = n_distinct(model_data_i$tree_id),
         n_containers = n_distinct(model_data_i$boxlabel),
@@ -446,15 +467,27 @@ for (species_i in species_levels) {
         point_model_singular = lme4::isSingular(point_model_i, tol = 1e-4),
         formula = "y_z ~ precipitation + culture + robinia + (1 | boxlabel)",
         workbook = workbook
-      )
-    failure_results[[key_i]] <- bootstrap_i$failures
-  }
+      ),
+    failures = bootstrap_i$failures
+  )
 }
 
-point_results <- bind_rows(point_results)
-bootstrap_estimates <- bind_rows(bootstrap_results)
-status_results <- bind_rows(status_results)
-failure_results <- bind_rows(failure_results)
+spec_rows <- split(model_specs, seq_len(nrow(model_specs)))
+if (.Platform$OS.type == "unix" && n_cores > 1L) {
+  model_results <- parallel::mclapply(
+    spec_rows, fit_and_bootstrap,
+    mc.cores = min(n_cores, length(spec_rows)),
+    mc.preschedule = FALSE
+  )
+} else {
+  model_results <- lapply(spec_rows, fit_and_bootstrap)
+}
+
+point_models <- setNames(lapply(model_results, `[[`, "model"), vapply(model_results, `[[`, character(1), "key"))
+point_results <- bind_rows(lapply(model_results, `[[`, "point"))
+bootstrap_estimates <- bind_rows(lapply(model_results, `[[`, "estimates"))
+status_results <- bind_rows(lapply(model_results, `[[`, "status"))
+failure_results <- bind_rows(lapply(model_results, `[[`, "failures"))
 boot_summary <- bootstrap_summary(bootstrap_estimates)
 comparison <- make_comparison(point_results, boot_summary)
 
@@ -468,6 +501,7 @@ saveRDS(
   list(
     settings = list(
       target_successful = bootstrap_target,
+      cores = n_cores,
       max_attempts_per_model = max_attempts_per_model,
       seed = bootstrap_seed,
       resampling = "container clusters within block",
@@ -489,8 +523,7 @@ ggsave(
   figure,
   width = 160 / 25.4,
   height = 118 / 25.4,
-  units = "in",
-  device = grDevices::cairo_pdf
+  units = "in"
 )
 ggsave(
   file.path(output_dir, "fig5-biomass-effects-bootstrap.png"),

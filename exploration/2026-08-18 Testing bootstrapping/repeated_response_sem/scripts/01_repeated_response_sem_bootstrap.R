@@ -35,6 +35,19 @@ project_root <- normalizePath(file.path(analysis_dir, "..", "..", ".."), winslas
 output_dir <- file.path(analysis_dir, "output")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
+refresh_sources <- !tolower(Sys.getenv("ALINV_REFRESH_RESPONSE_SOURCES", unset = "true")) %in%
+  c("false", "0", "no")
+if (refresh_sources) {
+  refresh_script <- file.path(analysis_dir, "scripts", "00_refresh_response_model_sources.R")
+  refresh_status <- system2(
+    file.path(R.home("bin"), "Rscript"),
+    args = c("--vanilla", shQuote(refresh_script))
+  )
+  if (!identical(refresh_status, 0L)) {
+    stop("Could not refresh repeated-response model sources from current interim data.")
+  }
+}
+
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
 response_specs <- tribble(
@@ -59,6 +72,7 @@ model_grid <- tidyr::crossing(
 
 find_current_sem_source <- function(species, resp_var) {
   roots <- c(
+    file.path(analysis_dir, "source_models"),
     file.path(project_root, "output"),
     file.path(project_root, "_archive", "model-caches", "dated-output")
   )
@@ -438,7 +452,8 @@ write_csv(failures, file.path(output_dir, "repeated-response-sem-bootstrap-failu
 saveRDS(
   list(
     settings = list(B_target = B_target, cores = n_cores, base_seed = base_seed,
-                    resampling = "containers within block", formulas = "frozen original rfeAIC2 formulas",
+                    resampling = "containers within block",
+                    formulas = "prespecified additive formulas refreshed from current interim data",
                     run_started_at = run_started_at, run_finished_at = run_finished_at,
                     runtime_seconds = runtime_seconds),
     inventory = source_inventory, status = status, point_effects = point_effects,

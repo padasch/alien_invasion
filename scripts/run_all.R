@@ -22,12 +22,12 @@ if (length(renv_lib)) {
   .libPaths(c(normalizePath(renv_lib[[1]], winslash = "/", mustWork = TRUE), .libPaths()))
 }
 
-run_script <- function(path, env = character()) {
+run_script <- function(path, args = character(), env = character()) {
   path <- normalizePath(path, winslash = "/", mustWork = TRUE)
   message("Running ", path)
   status <- system2(
     file.path(R.home("bin"), "Rscript"),
-    args = c("--vanilla", shQuote(path)),
+    args = c("--vanilla", shQuote(path), args),
     env = env
   )
   if (!identical(status, 0L)) {
@@ -41,10 +41,16 @@ run_script <- function(path, env = character()) {
 # run_script(file.path(project_root, "scripts", "auxiliary", "3-cleaning-sensor-data.R"))
 # run_script(file.path(project_root, "scripts", "auxiliary", "4-impute-swc-gam.R"))
 
+bootstrap_cores <- as.integer(Sys.getenv("ALINV_BOOT_CORES", unset = "8"))
+if (!is.finite(bootstrap_cores) || bootstrap_cores < 1L) bootstrap_cores <- 1L
+
 run_script(file.path(project_root, "scripts", "main_figures", "make_all_figures.R"))
 run_script(
   file.path(project_root, "scripts", "supplementary_figures", "make-v1-figures.R"),
-  env = c("ALINV_SUPP_BOOT_B=1000", "ALINV_SUPP_BOOT_CORES=4")
+  env = c(
+    "ALINV_SUPP_BOOT_B=1000",
+    paste0("ALINV_SUPP_BOOT_CORES=", bootstrap_cores)
+  )
 )
 run_script(file.path(
   project_root, "scripts", "supplementary_figures",

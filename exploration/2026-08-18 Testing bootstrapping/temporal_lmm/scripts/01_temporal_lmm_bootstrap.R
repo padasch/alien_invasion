@@ -476,7 +476,7 @@ DROUGHT_WINDOWS <- tibble::tribble(
 theme_pub <- function(base_size = 7) {
   theme_classic(base_size = base_size) +
     theme(
-      text = element_text(family = "Helvetica", color = "black"),
+      text = element_text(color = "black"),
       axis.text = element_text(color = "black"),
       axis.ticks = element_line(linewidth = 0.25, color = "black"),
       axis.line = element_line(linewidth = 0.25, color = "black"),
@@ -535,7 +535,7 @@ make_effect_figure <- function(resp_var, panel_suffix, filename) {
       legend.text = element_text(size = 6.3),
       legend.key.width = grid::unit(7, "mm")
     )
-  ggsave(file.path(FIGURE_DIR, paste0(filename, ".pdf")), fig, width = 160 / 25.4, height = 125 / 25.4, device = cairo_pdf)
+  ggsave(file.path(FIGURE_DIR, paste0(filename, ".pdf")), fig, width = 160 / 25.4, height = 125 / 25.4)
   ggsave(file.path(FIGURE_DIR, paste0(filename, ".png")), fig, width = 160 / 25.4, height = 125 / 25.4, dpi = 300)
 }
 

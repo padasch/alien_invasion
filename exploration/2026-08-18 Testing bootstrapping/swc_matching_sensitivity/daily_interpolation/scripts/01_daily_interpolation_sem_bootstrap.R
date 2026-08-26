@@ -267,7 +267,7 @@ write_qa_pdf <- function() {
       subtitle = "Entire SWC measurement dates were held out",
       x = "Observed SWC", y = "Cross-validated daily-GAM SWC", colour = "Precipitation"
     ) +
-    theme_bw(base_size = 10)
+    theme_classic(base_size = 10)
 
   p_bias <- cv_predictions %>%
     mutate(treatment_group = paste(precipitation, robinia, culture, sep = " | ")) %>%
@@ -278,7 +278,7 @@ write_qa_pdf <- function() {
       title = "Cross-validated interpolation error by treatment combination",
       x = "Predicted minus observed SWC", y = NULL
     ) +
-    theme_bw(base_size = 9)
+    theme_classic(base_size = 9)
 
   pdf(file.path(output_dir, "interpolation-qa-diagnostic.pdf"), width = 9, height = 6.5)
   print(p_obs)
@@ -673,7 +673,7 @@ for (sp in c("fagus", "quercus")) {
       x = "Oriented standardized effect (95% cluster-bootstrap CI)", y = NULL,
       colour = "SWC definition"
     ) +
-    theme_bw(base_size = 8) +
+    theme_classic(base_size = 8) +
     theme(legend.position = "bottom", strip.text = element_text(size = 7))
   print(p)
 }

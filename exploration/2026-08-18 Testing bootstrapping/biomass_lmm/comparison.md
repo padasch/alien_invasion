@@ -2,9 +2,9 @@
 
 ## Result
 
-All 18 treatment coefficients retained their sign; 0 changed their 95%-interval significance classification. The current Wald analysis classified 10/18 effects as significant, compared with 10/18 using percentile container-cluster bootstrap intervals.
+All 18 treatment coefficients retained their sign; 2 changed their 95%-interval significance classification. The current Wald analysis classified 10/18 effects as significant, compared with 12/18 using percentile container-cluster bootstrap intervals.
 
-Bootstrap-to-Wald CI-width ratios ranged from 0.81 to 1.01 (median 0.96).
+Bootstrap-to-Wald CI-width ratios ranged from 0.85 to 1.01 (median 0.96).
 
 ## Method
 
@@ -12,7 +12,7 @@ For each species and biomass metric, whole containers were sampled with replacem
 
 ## Fit diagnostics
 
-The six models produced 6000 successful bootstrap refits (1000 per model) with 0 failed attempts. Five of six point models were singular; 4459 successful bootstrap refits estimated a zero or near-zero container variance.
+The six models produced 6000 successful bootstrap refits (1000 per model) with 0 failed attempts. Five of six point models were singular; 4479 successful bootstrap refits estimated a zero or near-zero container variance.
 
 The analysed harvest workbook contained 32 containers from two represented blocks (b2 and b3) per species; block b1 had no rows in this biomass dataset. Model samples contained 128 Fagus trees and 127 Quercus trees.
 
@@ -20,7 +20,8 @@ Singularity is scientifically informative here: for most biomass responses, betw
 
 ## Classification changes
 
-None. Wald and bootstrap inference agreed on sign and whether each 95% interval included zero.
+- fagus, root_biomass, precipitationdrought: Wald not significant; bootstrap significant (bootstrap p = 0.052).
+- fagus, root_biomass, culturemixed: Wald not significant; bootstrap significant (bootstrap p = 0.052).
 
 ## Interpretation
 

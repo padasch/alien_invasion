@@ -261,7 +261,7 @@ p <- ggplot(plot_df, aes(estimate, treatment, colour = matching, shape = matchin
   facet_grid(species + response_label ~ component, scales = "free_y", space = "free_y") +
   scale_colour_manual(values = c("Current fuzzy match" = "grey45", "Exact date" = "#0072B2")) +
   labs(x = "Oriented standardized path effect (95% percentile CI)", y = NULL, colour = NULL, shape = NULL) +
-  theme_bw(9) + theme(legend.position = "bottom", strip.text.y = element_text(angle = 0), panel.grid.minor = element_blank())
+  theme_classic(9) + theme(legend.position = "bottom", strip.text.y = element_text(angle = 0), panel.grid.minor = element_blank())
 ggsave(file.path(out, "exact-date-vs-fuzzy-sem-paths.pdf"), p, width = 11.5, height = 10.5)
 
 status <- status %>% mutate(run_started_at = format(started), run_finished_at = format(Sys.time()),

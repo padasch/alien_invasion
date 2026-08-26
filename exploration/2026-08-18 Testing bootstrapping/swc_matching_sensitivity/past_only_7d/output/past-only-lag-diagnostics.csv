@@ -21,10 +21,12 @@ fagus,remaining_green,Senescence (%),fagus__remaining_green,6,560,94
 fagus,remaining_green,Senescence (%),fagus__remaining_green,7,280,47
 fagus,volume,Volume (total),fagus__volume,0,280,47
 fagus,volume,Volume (total),fagus__volume,3,280,47
+fagus,volume,Volume (total),fagus__volume,4,280,47
 fagus,volume,Volume (total),fagus__volume,5,560,94
 fagus,volume,Volume (total),fagus__volume,6,560,94
 fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,0,280,47
 fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,3,280,47
+fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,4,280,47
 fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,5,560,94
 fagus,volume_inc_phase_rel,Volume (incr.),fagus__volume_inc_phase_rel,6,560,94
 quercus,chl,Chlorophyll,quercus__chl,0,1184,392
@@ -37,9 +39,11 @@ quercus,qy,Quantum yield,quercus__qy,2,148,49
 quercus,qy,Quantum yield,quercus__qy,5,148,49
 quercus,volume,Volume (total),quercus__volume,0,296,49
 quercus,volume,Volume (total),quercus__volume,3,296,49
+quercus,volume,Volume (total),quercus__volume,4,296,49
 quercus,volume,Volume (total),quercus__volume,5,592,98
 quercus,volume,Volume (total),quercus__volume,6,592,98
 quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,0,296,49
 quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,3,296,49
+quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,4,296,49
 quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,5,592,98
 quercus,volume_inc_phase_rel,Volume (incr.),quercus__volume_inc_phase_rel,6,592,98

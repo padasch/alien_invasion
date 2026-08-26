@@ -50,7 +50,7 @@ for (sp in c("fagus", "quercus")) {
       x = "Oriented standardized effect (95% container-bootstrap CI)", y = NULL,
       colour = "Mediator definition"
     ) +
-    theme_bw(base_size = 8) +
+    theme_classic(base_size = 8) +
     theme(
       legend.position = "bottom", strip.text = element_text(size = 7),
       plot.title = element_text(hjust = 0.5)

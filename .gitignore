@@ -62,4 +62,5 @@ rsconnect/
 /exploration/**/output/
 /exploration/**/figures/
 /exploration/**/recreated_figures/
+/exploration/**/source_models/
 **/.DS_Store

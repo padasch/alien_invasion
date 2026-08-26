@@ -1,10 +1,11 @@
 # Repeated-response SEM bootstrap
 
 This directory tests container-cluster bootstrap inference for the 14
-non-phenology species-response slots used in Figure 6. The current Figure 6
-models are loaded from their latest valid `rfeAIC2` caches. Their original
-standardized analysis data and selected mediator/outcome formulas are held
-fixed; model selection is **not** repeated within bootstrap samples.
+non-phenology species-response slots used in the supplementary SEM analysis.
+Before fitting, `00_refresh_response_model_sources.R` reconstructs every
+estimable model sample from the current tracked interim data and applies the
+prespecified additive mediator and response formulas. Model selection is not
+repeated within bootstrap samples.
 
 ## Method
 
@@ -13,8 +14,9 @@ fixed; model selection is **not** repeated within bootstrap samples.
   within each experimental block (`b1`, `b2`, `b3`).
 - Dependence: all trees, dates, and aligned SWC observations from a sampled
   container remain together. Repeated draws receive new container and tree IDs.
-- Standardization: the cached original-data standardized variables are reused;
-  bootstrap samples are not restandardized.
+- Standardization: response, SWC, and centred DOY variables are standardized
+  once in the current original-data sample; bootstrap samples are not
+  restandardized.
 - Paths: direct (`c'`), SWC-associated indirect (`a*b`), and path-summed total
   (`c' + a*b`) effects are recalculated in each replicate.
 - Uncertainty: 95% percentile intervals and the shared two-sided empirical
@@ -23,7 +25,7 @@ fixed; model selection is **not** repeated within bootstrap samples.
   signs are exported.
 
 The two Quercus senescence slots (`remaining_green` and `chlavg`) contain no
-post-filtering SEM data in the current Figure 6 caches. They are retained in
+post-filtering SEM data in the current interim data. They are retained in
 the source inventory and model status table as unavailable, matching the
 current figure's missing cells.
 
@@ -34,15 +36,15 @@ From the repository root:
 ```sh
 Rscript --vanilla \
   "exploration/2026-08-18 Testing bootstrapping/repeated_response_sem/scripts/01_repeated_response_sem_bootstrap.R" \
-  --bootstrap=1000 --cores=4 --seed=20260818
+  --bootstrap=1000 --cores=8 --seed=20260818
 ```
 
 ## Outputs
 
 All generated files are under `output/`:
 
-- `repeated-response-sem-source-inventory.csv`: all 14 Figure 6 slots and
-  their resolved current cache files.
+- `repeated-response-sem-source-inventory.csv`: all 14 response slots and
+  their refreshed current-data source files.
 - `repeated-response-sem-bootstrap-status.csv`: formulas, data sizes,
   successful replicates, attempts, failures, and singular-fit counts.
 - `repeated-response-sem-point-delta-effects.csv`: current point estimates and
