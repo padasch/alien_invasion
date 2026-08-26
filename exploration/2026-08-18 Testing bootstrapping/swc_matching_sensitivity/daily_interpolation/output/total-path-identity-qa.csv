@@ -1,3 +1,0 @@
-level,n_checks,max_abs_identity_error,n_above_tolerance_1e12
-point,48,7.632783294297951e-17,0
-bootstrap,48000,1.1102230246251565e-16,0

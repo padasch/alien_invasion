@@ -5,34 +5,38 @@
 
 ALINV_BOOTSTRAP_TARGET <- 1000L
 
-alinv_bootstrap_analysis_root <- function(project_root = .alinv_project_root()) {
-  file.path(project_root, "exploration", "2026-08-18 Testing bootstrapping")
+alinv_bootstrap_results_root <- function(project_root = .alinv_project_root()) {
+  file.path(project_root, "data", "final", "bootstrap")
+}
+
+alinv_bootstrap_script_root <- function(project_root = .alinv_project_root()) {
+  file.path(project_root, "scripts", "auxiliary", "bootstrap")
 }
 
 alinv_bootstrap_paths <- function(project_root = .alinv_project_root()) {
-  root <- alinv_bootstrap_analysis_root(project_root)
+  root <- alinv_bootstrap_results_root(project_root)
+  scripts <- alinv_bootstrap_script_root(project_root)
   list(
     root = root,
-    temporal_script = file.path(root, "temporal_lmm", "scripts", "01_temporal_lmm_bootstrap.R"),
-    temporal_effects = file.path(root, "temporal_lmm", "output", "data", "temporal-lmm-bootstrap-effects.csv"),
-    temporal_status = file.path(root, "temporal_lmm", "output", "status", "temporal-lmm-bootstrap-status.csv"),
-    biomass_script = file.path(root, "biomass_lmm", "scripts", "01-biomass-container-bootstrap.R"),
-    biomass_effects = file.path(root, "biomass_lmm", "output", "biomass-wald-vs-bootstrap-comparison.csv"),
-    biomass_status = file.path(root, "biomass_lmm", "output", "biomass-bootstrap-status.csv"),
-    repeated_sem_script = file.path(root, "repeated_response_sem", "scripts", "01_repeated_response_sem_bootstrap.R"),
-    repeated_sem_totals = file.path(root, "repeated_response_sem", "output", "figure6-ready-repeated-response-sem-path-summed-total.csv"),
-    repeated_sem_effects = file.path(root, "repeated_response_sem", "output", "repeated-response-sem-bootstrap-effects.csv"),
-    repeated_sem_status = file.path(root, "repeated_response_sem", "output", "repeated-response-sem-bootstrap-status.csv"),
-    reduced_response_script = file.path(root, "reduced_response_lmm", "scripts", "01_reduced_response_bootstrap.R"),
-    reduced_response_effects = file.path(root, "reduced_response_lmm", "output", "reduced-response-bootstrap-effects.csv"),
-    reduced_response_status = file.path(root, "reduced_response_lmm", "output", "reduced-response-bootstrap-status.csv"),
-    phenology_script = file.path(root, "phenology", "run_phenology_bootstrap.R"),
-    phenology_totals = file.path(root, "phenology", "output", "figure6-ready-phenology-path-summed-total.csv"),
-    phenology_primary = file.path(root, "phenology", "output", "primary-common-shift-bootstrap-effects.csv"),
-    phenology_timing_index = file.path(root, "phenology", "output", "stage-centred-timing-index.csv"),
-    phenology_sem_effects = file.path(root, "phenology", "output", "sem-effect-decomposition-block-stratified.csv"),
-    phenology_sem_paths = file.path(root, "phenology", "output", "sem-constituent-paths-block-stratified.csv"),
-    phenology_status = file.path(root, "phenology", "output", "phenology-bootstrap-model-status.csv")
+    temporal_script = file.path(scripts, "01_temporal_lmm_bootstrap.R"),
+    temporal_effects = file.path(root, "temporal_lmm", "temporal-lmm-bootstrap-effects.csv"),
+    temporal_status = file.path(root, "temporal_lmm", "temporal-lmm-bootstrap-status.csv"),
+    biomass_script = file.path(scripts, "02_biomass_lmm_bootstrap.R"),
+    biomass_effects = file.path(root, "biomass_lmm", "biomass-wald-vs-bootstrap-comparison.csv"),
+    biomass_status = file.path(root, "biomass_lmm", "biomass-bootstrap-status.csv"),
+    phenology_script = file.path(scripts, "03_phenology_bootstrap.R"),
+    phenology_totals = file.path(root, "phenology", "figure6-ready-phenology-path-summed-total.csv"),
+    phenology_primary = file.path(root, "phenology", "primary-common-shift-bootstrap-effects.csv"),
+    phenology_timing_index = file.path(root, "phenology", "stage-centred-timing-index.csv"),
+    phenology_sem_effects = file.path(root, "phenology", "sem-effect-decomposition-block-stratified.csv"),
+    phenology_sem_paths = file.path(root, "phenology", "sem-constituent-paths-block-stratified.csv"),
+    phenology_status = file.path(root, "phenology", "phenology-bootstrap-model-status.csv"),
+    repeated_sem_script = file.path(scripts, "05_repeated_response_sem_bootstrap.R"),
+    repeated_sem_effects = file.path(root, "repeated_response_sem", "repeated-response-sem-bootstrap-effects.csv"),
+    repeated_sem_status = file.path(root, "repeated_response_sem", "repeated-response-sem-bootstrap-status.csv"),
+    past_only_script = file.path(scripts, "06_past_only_7d_sem_bootstrap.R"),
+    past_only_effects = file.path(root, "past_only_7d", "past-only-sem-bootstrap-effects.csv"),
+    past_only_status = file.path(root, "past_only_7d", "past-only-sem-bootstrap-status.csv")
   )
 }
 
@@ -66,7 +70,7 @@ alinv_bootstrap_read_csv <- function(path, required_cols = character()) {
 
 alinv_bootstrap_valid <- function(family, project_root = .alinv_project_root(), target = ALINV_BOOTSTRAP_TARGET) {
   paths <- alinv_bootstrap_paths(project_root)
-  family <- match.arg(family, c("temporal", "biomass", "repeated_sem", "reduced_response", "phenology"))
+  family <- match.arg(family, c("temporal", "biomass", "phenology", "repeated_sem", "past_only"))
 
   if (family == "temporal") {
     effects <- alinv_bootstrap_read_csv(paths$temporal_effects, c("model_id", "bootstrap_replicates", "lower", "upper", "p_boot"))
@@ -87,15 +91,14 @@ alinv_bootstrap_valid <- function(family, project_root = .alinv_project_root(), 
     return(!is.null(effects) && !is.null(status) &&
       all(effects$n_boot >= target) && all(status$n_boot_success[estimable] >= target))
   }
-  if (family == "reduced_response") {
-    effects <- alinv_bootstrap_read_csv(
-      paths$reduced_response_effects,
-      c("species", "resp_var", "treatment", "estimate", "lower", "upper", "p_boot", "n_boot")
-    )
-    status <- alinv_bootstrap_read_csv(
-      paths$reduced_response_status,
-      c("species", "resp_var", "status", "n_boot_success")
-    )
+  if (family == "past_only") {
+    effects <- alinv_bootstrap_read_csv(paths$past_only_effects, c(
+      "species", "resp_var", "treatment", "component", "estimate",
+      "lower", "upper", "p_boot", "n_boot"
+    ))
+    status <- alinv_bootstrap_read_csv(paths$past_only_status, c(
+      "species", "resp_var", "status", "n_boot_success"
+    ))
     estimable <- if (is.null(status)) logical() else status$status == "complete"
     return(!is.null(effects) && !is.null(status) &&
       all(effects$n_boot >= target) && all(status$n_boot_success[estimable] >= target))
@@ -114,14 +117,19 @@ alinv_run_bootstrap_family <- function(family,
                                        target = ALINV_BOOTSTRAP_TARGET,
                                        cores = 8L) {
   paths <- alinv_bootstrap_paths(project_root)
-  family <- match.arg(family, c("temporal", "biomass", "repeated_sem", "reduced_response", "phenology"))
+  family <- match.arg(family, c("temporal", "biomass", "phenology", "repeated_sem", "past_only"))
+  if (family == "past_only") {
+    # Rebuild the current-data SEM source bundles before applying the past-only
+    # SWC matching rule. This avoids depending on machine-specific cache paths.
+    alinv_run_bootstrap_family("repeated_sem", project_root, target, cores)
+  }
   script <- switch(
     family,
     temporal = paths$temporal_script,
     biomass = paths$biomass_script,
+    phenology = paths$phenology_script,
     repeated_sem = paths$repeated_sem_script,
-    reduced_response = paths$reduced_response_script,
-    phenology = paths$phenology_script
+    past_only = paths$past_only_script
   )
   if (!file.exists(script)) stop("Missing bootstrap analysis script: ", script, call. = FALSE)
 
@@ -132,7 +140,7 @@ alinv_run_bootstrap_family <- function(family,
       paste0("ALINV_TEMPORAL_BOOT_B=", as.integer(target)),
       paste0("ALINV_TEMPORAL_BOOT_CORES=", as.integer(cores))
     )
-  } else if (family %in% c("biomass", "repeated_sem", "reduced_response", "phenology")) {
+  } else {
     args <- c(args, paste0("--bootstrap=", as.integer(target)), paste0("--cores=", as.integer(cores)))
   }
 
@@ -187,29 +195,18 @@ alinv_read_repeated_sem_bootstrap_effects <- function(project_root = .alinv_proj
     )
 }
 
-alinv_past_only_7d_sem_paths <- function(project_root = .alinv_project_root()) {
-  output_dir <- file.path(
-    alinv_bootstrap_analysis_root(project_root),
-    "swc_matching_sensitivity", "past_only_7d", "output"
-  )
-  list(
-    effects = file.path(output_dir, "past-only-sem-bootstrap-effects.csv"),
-    status = file.path(output_dir, "past-only-sem-bootstrap-status.csv")
-  )
-}
-
 alinv_read_past_only_7d_sem_bootstrap_effects <- function(project_root = .alinv_project_root(),
                                                           target = ALINV_BOOTSTRAP_TARGET) {
-  paths <- alinv_past_only_7d_sem_paths(project_root)
+  paths <- alinv_ensure_bootstrap_family("past_only", project_root, target)
   effects <- alinv_bootstrap_read_csv(
-    paths$effects,
+    paths$past_only_effects,
     c(
       "species", "resp_var", "response_label", "treatment", "component",
       "estimate", "lower", "upper", "p_boot", "n_boot"
     )
   )
   status <- alinv_bootstrap_read_csv(
-    paths$status,
+    paths$past_only_status,
     c("species", "resp_var", "status", "n_boot_success")
   )
   if (is.null(effects) || is.null(status)) {
@@ -224,7 +221,7 @@ alinv_read_past_only_7d_sem_bootstrap_effects <- function(project_root = .alinv_
   }
   effects |>
     dplyr::mutate(
-      source_file = paths$effects,
+      source_file = paths$past_only_effects,
       swc_definition = "same-day or latest preceding measured SWC within seven days",
       uncertainty_method = "block-stratified container-cluster bootstrap percentile"
     )
@@ -264,15 +261,6 @@ alinv_read_repeated_sem_bootstrap_totals <- function(project_root = .alinv_proje
       n_boot_success = .data$n_boot,
       source_file = .data$source_file,
       uncertainty_method = .data$uncertainty_method
-    )
-}
-
-alinv_read_reduced_response_bootstrap_effects <- function(project_root = .alinv_project_root()) {
-  paths <- alinv_ensure_bootstrap_family("reduced_response", project_root)
-  readr::read_csv(paths$reduced_response_effects, show_col_types = FALSE) |>
-    dplyr::mutate(
-      source_file = paths$reduced_response_effects,
-      uncertainty_method = "block-stratified container-cluster bootstrap percentile"
     )
 }
 

@@ -16,7 +16,7 @@ scripts/
 data/
   raw/                   # Raw inputs; see data/raw/README.md
   interim/               # Cleaned analysis-ready CSV files
-exploration/             # Reproducible model-development and sensitivity analyses
+  final/bootstrap/       # Promoted bootstrap summaries used by figures
 output/
   main_figures/          # Final main-figure PDFs
   supplementary/         # Final supplementary-figure PDFs
@@ -27,6 +27,9 @@ _archive/                # Local historical material; intentionally not version 
 Historical dated model caches are stored locally under
 `_archive/model-caches/dated-output/`. They are ignored by Git and are retained
 only for legacy method comparisons; `output/` contains publication PDFs only.
+Local scratch analyses may be kept under `exploration/`, but that directory is
+ignored and is not part of the repository. Production bootstrap scripts are
+under `scripts/auxiliary/bootstrap/`.
 
 ## Rebuilding the publication figures
 
@@ -47,7 +50,7 @@ Run a collection separately with:
 
 ```sh
 Rscript --vanilla scripts/main_figures/make_all_figures.R
-ALINV_SUPP_BOOT_B=1000 ALINV_SUPP_BOOT_CORES=4 \
+ALINV_SUPP_BOOT_B=1000 ALINV_SUPP_BOOT_CORES=8 \
   Rscript --vanilla scripts/supplementary_figures/make-v1-figures.R
 ```
 

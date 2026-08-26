@@ -63,8 +63,10 @@ rsconnect/
 *.pdf
 !/output/main_figures/*.pdf
 !/output/supplementary/*.pdf
-/exploration/**/output/
-/exploration/**/figures/
-/exploration/**/recreated_figures/
-/exploration/**/source_models/
+/exploration/
+/data/final/bootstrap/**/source_models/
+/data/final/bootstrap/**/*-replicates.csv
+/data/final/bootstrap/**/*-draws.csv
+/data/final/bootstrap/**/*.rds
+/data/final/bootstrap/**/*.png
 **/.DS_Store

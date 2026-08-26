@@ -22,7 +22,7 @@ Shared data preparation, bootstrap, modelling, plotting, and export code is in
 dataset, response, species, and labels. Run the complete collection with:
 
 ```sh
-ALINV_SUPP_BOOT_B=1000 ALINV_SUPP_BOOT_CORES=4 \
+ALINV_SUPP_BOOT_B=1000 ALINV_SUPP_BOOT_CORES=8 \
   Rscript --vanilla scripts/supplementary_figures/make-v1-figures.R
 ```
 
@@ -90,13 +90,13 @@ descriptive.
   container-bootstrap intervals.
 - `fig_s17.pdf`: exploratory small-multiple heatmaps of
   SWC-adjusted treatment-response associations, SWC-associated indirect paths,
-  and treatment-to-SWC paths. Repeated responses use same-day or latest
-  preceding measured SWC within seven days; future SWC is never assigned to an
-  earlier response. All components use one shared diverging scale. The figure
-  is an associative decomposition and is not evidence of causal mediation.
-  Cell intervals and probabilities use a 1,000-replicate block-stratified
-  container-cluster bootstrap. Figure 6 instead reports directly fitted
-  reduced-form treatment effects without SWC.
+  and their uncertainty. Repeated responses use same-day or latest preceding
+  measured SWC within seven days; future SWC is never assigned to an earlier
+  response. Both components use one shared diverging scale. The figure is an
+  associative decomposition and is not evidence of causal mediation. Cell
+  intervals and probabilities use a 1,000-replicate block-stratified
+  container-cluster bootstrap. Figure 6 reports their path-summed total
+  (`c' + ab`).
 
 ## Statistical model
 
@@ -109,8 +109,8 @@ transition DOY ~ phenological stage + precipitation + Robinia + culture
 ```
 
 Only transitions into stages 2–4 are used for inference. Phenological stage,
-precipitation, *Robinia* presence, culture, and experimental block are fixed
-effects; container and tree identity are random intercepts. The additive
+precipitation, *Robinia* presence, and culture are fixed effects; container and
+tree identity are random intercepts. The additive
 treatment coefficients estimate a common shift in the stage-2–4 transition
 profile. Treatment contrasts are treatment minus reference (drought minus
 control, with minus without *Robinia*, and mixed culture minus monoculture).
@@ -121,6 +121,7 @@ effects are multiplied by -1 so that negative values mean later and positive
 values earlier leaf-out in Figures 6, S16, and the leaf-out cells of S17.
 Because DOY is continuous, this is an LMM rather than a GLMM.
 
-Bootstrap model artifacts and audit tables are retained in
-`exploration/2026-08-18 Testing bootstrapping/`; they are intentionally kept
-separate from the publication-only supplementary PDF directory.
+Production bootstrap scripts are under `scripts/auxiliary/bootstrap/`, and the
+compact summaries used by the figures are under `data/final/bootstrap/`.
+Replicate-level audit artifacts remain local and are not stored with the
+publication PDFs.

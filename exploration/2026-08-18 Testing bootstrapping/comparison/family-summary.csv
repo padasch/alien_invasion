@@ -1,8 +1,0 @@
-model_family,estimable_models,successful_bootstrap_resamples,failed_attempts,point_estimate_direction_changes,interval_classification_changes,total_compared_effects,assessment
-Temporal LMM,4,4000,16,0,10,120,"Dominant temporal patterns retained; ten borderline date-specific contrasts changed zero-exclusion status"
-Biomass LMM,6,6000,0,0,0,18,"Complete agreement in direction and zero-exclusion classification"
-Phenology common-shift LMM,2,2000,0,0,0,6,"Complete agreement for the primary overall-timing effects"
-Phenology duration sensitivity,2,2000,0,0,0,6,"Complete agreement"
-Phenology stage-specific sensitivity,2,2000,0,0,1,18,"One borderline Fagus mixed-culture stage-4 contrast changed classification"
-Phenology SEM components,2,2000,0,0,1,24,"One borderline Quercus precipitation direct path changed classification; all six Figure 6 totals unchanged"
-Repeated-response SEM,12,12000,0,0,7,48,"Effect directions retained; seven Figure 6 path-summed totals changed classification"
