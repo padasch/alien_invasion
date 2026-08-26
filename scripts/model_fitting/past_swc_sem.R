@@ -33,7 +33,7 @@ if (!is.finite(n_cores) || n_cores < 1L) stop("--cores must be a positive intege
 script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 script_path_arg <- gsub("~[+]~", " ", sub("^--file=", "", script_arg[[1]]), fixed = FALSE)
 script_file <- normalizePath(script_path_arg, winslash = "/", mustWork = TRUE)
-project_root <- normalizePath(file.path(dirname(script_file), "..", "..", ".."), winslash = "/", mustWork = TRUE)
+project_root <- normalizePath(file.path(dirname(script_file), "..", ".."), winslash = "/", mustWork = TRUE)
 output_dir <- file.path(project_root, "data", "final", "bootstrap", "past_only_7d")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 

@@ -1,5 +1,5 @@
 # Central analysis configuration for factor baselines, response labels, and
-# treatment display wording used across notebooks and exported outputs.
+# treatment display wording used by the active analyses and figures.
 
 # Central growth proxy options.
 #
@@ -103,14 +103,6 @@ ALINV_RESPONSE_LABELS <- c(
   remaining_green = "Senescence",
   chlavg = "Senescence chlorophyll",
   stage = "Phenology stage"
-)
-
-ALINV_SCENARIO_GRID <- tibble::tribble(
-  ~scenario_label, ~soil_filter, ~include_soil_treatment,
-  "drier soil (beech soil)", "inoc-beech", FALSE,
-  "wetter soil (robinia soil)", "inoc-robinia", FALSE,
-  "both soils (with soil as treatment)", "both", TRUE,
-  "both soils (without soil as treatment)", "both", FALSE
 )
 
 ALINV_TREATMENT_CONFIG <- tibble::tribble(

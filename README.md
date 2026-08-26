@@ -9,9 +9,12 @@ precipitation, species mixing, *Robinia* presence, and legacy soil type on
 
 ```text
 scripts/
+  config.R               # Central analysis settings and factor definitions
+  data_preparation/      # Executable scripts that rebuild cleaned data
+  functions/             # Shared function definitions only
+  model_fitting/         # Executable scripts that refit bootstrap models
   main_figures/          # One script per main figure and the main runner
   supplementary_figures/# One script per supplementary figure and its runner
-  auxiliary/             # Shared config, functions, and data-processing scripts
   run_all.R              # Rebuild both publication figure collections
 data/
   raw/                   # Raw inputs; see data/raw/README.md
@@ -29,7 +32,8 @@ Historical dated model caches are stored locally under
 only for legacy method comparisons; `output/` contains publication PDFs only.
 Local scratch analyses may be kept under `exploration/`, but that directory is
 ignored and is not part of the repository. Production bootstrap scripts are
-under `scripts/auxiliary/bootstrap/`.
+under `scripts/model_fitting/`. The retired GAM-based SWC interpolation is
+stored locally under `_archive/gam-swc/`.
 
 ## Rebuilding the publication figures
 
@@ -51,7 +55,7 @@ Run a collection separately with:
 ```sh
 Rscript --vanilla scripts/main_figures/make_all_figures.R
 ALINV_SUPP_BOOT_B=1000 ALINV_SUPP_BOOT_CORES=8 \
-  Rscript --vanilla scripts/supplementary_figures/make-v1-figures.R
+  Rscript --vanilla scripts/supplementary_figures/make_all_figures.R
 ```
 
 The supplementary runner creates the 15 reconstructed supplementary figures.
@@ -64,10 +68,9 @@ Cleaned interim files are tracked, so this is normally unnecessary. To rebuild
 them from the raw inputs, run:
 
 ```sh
-Rscript --vanilla scripts/auxiliary/1-data-cleaning.R
-Rscript --vanilla scripts/auxiliary/3-cleaning-sensor-data.R
-Rscript --vanilla scripts/auxiliary/4-impute-swc-gam.R
+Rscript --vanilla scripts/data_preparation/clean_experiment_data.R
+Rscript --vanilla scripts/data_preparation/clean_sensor_data.R
 ```
 
-Shared data access, bootstrap readers, plotting utilities, factor definitions,
-and volume-proxy configuration are under `scripts/auxiliary/`.
+Shared data access, bootstrap readers, and plotting utilities are under
+`scripts/functions/`; analysis settings are in `scripts/config.R`.

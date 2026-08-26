@@ -19,7 +19,7 @@ suppressPackageStartupMessages({
 script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 script_path <- gsub("~[+]~", " ", sub("^--file=", "", script_arg[[1]]))
 script_file <- normalizePath(script_path, winslash = "/", mustWork = TRUE)
-project_root <- normalizePath(file.path(dirname(script_file), "..", "..", ".."), winslash = "/", mustWork = TRUE)
+project_root <- normalizePath(file.path(dirname(script_file), "..", ".."), winslash = "/", mustWork = TRUE)
 source_root <- file.path(
   project_root, "data", "final", "bootstrap", "repeated_response_sem",
   "source_models", format(Sys.Date(), "%Y-%m-%d")
@@ -27,8 +27,8 @@ source_root <- file.path(
 dir.create(source_root, recursive = TRUE, showWarnings = FALSE)
 setwd(project_root)
 
-source(file.path(project_root, "scripts", "auxiliary", "functions", "_source.R"))
-source(file.path(project_root, "scripts", "auxiliary", "functions", "3-effect-size-factorial.R"))
+source(file.path(project_root, "scripts", "functions", "project_data.R"))
+source(file.path(project_root, "scripts", "functions", "factorial_effects.R"))
 
 response_specs <- tibble::tribble(
   ~data_name, ~resp_var, ~response_label,
@@ -56,8 +56,7 @@ prepare_current_sem_data <- function(data_name, resp_var, species) {
     standardize_response = FALSE,
     add_covars = FALSE,
     soil_type = "both",
-    include_soil_treatment = FALSE,
-    swc_source = "measured"
+    include_soil_treatment = FALSE
   ) |>
     dplyr::filter(!is.na(.data$y), !is.na(.data$swc), !is.na(.data$date)) |>
     dplyr::mutate(

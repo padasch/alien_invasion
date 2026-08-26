@@ -18,12 +18,12 @@ figure-specific subdirectories, PNGs, CSVs, reports, or model objects.
 
 The first 15 reconstructed figures each have a dedicated numbered entry script.
 Shared data preparation, bootstrap, modelling, plotting, and export code is in
-`scripts/supplementary_figures/_v1-figure-helpers.R`; the figure scripts only specify the relevant
+`scripts/supplementary_figures/figure_helpers.R`; the figure scripts only specify the relevant
 dataset, response, species, and labels. Run the complete collection with:
 
 ```sh
 ALINV_SUPP_BOOT_B=1000 ALINV_SUPP_BOOT_CORES=8 \
-  Rscript --vanilla scripts/supplementary_figures/make-v1-figures.R
+  Rscript --vanilla scripts/supplementary_figures/make_all_figures.R
 ```
 
 All 17 outputs are written as `fig_s1.pdf` through `fig_s17.pdf` directly to
@@ -121,7 +121,7 @@ effects are multiplied by -1 so that negative values mean later and positive
 values earlier leaf-out in Figures 6, S16, and the leaf-out cells of S17.
 Because DOY is continuous, this is an LMM rather than a GLMM.
 
-Production bootstrap scripts are under `scripts/auxiliary/bootstrap/`, and the
+Production model-fitting scripts are under `scripts/model_fitting/`, and the
 compact summaries used by the figures are under `data/final/bootstrap/`.
 Replicate-level audit artifacts remain local and are not stored with the
 publication PDFs.

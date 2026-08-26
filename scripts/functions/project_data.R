@@ -80,11 +80,6 @@ if (!exists("remove_empty", mode = "function")) {
   wd
 }
 
-# Escape regex metacharacters in literal paths.
-.escape_regex <- function(x) {
-  gsub("([][{}()+*^$|\\\\?.])", "\\\\\\1", x)
-}
-
 # Resolve possibly relative paths against project root when needed.
 .resolve_path <- function(path) {
   if (is.null(path) || !nzchar(path)) return(path)
@@ -106,29 +101,9 @@ if (!exists("remove_empty", mode = "function")) {
   normalizePath(project_path, winslash = "/", mustWork = FALSE)
 }
 
-alinv_project_relative_path <- function(path) {
-  if (is.null(path) || !nzchar(path)) return(path)
-
-  project_root <- normalizePath(.alinv_project_root(), winslash = "/", mustWork = TRUE)
-  path_abs <- normalizePath(.resolve_path(path), winslash = "/", mustWork = FALSE)
-
-  if (identical(path_abs, project_root)) {
-    return(".")
-  }
-
-  prefix <- paste0(project_root, "/")
-  if (!startsWith(path_abs, prefix)) {
-    return(path_abs)
-  }
-
-  sub(paste0("^", .escape_regex(prefix)), "", path_abs)
-}
-
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
-alinv_config_path <- file.path(
-  .alinv_project_root(), "scripts", "auxiliary", "config", "analysis-config.R"
-)
+alinv_config_path <- file.path(.alinv_project_root(), "scripts", "config.R")
 if (file.exists(alinv_config_path)) {
   source(alinv_config_path, local = FALSE)
 } else {
@@ -282,10 +257,6 @@ alinv_volume_zianis_catalog <- function() {
   ALINV_VOLUME_ZIANIS$specs
 }
 
-alinv_volume_zianis_source <- function() {
-  ALINV_VOLUME_ZIANIS$source
-}
-
 alinv_volume_zianis_spec <- function(repo_species) {
   repo_species <- as.character(repo_species)
   specs <- alinv_volume_zianis_catalog()
@@ -300,15 +271,6 @@ alinv_volume_zianis_spec <- function(repo_species) {
   }
 
   tibble::as_tibble(out)
-}
-
-alinv_volume_model_cache_tag <- function(data_name = NULL, resp_var = NULL) {
-  resp_var <- resp_var %||% ""
-  if (identical(as.character(data_name), "growth") && grepl("^volume", resp_var)) {
-    paste0("-volproxy-", alinv_volume_proxy_version())
-  } else {
-    ""
-  }
 }
 
 alinv_clean_names <- function(x) {
@@ -340,168 +302,7 @@ alinv_drop_empty_cols <- function(df) {
   df[, keep, drop = FALSE]
 }
 
-alinv_temporal_effect_y_limits <- function() {
-  c(-2, 2)
-}
-
-alinv_temporal_effect_y_label <- function() {
-  "Effect size (positive = beneficial, negative = harmful)"
-}
-
-alinv_empty_plot <- function(title, subtitle = NULL) {
-  ggplot2::ggplot() +
-    ggplot2::theme_void() +
-    ggplot2::labs(title = title, subtitle = subtitle) +
-    ggplot2::theme(
-      plot.title = ggplot2::element_text(size = 12, face = "plain"),
-      plot.subtitle = ggplot2::element_text(size = 10)
-    )
-}
-
-alinv_lmm_r2 <- function(mod) {
-  if (is.null(mod)) {
-    return(tibble::tibble(r2_marginal = NA_real_, r2_conditional = NA_real_))
-  }
-
-  if (requireNamespace("performance", quietly = TRUE)) {
-    r2_obj <- tryCatch(
-      performance::r2_nakagawa(mod),
-      error = function(e) NULL
-    )
-    if (!is.null(r2_obj)) {
-      return(tibble::tibble(
-        r2_marginal = unname(r2_obj$R2_marginal %||% NA_real_),
-        r2_conditional = unname(r2_obj$R2_conditional %||% NA_real_)
-      ))
-    }
-  }
-
-  if (requireNamespace("MuMIn", quietly = TRUE)) {
-    r2_obj <- tryCatch(
-      MuMIn::r.squaredGLMM(mod),
-      error = function(e) NULL
-    )
-    if (!is.null(r2_obj)) {
-      return(tibble::tibble(
-        r2_marginal = unname(r2_obj[1, "R2m"]),
-        r2_conditional = unname(r2_obj[1, "R2c"])
-      ))
-    }
-  }
-
-  pred_fixed <- tryCatch(
-    stats::predict(mod, re.form = NA),
-    error = function(e) NULL
-  )
-
-  var_fixed <- if (is.null(pred_fixed)) {
-    NA_real_
-  } else {
-    stats::var(as.numeric(pred_fixed), na.rm = TRUE)
-  }
-
-  vc_df <- tryCatch(
-    as.data.frame(lme4::VarCorr(mod)),
-    error = function(e) NULL
-  )
-
-  if (is.null(vc_df) || !nrow(vc_df) || !is.finite(var_fixed)) {
-    return(tibble::tibble(r2_marginal = NA_real_, r2_conditional = NA_real_))
-  }
-
-  var_random <- sum(vc_df$vcov[vc_df$grp != "Residual"], na.rm = TRUE)
-  var_residual <- vc_df$vcov[vc_df$grp == "Residual"][1]
-  total_var <- var_fixed + var_random + var_residual
-
-  if (!is.finite(total_var) || total_var <= 0) {
-    return(tibble::tibble(r2_marginal = NA_real_, r2_conditional = NA_real_))
-  }
-
-  tibble::tibble(
-    r2_marginal = var_fixed / total_var,
-    r2_conditional = (var_fixed + var_random) / total_var
-  )
-}
-
-ALINV_RESPONSE_DISPLAY_SIGN <- stats::setNames(numeric(), character())
-
-alinv_response_display_sign <- function(resp_var) {
-  signs <- ALINV_RESPONSE_DISPLAY_SIGN[as.character(resp_var)]
-  signs[is.na(signs)] <- 1
-  as.numeric(signs)
-}
-
-alinv_apply_response_orientation <- function(df,
-                                             resp_var = NULL,
-                                             resp_col = NULL,
-                                             estimate_col = "estimate",
-                                             lower_col = NULL,
-                                             upper_col = NULL,
-                                             stat_col = NULL,
-                                             estimate_sig_col = NULL) {
-  if (is.null(df) || !nrow(df)) {
-    return(df)
-  }
-
-  if (!is.null(resp_col)) {
-    if (!resp_col %in% names(df)) {
-      stop("resp_col not found in data frame: ", resp_col, call. = FALSE)
-    }
-    resp_vals <- df[[resp_col]]
-  } else if (!is.null(resp_var)) {
-    resp_vals <- rep(resp_var, nrow(df))
-  } else {
-    stop("Provide either resp_var or resp_col.", call. = FALSE)
-  }
-
-  sign_vec <- alinv_response_display_sign(resp_vals)
-  df$display_sign <- sign_vec
-
-  orient_bounds <- function(lower_vals, upper_vals, signs) {
-    tibble::tibble(
-      lower = ifelse(signs < 0, upper_vals * signs, lower_vals * signs),
-      upper = ifelse(signs < 0, lower_vals * signs, upper_vals * signs)
-    )
-  }
-
-  if (!is.null(estimate_col) && estimate_col %in% names(df)) {
-    raw_col <- paste0(estimate_col, "_raw")
-    df[[raw_col]] <- df[[estimate_col]]
-    df[[estimate_col]] <- df[[estimate_col]] * sign_vec
-  }
-
-  if (!is.null(lower_col) && !is.null(upper_col) &&
-      lower_col %in% names(df) && upper_col %in% names(df)) {
-    lower_raw_col <- paste0(lower_col, "_raw")
-    upper_raw_col <- paste0(upper_col, "_raw")
-    df[[lower_raw_col]] <- df[[lower_col]]
-    df[[upper_raw_col]] <- df[[upper_col]]
-
-    bounds <- orient_bounds(df[[lower_col]], df[[upper_col]], sign_vec)
-    df[[lower_col]] <- bounds$lower
-    df[[upper_col]] <- bounds$upper
-  }
-
-  if (!is.null(stat_col) && stat_col %in% names(df)) {
-    raw_col <- paste0(stat_col, "_raw")
-    df[[raw_col]] <- df[[stat_col]]
-    df[[stat_col]] <- df[[stat_col]] * sign_vec
-  }
-
-  if (!is.null(estimate_sig_col) && estimate_sig_col %in% names(df)) {
-    raw_col <- paste0(estimate_sig_col, "_raw")
-    df[[raw_col]] <- df[[estimate_sig_col]]
-    df[[estimate_sig_col]] <- df[[estimate_sig_col]] * sign_vec
-  }
-
-  df
-}
-
 ALINV_SOIL_LABELS <- alinv_level_labels("soiltype")
-
-alinv_scenario_grid <- function() {
-  ALINV_SCENARIO_GRID
-}
 
 alinv_get_analysis_context <- function() {
   getOption("alinv.analysis_context", NULL)
@@ -521,64 +322,6 @@ alinv_resolve_include_soil_treatment <- function(include_soil_treatment = NULL,
 
   ctx <- alinv_get_analysis_context()
   include_soil_treatment %||% ctx$include_soil_treatment %||% TRUE
-}
-
-alinv_should_show_soil_panels <- function(soil_filter = NULL,
-                                          include_soil_treatment = NULL) {
-  soil_filter <- alinv_resolve_soil_filter(soil_filter)
-  include_soil_treatment <- alinv_resolve_include_soil_treatment(
-    include_soil_treatment = include_soil_treatment,
-    soil_filter = soil_filter
-  )
-
-  identical(soil_filter, "both") && isTRUE(include_soil_treatment)
-}
-
-alinv_soil_mode_tag <- function(soil_filter = NULL,
-                                include_soil_treatment = NULL) {
-  soil_filter <- alinv_resolve_soil_filter(soil_filter)
-  include_soil_treatment <- alinv_resolve_include_soil_treatment(
-    include_soil_treatment = include_soil_treatment,
-    soil_filter = soil_filter
-  )
-
-  if (!identical(soil_filter, "both")) {
-    return(paste0("soil-", gsub("[^a-zA-Z0-9]+", "_", soil_filter)))
-  }
-
-  if (isTRUE(include_soil_treatment)) {
-    "soil-both_with_soil_treatment"
-  } else {
-    "soil-both_without_soil_treatment"
-  }
-}
-
-alinv_get_treatment_factors <- function(include_soil_treatment = NULL,
-                                        soil_filter = NULL) {
-  include_soil_treatment <- alinv_resolve_include_soil_treatment(
-    include_soil_treatment = include_soil_treatment,
-    soil_filter = soil_filter
-  )
-
-  cfg <- alinv_treatment_config(
-    include_soil_treatment = include_soil_treatment,
-    soil_filter = soil_filter
-  )
-  cfg$effect
-}
-
-alinv_treatment_config <- function(include_soil_treatment = NULL,
-                                   soil_filter = NULL) {
-  include_soil_treatment <- alinv_resolve_include_soil_treatment(
-    include_soil_treatment = include_soil_treatment,
-    soil_filter = soil_filter
-  )
-
-  cfg <- ALINV_TREATMENT_CONFIG
-  if (!isTRUE(include_soil_treatment)) {
-    cfg <- dplyr::filter(cfg, .data$effect != "soiltype")
-  }
-  cfg
 }
 
 alinv_set_analysis_context <- function(
@@ -629,91 +372,6 @@ alinv_set_analysis_context <- function(
   }
 
   ctx
-}
-
-alinv_init_notebook_context <- function(params = NULL,
-                                        output_root = "output") {
-  params <- params %||% list()
-
-  alinv_set_analysis_context(
-    scenario_label = params$scenario_label %||% NULL,
-    soil_filter = params$soil_filter %||% "both",
-    include_soil_treatment = params$include_soil_treatment %||% NULL,
-    analysis_date = params$analysis_date %||% Sys.Date(),
-    output_root = params$output_root %||% output_root
-  )
-}
-
-alinv_analysis_path <- function(..., create_dir = FALSE) {
-  ctx <- alinv_get_analysis_context()
-  if (is.null(ctx)) {
-    ctx <- alinv_set_analysis_context(create_dirs = FALSE)
-  }
-
-  path <- file.path(ctx$analysis_root, ...)
-  if (isTRUE(create_dir)) {
-    dir.create(path, recursive = TRUE, showWarnings = FALSE)
-  }
-  path
-}
-
-alinv_data_path <- function(..., create_dir = FALSE) {
-  ctx <- alinv_get_analysis_context()
-  if (is.null(ctx)) {
-    ctx <- alinv_set_analysis_context(create_dirs = FALSE)
-  }
-
-  path <- file.path(ctx$analysis_data_root, ...)
-  if (isTRUE(create_dir)) {
-    dir.create(path, recursive = TRUE, showWarnings = FALSE)
-  }
-  path
-}
-
-alinv_resolve_output_date_dir <- function(output_root = "output",
-                                          requested_date = NULL) {
-  output_root <- .resolve_path(output_root)
-
-  if (!is.null(requested_date) && nzchar(requested_date)) {
-    date_dir <- file.path(output_root, requested_date)
-    if (!dir.exists(date_dir)) {
-      stop("Requested output date folder does not exist: ", date_dir, call. = FALSE)
-    }
-    return(date_dir)
-  }
-
-  date_dirs <- list.dirs(output_root, full.names = TRUE, recursive = FALSE)
-  date_tbl <- tibble(
-    path = date_dirs,
-    label = basename(date_dirs),
-    date = suppressWarnings(as.Date(basename(date_dirs)))
-  ) %>%
-    filter(!is.na(.data$date)) %>%
-    arrange(desc(.data$date))
-
-  if (!nrow(date_tbl)) {
-    stop("No dated output folders found under ", output_root, call. = FALSE)
-  }
-
-  date_tbl$path[[1]]
-}
-
-alinv_cache_path <- function(subdir, ..., create_dir = TRUE) {
-  dir_path <- alinv_data_path(subdir, create_dir = create_dir)
-  file.path(dir_path, ...)
-}
-
-alinv_notebook_path <- function(..., create_dir = FALSE) {
-  ctx <- alinv_get_analysis_context()
-  if (is.null(ctx)) {
-    ctx <- alinv_set_analysis_context(create_dirs = FALSE)
-  }
-
-  path <- file.path(ctx$notebooks_root, ...)
-  if (isTRUE(create_dir)) {
-    dir.create(path, recursive = TRUE, showWarnings = FALSE)
-  }
-  path
 }
 
 alinv_filter_by_soil <- function(df,
@@ -890,7 +548,7 @@ get_site_precipitation_daily <- function(
 }
 
 # Load the shared site-level daily climate product generated by
-# scripts/3-cleaning-sensor-data.R.
+# scripts/data_preparation/clean_sensor_data.R.
 get_climate <- function(
   variables = NULL,
   path = "./data/interim"
@@ -903,7 +561,7 @@ get_climate <- function(
       paste0(
         "'site_climate_daily.csv' not found in ",
         normalizePath(path, winslash = "/", mustWork = FALSE),
-        ". Run source(\"scripts/3-cleaning-sensor-data.R\") to create it."
+        ". Run source(\"scripts/data_preparation/clean_sensor_data.R\") to create it."
       ),
       call. = FALSE
     )
@@ -968,9 +626,8 @@ get_meta <- function(which = c("tree", "box")) {
   return(df)
 }
 
-get_data <- function(type = c("tree", "box"), data_name, with_meta = TRUE, path = "./data/interim", swc_source = "measured") {
+get_data <- function(type = c("tree", "box"), data_name, with_meta = TRUE, path = "./data/interim") {
   type <- match.arg(type)
-  swc_source <- match.arg(swc_source, choices = c("measured", "imputed_gam"))
   path <- .resolve_path(path)
   if (missing(data_name) || !nzchar(data_name)) {
     stop("Provide data_name (e.g., 'growth', 'respiration', 'chlorophyll').", call. = FALSE)
@@ -1030,7 +687,7 @@ get_data <- function(type = c("tree", "box"), data_name, with_meta = TRUE, path 
   
   # Attach extreme event information (only if date column exists)
   if ("date" %in% names(df)) {
-    buffer_days <- 14  # 3 weeks (to cover measurement measured after the extreme event)
+    buffer_days <- 14  # Extend event attribution to measurements made within two weeks.
     
     df <- df |> 
       mutate(
@@ -1053,16 +710,15 @@ get_data <- function(type = c("tree", "box"), data_name, with_meta = TRUE, path 
       mutate(date_num = as.numeric(.data$date))
   }
   
-  # Attach SWC data (measured or imputed)
+  # Attach measured SWC data.
   if (type == "tree" && "date" %in% names(df)) {
-    if (swc_source == "measured") {
-      # Use closest measured SWC within 7-day window (original behavior)
-      df_swc <- get_data("box", "soilwater", swc_source = "measured")
+    # Use closest measured SWC within the established matching window.
+    df_swc <- get_data("box", "soilwater")
       
-      df <- df %>%
-        group_by(boxlabel) %>%
-        mutate(
-          swc = sapply(date, function(d) {
+    df <- df %>%
+      group_by(boxlabel) %>%
+      mutate(
+        swc = sapply(date, function(d) {
             # restrict to current box
             box <- unique(boxlabel)
             idx_box <- which(df_swc$boxlabel == box)
@@ -1099,49 +755,12 @@ get_data <- function(type = c("tree", "box"), data_name, with_meta = TRUE, path 
             
             # if there is no SWC at all before/after
             NA_real_
-          })
-        ) %>%
-        ungroup()
-    } else if (swc_source == "imputed_gam") {
-      swc_candidates <- unique(c(
-        file.path(path, "box_soilwater_daily_gam_agnostic.csv"),
-        alinv_data_path("swc_interpolation", "box_soilwater_daily_gam_agnostic.csv"),
-        .resolve_path("data/interim/box_soilwater_daily_gam_agnostic.csv")
-      ))
-      swc_file <- swc_candidates[file.exists(swc_candidates)][1]
-
-      # Use imputed daily SWC (exact date match on measurement date)
-      df_swc_daily <- tryCatch(
-        read_csv(swc_file, show_col_types = FALSE),
-        error = function(e) {
-          warning(
-            "Could not load imputed SWC; falling back to measured SWC. Error: ",
-            conditionMessage(e),
-            call. = FALSE
-          )
-          NULL
-        }
-      )
-
-      if (is.null(df_swc_daily)) {
-        # Fallback to measured SWC if imputed is not available
-        return(get_data(type = type, data_name = data_name, with_meta = with_meta, 
-                       path = path, swc_source = "measured"))
-      }
-      
-      # Join imputed SWC on exact date match
-      df <- df %>%
-        left_join(
-          df_swc_daily %>% 
-            select(boxlabel, date, swc_hat) %>%
-            rename(swc = swc_hat),
-          by = c("boxlabel", "date")
-        )
-    }
+        })
+      ) %>%
+      ungroup()
   }
   
-  message("✅ Loaded ", data_file, if (with_meta) paste0(" with ", meta_file) else "", 
-          " (SWC source: ", swc_source, ")")
+  message("✅ Loaded ", data_file, if (with_meta) paste0(" with ", meta_file) else "")
   return(df)
 }
 

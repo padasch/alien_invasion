@@ -1,14 +1,14 @@
-# Production bootstrap models
+# Model-fitting scripts
 
 These scripts implement the container-cluster bootstrap analyses used by the
 publication figures:
 
-- `01_temporal_lmm_bootstrap.R`: temporal treatment effects;
-- `02_biomass_lmm_bootstrap.R`: harvest biomass effects;
-- `03_phenology_bootstrap.R`: phenology timing and its SWC decomposition;
-- `04_refresh_response_model_sources.R`: current-data SEM source models;
-- `05_repeated_response_sem_bootstrap.R`: repeated-response SEM paths;
-- `06_past_only_7d_sem_bootstrap.R`: SEM paths using same-day or preceding SWC
+- `temporal_models.R`: temporal treatment effects;
+- `biomass_models.R`: harvest biomass effects;
+- `phenology_model.R`: phenology timing and its SWC decomposition;
+- `response_sem_sources.R`: current-data SEM source models;
+- `response_sem.R`: repeated-response SEM paths;
+- `past_swc_sem.R`: SEM paths using same-day or preceding SWC
   within seven days.
 
 The plotting pipeline normally reads validated 1,000-replicate summaries from

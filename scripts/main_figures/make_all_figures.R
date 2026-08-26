@@ -11,12 +11,12 @@ script_file <- {
 
 script_dir <- dirname(normalizePath(script_file, winslash = "/", mustWork = TRUE))
 
-source(file.path(script_dir, "00_setup.R"))
-source(file.path(script_dir, "02_fig2_variation_timeseries.R"))
-source(file.path(script_dir, "03_fig3_diameter_increment_effects.R"))
-source(file.path(script_dir, "04_fig4_quantum_yield_effects.R"))
-source(file.path(script_dir, "05_fig5_biomass_effects.R"))
-source(file.path(script_dir, "06_fig6_volume_sem.R"))
+source(file.path(script_dir, "setup.R"))
+source(file.path(script_dir, "fig2_variation_timeseries.R"))
+source(file.path(script_dir, "fig3_diameter_increment_effects.R"))
+source(file.path(script_dir, "fig4_quantum_yield_effects.R"))
+source(file.path(script_dir, "fig5_biomass_effects.R"))
+source(file.path(script_dir, "fig6_volume_sem.R"))
 
 message("Writing final figures to: ", ALINV_FINAL_OUTPUT_DIR)
 

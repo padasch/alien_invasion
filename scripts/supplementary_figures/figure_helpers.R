@@ -28,12 +28,12 @@ suppressPackageStartupMessages({
   library(ggplot2); library(lme4); library(patchwork); library(lubridate)
 })
 suppressMessages(suppressPackageStartupMessages({
-  auxiliary_functions <- file.path(PROJECT_ROOT, "scripts", "auxiliary", "functions")
-  source(file.path(auxiliary_functions, "_source.R"))
-  source(file.path(auxiliary_functions, "2-biomass.R"))
-  source(file.path(auxiliary_functions, "3-effect-size-factorial.R"))
-  source(file.path(auxiliary_functions, "10-temporal-alignment.R"))
-  source(file.path(auxiliary_functions, "11-bootstrap-inference.R"))
+  function_dir <- file.path(PROJECT_ROOT, "scripts", "functions")
+  source(file.path(function_dir, "project_data.R"))
+  source(file.path(function_dir, "biomass.R"))
+  source(file.path(function_dir, "factorial_effects.R"))
+  source(file.path(function_dir, "temporal_alignment.R"))
+  source(file.path(function_dir, "bootstrap.R"))
 }))
 
 SUPP_BOOT_B <- as.integer(Sys.getenv("ALINV_SUPP_BOOT_B", unset = "1000"))
@@ -269,7 +269,7 @@ supp_temporal_formula <- y ~ date + date:robinia + date:precipitation + date:cul
 supp_prepare_temporal <- function(data_name, resp_var, species) {
   prepare_df_generic(type = "tree", data_name = data_name, resp_var = resp_var, species_keep = species,
                      standardize_response = TRUE, add_covars = FALSE, soil_type = "both",
-                     include_soil_treatment = FALSE, swc_source = "measured") %>%
+                     include_soil_treatment = FALSE) %>%
     mutate(block = supp_block(.data$boxlabel), date = factor(as.character(.data$date), levels = sort(unique(as.character(.data$date)))),
            culture = factor(.data$culture, levels = c("mono", "mixed")), precipitation = factor(.data$precipitation, levels = c("control", "drought")),
            robinia = factor(.data$robinia, levels = c("without-robinia", "with-robinia")), boxlabel = factor(.data$boxlabel), tree_id = factor(.data$tree_id))

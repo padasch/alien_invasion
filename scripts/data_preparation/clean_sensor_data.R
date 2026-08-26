@@ -6,7 +6,7 @@
 # Precipitation is summed from 10-minute observations, using the existing
 # MeteoSwiss series with the required LWF replacement on 2025-07-13--15.
 
-source("./scripts/auxiliary/functions/_source.R")
+source("./scripts/functions/project_data.R")
 
 .daily_mean <- function(x) {
   if (all(is.na(x))) NA_real_ else mean(x, na.rm = TRUE)

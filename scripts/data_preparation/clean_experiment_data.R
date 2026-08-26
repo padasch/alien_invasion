@@ -1,4 +1,4 @@
-# 1-data-cleaning.R
+# Rebuild the cleaned experiment tables from the local raw workbook.
 
 # --- Setup --------------------------------------------------------------------
 library(readxl)
@@ -10,12 +10,12 @@ library(purrr)
 # Load helpers (if not already loaded)
 if (!exists(".alinv_project_root", mode = "function")) {
   source_candidates <- c(
-    "scripts/auxiliary/functions/_source.R",
-    "_source.R"
+    "scripts/functions/project_data.R",
+    "../functions/project_data.R"
   )
   source_path <- source_candidates[file.exists(source_candidates)][1]
   if (is.na(source_path)) {
-    stop("Could not locate scripts/auxiliary/functions/_source.R for cleaning script setup.")
+    stop("Could not locate scripts/functions/project_data.R for data preparation.")
   }
   source(source_path)
 }

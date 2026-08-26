@@ -30,14 +30,14 @@ if (!is.finite(n_cores) || n_cores < 1L) stop("--cores must be a positive intege
 script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 script_path_arg <- gsub("~[+]~", " ", sub("^--file=", "", script_arg[[1]]), fixed = FALSE)
 script_file <- normalizePath(script_path_arg, winslash = "/", mustWork = TRUE)
-project_root <- normalizePath(file.path(dirname(script_file), "..", "..", ".."), winslash = "/", mustWork = TRUE)
+project_root <- normalizePath(file.path(dirname(script_file), "..", ".."), winslash = "/", mustWork = TRUE)
 output_dir <- file.path(project_root, "data", "final", "bootstrap", "repeated_response_sem")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
 refresh_sources <- !tolower(Sys.getenv("ALINV_REFRESH_RESPONSE_SOURCES", unset = "true")) %in%
   c("false", "0", "no")
 if (refresh_sources) {
-  refresh_script <- file.path(dirname(script_file), "04_refresh_response_model_sources.R")
+  refresh_script <- file.path(dirname(script_file), "response_sem_sources.R")
   refresh_status <- system2(
     file.path(R.home("bin"), "Rscript"),
     args = c("--vanilla", shQuote(refresh_script))

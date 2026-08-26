@@ -10,7 +10,7 @@ alinv_bootstrap_results_root <- function(project_root = .alinv_project_root()) {
 }
 
 alinv_bootstrap_script_root <- function(project_root = .alinv_project_root()) {
-  file.path(project_root, "scripts", "auxiliary", "bootstrap")
+  file.path(project_root, "scripts", "model_fitting")
 }
 
 alinv_bootstrap_paths <- function(project_root = .alinv_project_root()) {
@@ -18,23 +18,23 @@ alinv_bootstrap_paths <- function(project_root = .alinv_project_root()) {
   scripts <- alinv_bootstrap_script_root(project_root)
   list(
     root = root,
-    temporal_script = file.path(scripts, "01_temporal_lmm_bootstrap.R"),
+    temporal_script = file.path(scripts, "temporal_models.R"),
     temporal_effects = file.path(root, "temporal_lmm", "temporal-lmm-bootstrap-effects.csv"),
     temporal_status = file.path(root, "temporal_lmm", "temporal-lmm-bootstrap-status.csv"),
-    biomass_script = file.path(scripts, "02_biomass_lmm_bootstrap.R"),
+    biomass_script = file.path(scripts, "biomass_models.R"),
     biomass_effects = file.path(root, "biomass_lmm", "biomass-wald-vs-bootstrap-comparison.csv"),
     biomass_status = file.path(root, "biomass_lmm", "biomass-bootstrap-status.csv"),
-    phenology_script = file.path(scripts, "03_phenology_bootstrap.R"),
+    phenology_script = file.path(scripts, "phenology_model.R"),
     phenology_totals = file.path(root, "phenology", "figure6-ready-phenology-path-summed-total.csv"),
     phenology_primary = file.path(root, "phenology", "primary-common-shift-bootstrap-effects.csv"),
     phenology_timing_index = file.path(root, "phenology", "stage-centred-timing-index.csv"),
     phenology_sem_effects = file.path(root, "phenology", "sem-effect-decomposition-block-stratified.csv"),
     phenology_sem_paths = file.path(root, "phenology", "sem-constituent-paths-block-stratified.csv"),
     phenology_status = file.path(root, "phenology", "phenology-bootstrap-model-status.csv"),
-    repeated_sem_script = file.path(scripts, "05_repeated_response_sem_bootstrap.R"),
+    repeated_sem_script = file.path(scripts, "response_sem.R"),
     repeated_sem_effects = file.path(root, "repeated_response_sem", "repeated-response-sem-bootstrap-effects.csv"),
     repeated_sem_status = file.path(root, "repeated_response_sem", "repeated-response-sem-bootstrap-status.csv"),
-    past_only_script = file.path(scripts, "06_past_only_7d_sem_bootstrap.R"),
+    past_only_script = file.path(scripts, "past_swc_sem.R"),
     past_only_effects = file.path(root, "past_only_7d", "past-only-sem-bootstrap-effects.csv"),
     past_only_status = file.path(root, "past_only_7d", "past-only-sem-bootstrap-status.csv")
   )
@@ -186,15 +186,6 @@ alinv_read_biomass_bootstrap_effects <- function(project_root = .alinv_project_r
     )
 }
 
-alinv_read_repeated_sem_bootstrap_effects <- function(project_root = .alinv_project_root()) {
-  paths <- alinv_ensure_bootstrap_family("repeated_sem", project_root)
-  readr::read_csv(paths$repeated_sem_effects, show_col_types = FALSE) |>
-    dplyr::mutate(
-      source_file = paths$repeated_sem_effects,
-      uncertainty_method = "block-stratified container-cluster bootstrap percentile"
-    )
-}
-
 alinv_read_past_only_7d_sem_bootstrap_effects <- function(project_root = .alinv_project_root(),
                                                           target = ALINV_BOOTSTRAP_TARGET) {
   paths <- alinv_ensure_bootstrap_family("past_only", project_root, target)
@@ -246,108 +237,12 @@ alinv_read_past_only_7d_sem_bootstrap_totals <- function(project_root = .alinv_p
     )
 }
 
-alinv_read_repeated_sem_bootstrap_totals <- function(project_root = .alinv_project_root()) {
-  alinv_read_repeated_sem_bootstrap_effects(project_root) |>
-    dplyr::filter(.data$component == "total") |>
-    dplyr::transmute(
-      species = .data$species,
-      treatment = .data$treatment,
-      response_label = .data$response_label,
-      resp_var = .data$resp_var,
-      estimate = .data$estimate,
-      lower = .data$lower,
-      upper = .data$upper,
-      p_value = .data$p_boot,
-      n_boot_success = .data$n_boot,
-      source_file = .data$source_file,
-      uncertainty_method = .data$uncertainty_method
-    )
-}
-
-alinv_factor_main_effect_coef <- function(model, factor_name) {
-  hits <- grep(factor_name, names(lme4::fixef(model)), fixed = TRUE, value = TRUE)
-  hits <- hits[!grepl(":", hits, fixed = TRUE)]
-  if (length(hits) != 1L) return(NA_character_)
-  hits[[1]]
-}
-
-alinv_resample_containers_within_block <- function(data, replicate_id,
-                                                    container = "boxlabel",
-                                                    tree = "tree_id") {
-  dat <- data |>
-    dplyr::mutate(
-      .container_original = as.character(.data[[container]]),
-      .tree_original = as.character(.data[[tree]]),
-      .block = sub("-.*$", "", .data$.container_original)
-    )
-  containers <- dat |>
-    dplyr::distinct(.data$.block, .data$.container_original) |>
-    dplyr::arrange(.data$.block, .data$.container_original)
-  selected <- containers |>
-    dplyr::group_by(.data$.block) |>
-    dplyr::group_modify(~tibble::tibble(
-      .container_original = sample(
-        .x$.container_original,
-        size = nrow(.x),
-        replace = TRUE
-      ),
-      .draw = seq_len(nrow(.x))
-    )) |>
-    dplyr::ungroup()
-
-  pieces <- purrr::pmap(selected, function(.block, .container_original, .draw) {
-    new_container <- paste0(
-      "boot", replicate_id, "_", .block, "_", sprintf("%02d", .draw)
-    )
-    dat |>
-      dplyr::filter(.data$.container_original == .env$.container_original) |>
-      dplyr::mutate(
-        "{container}" := new_container,
-        "{tree}" := paste(new_container, .data$.tree_original, sep = "__")
-      )
-  })
-
-  dplyr::bind_rows(pieces) |>
-    dplyr::select(-.data$.container_original, -.data$.tree_original, -.data$.block) |>
-    dplyr::mutate(
-      "{container}" := factor(.data[[container]]),
-      "{tree}" := factor(.data[[tree]])
-    )
-}
-
-alinv_read_phenology_bootstrap_totals <- function(project_root = .alinv_project_root()) {
-  paths <- alinv_ensure_bootstrap_family("phenology", project_root)
-  readr::read_csv(paths$phenology_totals, show_col_types = FALSE) |>
-    dplyr::mutate(
-      source_file = paths$phenology_totals,
-      uncertainty_method = "block-stratified container-cluster bootstrap percentile"
-    )
-}
-
 alinv_read_phenology_bootstrap_primary <- function(project_root = .alinv_project_root()) {
   paths <- alinv_ensure_bootstrap_family("phenology", project_root)
   readr::read_csv(paths$phenology_primary, show_col_types = FALSE) |>
     dplyr::mutate(
       source_file = paths$phenology_primary,
       uncertainty_method = "block-stratified container-cluster bootstrap percentile"
-    )
-}
-
-alinv_read_phenology_bootstrap_primary_standardized <- function(project_root = .alinv_project_root()) {
-  paths <- alinv_ensure_bootstrap_family("phenology", project_root)
-  scales <- readr::read_csv(paths$phenology_timing_index, show_col_types = FALSE) |>
-    dplyr::group_by(.data$species) |>
-    dplyr::summarise(
-      timing_index_sd_days = stats::sd(.data$timing_index_days, na.rm = TRUE),
-      .groups = "drop"
-    )
-  alinv_read_phenology_bootstrap_primary(project_root) |>
-    dplyr::left_join(scales, by = "species") |>
-    dplyr::mutate(
-      estimate = .data$estimate_oriented / .data$timing_index_sd_days,
-      lower = .data$lower_95_oriented / .data$timing_index_sd_days,
-      upper = .data$upper_95_oriented / .data$timing_index_sd_days,
-      response_scale = "species-specific SD of the stage-centred tree timing index"
     )
 }
 

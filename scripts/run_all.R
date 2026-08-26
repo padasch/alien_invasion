@@ -37,16 +37,15 @@ run_script <- function(path, args = character(), env = character()) {
 
 # Cleaned interim data are tracked. Uncomment only when rebuilding them from
 # the raw inputs.
-# run_script(file.path(project_root, "scripts", "auxiliary", "1-data-cleaning.R"))
-# run_script(file.path(project_root, "scripts", "auxiliary", "3-cleaning-sensor-data.R"))
-# run_script(file.path(project_root, "scripts", "auxiliary", "4-impute-swc-gam.R"))
+# run_script(file.path(project_root, "scripts", "data_preparation", "clean_experiment_data.R"))
+# run_script(file.path(project_root, "scripts", "data_preparation", "clean_sensor_data.R"))
 
 bootstrap_cores <- as.integer(Sys.getenv("ALINV_BOOT_CORES", unset = "8"))
 if (!is.finite(bootstrap_cores) || bootstrap_cores < 1L) bootstrap_cores <- 1L
 
 run_script(file.path(project_root, "scripts", "main_figures", "make_all_figures.R"))
 run_script(
-  file.path(project_root, "scripts", "supplementary_figures", "make-v1-figures.R"),
+  file.path(project_root, "scripts", "supplementary_figures", "make_all_figures.R"),
   env = c(
     "ALINV_SUPP_BOOT_B=1000",
     paste0("ALINV_SUPP_BOOT_CORES=", bootstrap_cores)

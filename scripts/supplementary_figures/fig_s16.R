@@ -12,7 +12,7 @@ SUPP_SCRIPT_FILE <- normalizePath(
   winslash = "/",
   mustWork = TRUE
 )
-source(file.path(dirname(SUPP_SCRIPT_FILE), "_phenology-setup.R"))
+source(file.path(dirname(SUPP_SCRIPT_FILE), "phenology_setup.R"))
 
 primary_effects <- alinv_read_phenology_bootstrap_primary(PROJECT_ROOT) %>%
   dplyr::mutate(

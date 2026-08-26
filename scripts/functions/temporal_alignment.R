@@ -1,4 +1,4 @@
-## Legacy measurement-alignment helpers.
+## Measurement-schedule data and plotting helpers.
 
 # -------------------------------------------------------------------
 # Packages
@@ -75,29 +75,6 @@ MEASUREMENT_SCHEDULE_GRID <- MEASUREMENT_SCHEDULE_DATA_MAP[c(
   "resp_var"
 )]
 
-MEASUREMENT_SCHEDULE_TAB20 <- c(
-  "#1f77b4",
-  "#aec7e8",
-  "#ff7f0e",
-  "#ffbb78",
-  "#2ca02c",
-  "#98df8a",
-  "#d62728",
-  "#ff9896",
-  "#9467bd",
-  "#c5b0d5",
-  "#8c564b",
-  "#c49c94",
-  "#e377c2",
-  "#f7b6d2",
-  "#7f7f7f",
-  "#c7c7c7",
-  "#bcbd22",
-  "#dbdb8d",
-  "#17becf",
-  "#9edae5"
-)
-
 MEASUREMENT_SCHEDULE_SOIL_WATER_COLOR <- "#1f77b4"
 MEASUREMENT_SCHEDULE_HEATWAVE_COLOR <- "#8b1a1a"
 MEASUREMENT_SCHEDULE_GRIDLINE_COLOR <- "grey88"
@@ -159,10 +136,6 @@ get_sem_dataset_grid <- get_data_var_grid
 
 get_measurement_schedule_grid <- function() {
   MEASUREMENT_SCHEDULE_GRID
-}
-
-measurement_schedule_tab20 <- function() {
-  MEASUREMENT_SCHEDULE_TAB20
 }
 
 measurement_schedule_date_breaks <- function(

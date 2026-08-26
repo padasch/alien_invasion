@@ -37,11 +37,10 @@ suppressPackageStartupMessages({
 })
 
 suppressMessages(suppressPackageStartupMessages({
-  auxiliary_functions <- file.path(ALINV_PROJECT_ROOT, "scripts", "auxiliary", "functions")
-  source(file.path(auxiliary_functions, "_source.R"))
-  source(file.path(auxiliary_functions, "1-summary-figures.R"))
-  source(file.path(auxiliary_functions, "8-size-trajectories.R"))
-  source(file.path(auxiliary_functions, "11-bootstrap-inference.R"))
+  function_dir <- file.path(ALINV_PROJECT_ROOT, "scripts", "functions")
+  source(file.path(function_dir, "project_data.R"))
+  source(file.path(function_dir, "growth.R"))
+  source(file.path(function_dir, "bootstrap.R"))
 }))
 
 alinv_set_analysis_context(

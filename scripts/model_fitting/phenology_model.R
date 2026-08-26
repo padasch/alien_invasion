@@ -16,7 +16,7 @@ script_dir <- dirname(script_file)
 find_project_root <- function(path) {
   path <- normalizePath(path, winslash = "/", mustWork = TRUE)
   repeat {
-    if (file.exists(file.path(path, "scripts", "auxiliary", "functions", "_source.R"))) return(path)
+    if (file.exists(file.path(path, "scripts", "functions", "project_data.R"))) return(path)
     parent <- dirname(path)
     if (identical(parent, path)) stop("Could not locate project root.", call. = FALSE)
     path <- parent
@@ -48,9 +48,8 @@ suppressPackageStartupMessages({
   library(tidyr)
 })
 suppressMessages(suppressPackageStartupMessages({
-  source(file.path(project_root, "scripts", "auxiliary", "functions", "_source.R"))
-  source(file.path(project_root, "scripts", "auxiliary", "functions", "1-summary-figures.R"))
-  source(file.path(project_root, "scripts", "auxiliary", "functions", "7-phenology-transition-models.R"))
+  source(file.path(project_root, "scripts", "functions", "project_data.R"))
+  source(file.path(project_root, "scripts", "functions", "phenology.R"))
 }))
 
 output_dir <- file.path(project_root, "data", "final", "bootstrap", "phenology")
@@ -295,7 +294,7 @@ make_timing_index <- function(df, sp) {
            phenology_oriented_z = -.data$timing_z, species = sp) %>% droplevels()
 }
 timing_index_data <- setNames(Map(make_timing_index, transition_data, species_vec), species_vec)
-spring_swc <- get_data("box", "soilwater", swc_source = "measured") %>%
+spring_swc <- get_data("box", "soilwater") %>%
   filter(.data$date >= spring_swc_start, .data$date <= spring_swc_end, !is.na(.data$swc)) %>%
   group_by(.data$boxlabel, .data$precipitation, .data$robinia, .data$culture) %>%
   summarise(spring_swc = mean(.data$swc), spring_swc_sd = sd(.data$swc),

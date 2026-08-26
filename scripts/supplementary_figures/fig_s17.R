@@ -33,8 +33,8 @@ suppressPackageStartupMessages({
   library(tidyr)
 })
 suppressMessages(suppressPackageStartupMessages({
-  auxiliary_functions <- file.path(project_root, "scripts", "auxiliary", "functions")
-  source(file.path(auxiliary_functions, "11-bootstrap-inference.R"))
+  function_dir <- file.path(project_root, "scripts", "functions")
+  source(file.path(function_dir, "bootstrap.R"))
 }))
 
 output_dir <- Sys.getenv(

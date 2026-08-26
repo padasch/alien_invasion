@@ -26,7 +26,7 @@ current_script <- function() {
 }
 
 SCRIPT_DIR <- dirname(current_script())
-PROJECT_ROOT <- normalizePath(file.path(SCRIPT_DIR, "..", "..", ".."), winslash = "/", mustWork = TRUE)
+PROJECT_ROOT <- normalizePath(file.path(SCRIPT_DIR, "..", ".."), winslash = "/", mustWork = TRUE)
 OUTPUT_DIR <- file.path(PROJECT_ROOT, "data", "final", "bootstrap", "temporal_lmm")
 WORK_DIR <- file.path(tempdir(), "alinv-temporal-bootstrap")
 FIGURE_DIR <- file.path(WORK_DIR, "figures")
@@ -39,8 +39,8 @@ dir.create(MODEL_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(STATUS_DIR, recursive = TRUE, showWarnings = FALSE)
 
 setwd(PROJECT_ROOT)
-source(file.path(PROJECT_ROOT, "scripts", "auxiliary", "functions", "_source.R"))
-source(file.path(PROJECT_ROOT, "scripts", "auxiliary", "functions", "3-effect-size-factorial.R"))
+source(file.path(PROJECT_ROOT, "scripts", "functions", "project_data.R"))
+source(file.path(PROJECT_ROOT, "scripts", "functions", "factorial_effects.R"))
 
 B_TARGET <- as.integer(Sys.getenv("ALINV_TEMPORAL_BOOT_B", unset = "1000"))
 if (!is.finite(B_TARGET) || B_TARGET < 1L) stop("ALINV_TEMPORAL_BOOT_B must be a positive integer.", call. = FALSE)
@@ -88,8 +88,7 @@ prepare_model_data <- function(data_name, resp_var, species) {
     standardize_response = TRUE,
     add_covars = FALSE,
     soil_type = "both",
-    include_soil_treatment = FALSE,
-    swc_source = "measured"
+    include_soil_treatment = FALSE
   ) %>%
     mutate(
       block = derive_block(.data$boxlabel),

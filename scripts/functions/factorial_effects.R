@@ -74,8 +74,7 @@ prepare_df_generic <- function(
     add_covars = FALSE,
     covars_fun = NULL,                # function returning covariates (boxlabel+date)
     soil_type = "both",
-    include_soil_treatment = NULL,
-    swc_source = "measured"          # "measured" or "imputed_gam"
+    include_soil_treatment = NULL
 ) {
   data_name <- match.arg(data_name)
   include_soil_treatment <- alinv_resolve_include_soil_treatment(
@@ -84,7 +83,7 @@ prepare_df_generic <- function(
   )
 
   # Pull
-  df_raw <- get_data(type = type, data_name = data_name, swc_source = swc_source)
+  df_raw <- get_data(type = type, data_name = data_name)
 
   # Early species filter if present
   if (!is.null(species_keep) && "species" %in% names(df_raw)) {

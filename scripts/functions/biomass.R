@@ -1,4 +1,4 @@
-# 2-biomass.R
+# Biomass data preparation shared by model-fitting and figure scripts.
 # Biomass wrangling shared by publication and bootstrap workflows.
 
 wrangle_tree_biomass <- function(fp, sheet = "Biomass") {

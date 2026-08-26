@@ -20,7 +20,7 @@ script_file_arg <- sub("^--file=", "", script_arg[[1]])
 # the literal token "~+~".
 script_file_arg <- gsub("~\\+~", " ", script_file_arg)
 script_path <- normalizePath(script_file_arg, winslash = "/", mustWork = TRUE)
-project_root <- normalizePath(file.path(dirname(script_path), "..", "..", ".."), winslash = "/", mustWork = TRUE)
+project_root <- normalizePath(file.path(dirname(script_path), "..", ".."), winslash = "/", mustWork = TRUE)
 output_dir <- file.path(project_root, "data", "final", "bootstrap", "biomass_lmm")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
@@ -39,8 +39,8 @@ suppressPackageStartupMessages({
   library(scales)
 })
 suppressMessages(suppressPackageStartupMessages({
-  source(file.path(project_root, "scripts", "auxiliary", "functions", "_source.R"))
-  source(file.path(project_root, "scripts", "auxiliary", "functions", "2-biomass.R"))
+  source(file.path(project_root, "scripts", "functions", "project_data.R"))
+  source(file.path(project_root, "scripts", "functions", "biomass.R"))
 }))
 
 bootstrap_target <- as.integer(arg_value("--bootstrap", "1000"))

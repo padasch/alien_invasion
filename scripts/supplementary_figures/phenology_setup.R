@@ -3,7 +3,7 @@
 # The calling script must define SUPP_SCRIPT_FILE as its normalized path.
 
 if (!exists("SUPP_SCRIPT_FILE", inherits = FALSE)) {
-  stop("SUPP_SCRIPT_FILE must be defined before sourcing _phenology-setup.R.", call. = FALSE)
+  stop("SUPP_SCRIPT_FILE must be defined before sourcing phenology_setup.R.", call. = FALSE)
 }
 
 SUPP_SCRIPT_DIR <- dirname(SUPP_SCRIPT_FILE)
@@ -28,8 +28,8 @@ suppressPackageStartupMessages({
 })
 
 suppressMessages(suppressPackageStartupMessages({
-  auxiliary_functions <- file.path(PROJECT_ROOT, "scripts", "auxiliary", "functions")
-  source(file.path(auxiliary_functions, "11-bootstrap-inference.R"))
+  function_dir <- file.path(PROJECT_ROOT, "scripts", "functions")
+  source(file.path(function_dir, "bootstrap.R"))
 }))
 
 SPECIES <- c("fagus", "quercus")
