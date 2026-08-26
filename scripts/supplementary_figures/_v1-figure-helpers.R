@@ -38,7 +38,7 @@ suppressMessages(suppressPackageStartupMessages({
 
 SUPP_BOOT_B <- as.integer(Sys.getenv("ALINV_SUPP_BOOT_B", unset = "1000"))
 if (!is.finite(SUPP_BOOT_B) || SUPP_BOOT_B < 1L) stop("ALINV_SUPP_BOOT_B must be positive.", call. = FALSE)
-SUPP_BOOT_CORES <- as.integer(Sys.getenv("ALINV_SUPP_BOOT_CORES", unset = "4"))
+SUPP_BOOT_CORES <- as.integer(Sys.getenv("ALINV_SUPP_BOOT_CORES", unset = "8"))
 if (!is.finite(SUPP_BOOT_CORES) || SUPP_BOOT_CORES < 1L) SUPP_BOOT_CORES <- 1L
 supp_detected_cores <- suppressWarnings(parallel::detectCores(logical = TRUE))
 if (!length(supp_detected_cores) || !is.finite(supp_detected_cores) || supp_detected_cores < 1L) supp_detected_cores <- 1L
@@ -60,7 +60,7 @@ SUPP_SUMMER_END <- as.Date("2025-09-01")
 SUPP_DROUGHT <- tibble::tribble(
   ~start, ~end,
   as.Date("2025-06-20"), as.Date("2025-07-02"),
-  as.Date("2025-08-12"), as.Date("2025-08-20")
+  as.Date("2025-08-05"), as.Date("2025-08-19")
 )
 SUPP_SEASONS <- tibble::tribble(
   ~start, ~end, ~fill,
@@ -72,15 +72,15 @@ SUPP_SEASONS <- tibble::tribble(
 supp_theme <- function(base_size = 7) {
   theme_classic(base_size = base_size) +
     theme(
-      text = element_text(family = "Helvetica", color = "black"),
+      text = element_text(color = "black"),
       axis.text = element_text(color = "black"),
       axis.line = element_line(linewidth = 0.25),
       axis.ticks = element_line(linewidth = 0.25),
       panel.border = element_rect(fill = NA, color = "grey55", linewidth = 0.25),
       panel.grid.major.y = element_line(color = "grey90", linewidth = 0.18),
       panel.grid.major.x = element_blank(), panel.grid.minor = element_blank(),
-      strip.background = element_rect(fill = "grey12", color = "grey12"),
-      strip.text = element_text(color = "white", face = "bold"),
+      strip.background = element_rect(fill = "grey92", color = "grey75", linewidth = 0.25),
+      strip.text = element_text(color = "black", face = "plain", size = base_size + 0.2),
       legend.position = "bottom",
       plot.title = element_blank(),
       plot.subtitle = element_blank(),
@@ -94,7 +94,7 @@ supp_save <- function(plot, figure_id, width_mm = 160, height_mm = 120, width_li
   if (width_mm > width_limit_mm) stop("Figure width exceeds its configured limit.", call. = FALSE)
   out <- supp_output_dir(figure_id)
   pdf <- file.path(out, paste0(figure_id, ".pdf"))
-  ggsave(pdf, plot, width = width_mm, height = height_mm, units = "mm", device = cairo_pdf, bg = "white", limitsize = FALSE)
+  ggsave(pdf, plot, width = width_mm, height = height_mm, units = "mm", bg = "white", limitsize = FALSE)
   invisible(pdf)
 }
 
@@ -234,7 +234,7 @@ supp_biomass <- function(figure_id, species) {
     root_shoot_biomass = "Root:shoot biomass (-)"
   )
   plot_data <- d %>%
-    filter(.data$species == species) %>%
+    filter(.data$species == .env$species) %>%
     pivot_longer(all_of(names(metric_labels)), names_to = "metric", values_to = "value") %>%
     filter(is.finite(.data$value), !is.na(.data$precipitation), !is.na(.data$culture), !is.na(.data$robinia)) %>%
     mutate(
@@ -251,10 +251,10 @@ supp_biomass <- function(figure_id, species) {
     scale_color_manual(values = c(control = "grey50", drought = "indianred"), guide = "none") +
     scale_alpha_manual(values = c(mono = .55, mixed = .9), guide = "none") +
     labs(x = "Culture", y = NULL) +
-    theme_bw(base_size = 9) +
+    theme_classic(base_size = 9) +
     theme(
-      strip.background.x = element_rect(fill = "black", color = "black"),
-      strip.text.x = element_text(color = "white", face = "bold"),
+      strip.background.x = element_rect(fill = "grey92", color = "grey75", linewidth = 0.25),
+      strip.text.x = element_text(color = "black", face = "plain"),
       strip.background.y = element_blank(),
       strip.text.y.left = element_text(color = "black", face = "plain", angle = 90),
       strip.placement = "outside", legend.position = "bottom",

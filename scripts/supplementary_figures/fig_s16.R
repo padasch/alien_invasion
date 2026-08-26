@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Supplementary Figure S2: primary common-shift phenology LMM with
+# Supplementary Figure S16: primary common-shift phenology LMM with
 # block-stratified container-cluster bootstrap uncertainty.
 
 options(stringsAsFactors = FALSE)
@@ -62,7 +62,7 @@ figure_s2 <- ggplot2::ggplot(
   ggplot2::scale_color_manual(values = TREATMENT_COLORS, guide = "none") +
   ggplot2::scale_shape_manual(values = c(`FALSE` = 1, `TRUE` = 16), guide = "none") +
   ggplot2::labs(
-    x = "Timing effect (days; negative = delayed, positive = earlier)",
+    x = "Timing effect (days; negative = later, positive = earlier)",
     y = NULL
   ) +
   theme_supplement(base_size = 8) +

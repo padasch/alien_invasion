@@ -78,7 +78,7 @@ SUMMER_END <- as.Date("2025-09-01")
 DROUGHT_WINDOWS <- tibble::tribble(
   ~start, ~end,
   as.Date("2025-06-20"), as.Date("2025-07-02"),
-  as.Date("2025-08-12"), as.Date("2025-08-20")
+  as.Date("2025-08-05"), as.Date("2025-08-19")
 )
 SEASON_WINDOWS <- tibble::tribble(
   ~season, ~start, ~end, ~fill,
@@ -90,7 +90,7 @@ SEASON_WINDOWS <- tibble::tribble(
 theme_alinv_pub <- function(base_size = 7) {
   ggplot2::theme_classic(base_size = base_size) +
     ggplot2::theme(
-      text = ggplot2::element_text(family = "Helvetica", color = "black"),
+      text = ggplot2::element_text(color = "black"),
       axis.text = ggplot2::element_text(color = "black"),
       axis.ticks = ggplot2::element_line(linewidth = 0.25, color = "black"),
       axis.line = ggplot2::element_line(linewidth = 0.25, color = "black"),
@@ -101,10 +101,10 @@ theme_alinv_pub <- function(base_size = 7) {
       legend.key.height = grid::unit(3.5, "mm"),
       legend.key.width = grid::unit(7, "mm"),
       legend.box.spacing = grid::unit(1, "mm"),
-      plot.title = ggplot2::element_text(face = "bold", size = base_size + 1, margin = ggplot2::margin(b = 2)),
+      plot.title = ggplot2::element_text(face = "plain", size = base_size + 1, margin = ggplot2::margin(b = 2)),
       plot.tag = ggplot2::element_text(face = "bold", size = base_size + 1),
-      strip.background = ggplot2::element_rect(fill = "grey12", color = "grey12", linewidth = 0.25),
-      strip.text = ggplot2::element_text(color = "white", face = "bold", size = base_size)
+      strip.background = ggplot2::element_rect(fill = "grey92", color = "grey75", linewidth = 0.25),
+      strip.text = ggplot2::element_text(color = "black", face = "plain", size = base_size + 0.2)
     )
 }
 
@@ -119,8 +119,7 @@ alinv_save_pdf <- function(plot, filename, height_mm, width_mm = FIG_WIDTH_MM) {
     plot = plot,
     width = width_mm / 25.4,
     height = height_mm / 25.4,
-    units = "in",
-    device = grDevices::cairo_pdf
+    units = "in"
   )
   normalizePath(out_path, winslash = "/", mustWork = TRUE)
 }

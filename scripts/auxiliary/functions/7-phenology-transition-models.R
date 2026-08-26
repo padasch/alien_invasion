@@ -331,8 +331,8 @@ plot_phenology_transition_effects <- function(effects_df) {
         theme_classic(base_size = 11) +
         theme(
           legend.position = "none",
-          strip.background = ggplot2::element_rect(fill = "black", color = "black"),
-          strip.text = ggplot2::element_text(color = "white", face = "bold")
+          strip.background = ggplot2::element_rect(fill = "grey92", color = "grey75", linewidth = 0.25),
+          strip.text = ggplot2::element_text(color = "black", face = "plain")
         )
     )
   }
@@ -374,9 +374,9 @@ plot_phenology_transition_effects <- function(effects_df) {
       theme_classic(base_size = 11) +
       theme(
         legend.position = "none",
-        plot.title = ggplot2::element_text(face = "bold", hjust = 0),
-        strip.background = ggplot2::element_rect(fill = "black", color = "black"),
-        strip.text = ggplot2::element_text(color = "white", face = "bold")
+        plot.title = ggplot2::element_text(face = "plain", hjust = 0),
+        strip.background = ggplot2::element_rect(fill = "grey92", color = "grey75", linewidth = 0.25),
+        strip.text = ggplot2::element_text(color = "black", face = "plain")
       )
   }
 

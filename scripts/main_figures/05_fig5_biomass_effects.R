@@ -66,12 +66,15 @@ make_fig5 <- function() {
       drop = FALSE
     ) +
     ggplot2::labs(x = "Effect size", y = NULL) +
-    theme_alinv_pub(base_size = 7) +
+    theme_alinv_pub(base_size = 7.4) +
     ggplot2::theme(
       legend.position = "bottom",
       panel.grid.major.y = ggplot2::element_blank(),
-      strip.text.y = ggplot2::element_text(angle = 90),
-      axis.text.y = ggplot2::element_text(size = 6.7),
+      strip.background.y = ggplot2::element_blank(),
+      strip.text.y.right = ggplot2::element_text(
+        color = "black", face = "plain", angle = 90, size = 7.2
+      ),
+      axis.text.y = ggplot2::element_text(size = 7),
       panel.spacing.x = grid::unit(3, "mm"),
       plot.margin = ggplot2::margin(3, 5, 3, 4)
     )

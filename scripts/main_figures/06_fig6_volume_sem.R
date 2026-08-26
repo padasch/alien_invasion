@@ -38,28 +38,22 @@ prepare_fig6_volume_summary <- function() {
 }
 
 prepare_fig6_phase_windows <- function(summary_df) {
-  phase_levels <- levels(summary_df$phase)
-  if (is.null(phase_levels)) {
-    phase_levels <- unique(as.character(summary_df$phase))
-  }
-
-  phase_starts <- summary_df %>%
-    dplyr::filter(!is.na(.data$phase), !is.na(.data$date)) %>%
-    dplyr::mutate(phase_chr = as.character(.data$phase)) %>%
-    dplyr::group_by(.data$phase_chr) %>%
+  phase_levels <- c("until June", "July-August", "September+")
+  phase_two_plot_start <- summary_df %>%
+    dplyr::filter(as.character(.data$phase) == "July-August", !is.na(.data$date)) %>%
     dplyr::summarise(start = min(.data$date), .groups = "drop") %>%
-    dplyr::filter(.data$phase_chr %in% phase_levels) %>%
-    dplyr::arrange(match(.data$phase_chr, phase_levels))
+    dplyr::pull(.data$start)
 
-  if (nrow(phase_starts) < 2L) {
-    return(SEASON_WINDOWS)
+  if (!length(phase_two_plot_start) || is.na(phase_two_plot_start)) {
+    phase_two_plot_start <- SUMMER_START
   }
 
-  transition_dates <- phase_starts$start[-1]
   tibble::tibble(
     phase = factor(phase_levels, levels = phase_levels),
-    start = c(FIG6_TIMELINE_X_LIMITS[[1]], transition_dates),
-    end = c(transition_dates, FIG6_TIMELINE_X_LIMITS[[2]]),
+    # The phase-two display starts at its plotted zero-baseline measurement.
+    # This changes only the visual boundary, not the phase response values.
+    start = c(FIG6_TIMELINE_X_LIMITS[[1]], phase_two_plot_start, SUMMER_END),
+    end = c(phase_two_plot_start, SUMMER_END, FIG6_TIMELINE_X_LIMITS[[2]]),
     fill = unname(FIG6_PHASE_FILLS[phase_levels])
   )
 }
@@ -69,7 +63,9 @@ build_fig6_volume_panel <- function(summary_df, species_key, robinia_key, y_limi
     dplyr::filter(.data$species == .env$species_key, .data$robinia == .env$robinia_key)
   phase_windows <- prepare_fig6_phase_windows(summary_df)
   phase_transitions <- phase_windows$start[-1]
-  drought_y <- y_limits[[1]] + diff(y_limits) * 0.025
+  drought_y <- -5
+  plot_y_limits <- c(-10, y_limits[[2]])
+  y_breaks <- seq(y_limits[[1]], y_limits[[2]], length.out = 5)
 
   p <- ggplot2::ggplot(
     df_plot,
@@ -121,13 +117,14 @@ build_fig6_volume_panel <- function(summary_df, species_key, robinia_key, y_limi
       date_labels = "%b",
       expand = ggplot2::expansion(mult = 0, add = c(6, 6))
     ) +
-    ggplot2::coord_cartesian(ylim = y_limits, clip = "off") +
+    ggplot2::scale_y_continuous(breaks = y_breaks) +
+    ggplot2::coord_cartesian(ylim = plot_y_limits, clip = "off") +
     ggplot2::labs(
       x = NULL,
       y = if (isTRUE(show_y)) "Volume increment per phase (%)" else NULL,
       title = paste0(SPECIES_LABELS[[species_key]], ": ", ROBINIA_LABELS[[robinia_key]])
     ) +
-    theme_alinv_pub(base_size = 6.4) +
+    theme_alinv_pub(base_size = 6.8) +
     ggplot2::guides(
       color = ggplot2::guide_legend(
         ncol = 2,
@@ -154,17 +151,19 @@ build_fig6_volume_panel <- function(summary_df, species_key, robinia_key, y_limi
 }
 
 read_phenology_treatment_effects <- function() {
-  alinv_read_phenology_bootstrap_primary_standardized(ALINV_PROJECT_ROOT) %>%
+  alinv_read_phenology_sem_bootstrap_effects(ALINV_PROJECT_ROOT)$effects %>%
+    dplyr::filter(.data$metric == "total_path") %>%
     dplyr::transmute(
       species = .data$species,
       treatment = .data$effect,
       response_label = "Phenology timing",
       estimate = .data$estimate,
       p_value = .data$p_boot,
-      lower = .data$lower,
-      upper = .data$upper,
+      lower = .data$lower_95,
+      upper = .data$upper_95,
       n_boot_success = .data$n_boot_success,
-      source_file = .data$source_file
+      source_file = .data$source_file,
+      component = "total"
     )
 }
 
@@ -181,31 +180,25 @@ prepare_fig6_sem_data <- function(repeated_sem_totals = NULL) {
   )
 
   if (is.null(repeated_sem_totals)) {
-    repeated_sem_totals <- alinv_read_reduced_response_bootstrap_effects(ALINV_PROJECT_ROOT) %>%
-      dplyr::transmute(
-        species = .data$species,
-        treatment = .data$treatment,
-        response_label = .data$response_label,
-        resp_var = .data$resp_var,
-        estimate = .data$estimate,
-        lower = .data$lower,
-        upper = .data$upper,
-        p_value = .data$p_boot,
-        n_boot_success = .data$n_boot,
-        source_file = .data$source_file
-      )
+    repeated_sem_totals <- alinv_read_past_only_7d_sem_bootstrap_totals(ALINV_PROJECT_ROOT)
   }
 
   standard <- repeated_sem_totals %>%
     dplyr::semi_join(response_specs, by = c("resp_var", "response_label"))
 
-  sem_df <- dplyr::bind_rows(read_phenology_treatment_effects(), standard)
+  sem_df <- dplyr::bind_rows(read_phenology_treatment_effects(), standard) %>%
+    dplyr::mutate(
+      response_label = dplyr::recode(
+        .data$response_label,
+        `Volume (incr.)` = "Volume (phase incr.)"
+      )
+    )
 
   treatment_order <- c("extreme_event", "culture", "robinia", "precipitation")
   response_order <- c(
     "Phenology timing",
     "Volume (total)",
-    "Volume (incr.)",
+    "Volume (phase incr.)",
     "Chlorophyll",
     "Vitality",
     "Quantum yield",
@@ -260,17 +253,23 @@ build_fig6_sem_heatmap <- function(sem_df,
     x_var <- "response_label"
     y_var <- "treatment_label"
     x_angle <- 42
-    x_size <- 5.5
-    y_size <- 5.7
+    x_size <- 5.9
+    y_size <- 6.1
   } else {
     x_limits <- levels(sem_df$treatment_label)
     y_limits <- rev(levels(sem_df$response_label))
     x_var <- "treatment_label"
     y_var <- "response_label"
     x_angle <- 35
-    x_size <- 5.7
-    y_size <- 5.5
+    x_size <- 6.1
+    y_size <- 6.6
   }
+
+  heatmap_palette <- scales::col_numeric(
+    palette = c("#D65F5F", "white", "#3C6E8F"),
+    domain = c(-fill_limit, fill_limit),
+    na.color = "white"
+  )
 
   df_plot <- df_plot %>%
     dplyr::mutate(
@@ -281,7 +280,12 @@ build_fig6_sem_heatmap <- function(sem_df,
         TRUE ~ .data$estimate
       ),
       heatmap_x = factor(.data[[x_var]], levels = x_limits),
-      heatmap_y = factor(.data[[y_var]], levels = y_limits)
+      heatmap_y = factor(.data[[y_var]], levels = y_limits),
+      cell_fill = dplyr::case_when(
+        .data$missing_cell ~ FIG6_MISSING_CELL_FILL,
+        is.finite(.data$display_estimate) ~ .env$heatmap_palette(.data$display_estimate),
+        TRUE ~ "white"
+      )
     )
 
   label_df <- df_plot %>%
@@ -295,53 +299,29 @@ build_fig6_sem_heatmap <- function(sem_df,
     ggplot2::aes(x = .data$heatmap_x, y = .data$heatmap_y)
   ) +
     ggplot2::geom_tile(
-      data = df_plot %>% dplyr::filter(.data$missing_cell),
-      fill = FIG6_MISSING_CELL_FILL,
-      color = NA
-    ) +
-    ggplot2::geom_tile(
-      data = df_plot %>% dplyr::filter(!.data$missing_cell),
-      fill = "white",
-      color = NA
-    ) +
-    ggplot2::geom_tile(
-      data = df_plot %>% dplyr::filter(is.finite(.data$display_estimate)),
-      ggplot2::aes(fill = .data$display_estimate),
-      color = NA
+      ggplot2::aes(fill = .data$cell_fill),
+      width = 1.01,
+      height = 1.01,
+      color = NA,
+      linewidth = 0
     ) +
     ggplot2::geom_text(
       data = label_df,
       ggplot2::aes(label = .data$label),
       color = "black",
-      size = 1.75,
-      fontface = "bold",
+      size = 1.9,
+      fontface = "plain",
       show.legend = FALSE
     ) +
-    ggplot2::scale_fill_gradient2(
-      low = "#D65F5F",
-      mid = "white",
-      high = "#3C6E8F",
-      midpoint = 0,
-      limits = c(-fill_limit, fill_limit),
-      oob = scales::squish,
-      na.value = "white",
-      name = "Standardized Effect",
-      guide = ggplot2::guide_colorbar(
-        title.position = "top",
-        title.hjust = 0.5,
-        barwidth = grid::unit(24, "mm"),
-        barheight = grid::unit(2.5, "mm"),
-        label.position = "bottom"
-      )
-    ) +
+    ggplot2::scale_fill_identity(guide = "none") +
     ggplot2::scale_x_discrete(limits = x_limits, drop = FALSE) +
     ggplot2::scale_y_discrete(limits = y_limits, drop = FALSE) +
     ggplot2::labs(
       x = NULL,
       y = NULL,
-      title = paste0(SPECIES_LABELS[[species_key]], ": treatment effects")
+      title = paste0(SPECIES_LABELS[[species_key]], ": total treatment effects")
     ) +
-    theme_alinv_pub(base_size = 6.2) +
+    theme_alinv_pub(base_size = 6.8) +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = x_angle, hjust = 1, vjust = 1, size = x_size),
       axis.text.y = if (isTRUE(show_y)) ggplot2::element_text(size = y_size) else ggplot2::element_blank(),
@@ -353,6 +333,9 @@ build_fig6_sem_heatmap <- function(sem_df,
       },
       axis.ticks.length = grid::unit(1.2, "mm"),
       panel.grid = ggplot2::element_blank(),
+      panel.grid.major = ggplot2::element_blank(),
+      panel.grid.minor = ggplot2::element_blank(),
+      panel.background = ggplot2::element_blank(),
       panel.border = ggplot2::element_blank(),
       axis.line = ggplot2::element_blank(),
       axis.line.x.bottom = ggplot2::element_line(linewidth = 0.25, color = "black"),
@@ -393,8 +376,8 @@ build_fig6_line_legend <- function() {
       x = 0.5,
       y = 0.66,
       label = "Treatment",
-      fontface = "bold",
-      size = 2.15
+      fontface = "plain",
+      size = 2.25
     ) +
     ggplot2::geom_segment(
       ggplot2::aes(
@@ -412,13 +395,13 @@ build_fig6_line_legend <- function() {
       ggplot2::aes(x = .data$label_x, y = .data$y, label = .data$label),
       hjust = 0,
       vjust = 0.5,
-      size = 2.05,
+      size = 2.15,
       color = "black"
     ) +
     ggplot2::scale_color_identity() +
     ggplot2::scale_linetype_identity() +
     ggplot2::coord_cartesian(xlim = c(0, 1.08), ylim = c(0, 0.76), clip = "off") +
-    ggplot2::theme_void(base_size = 6.2) +
+    ggplot2::theme_void(base_size = 6.8) +
     ggplot2::theme(plot.margin = ggplot2::margin(0, 0, 0, 0))
 }
 
@@ -457,7 +440,7 @@ build_fig6_heatmap_legend <- function(fill_limit) {
     ggplot2::geom_text(
       data = tick_df,
       ggplot2::aes(x = .data$x, y = 0.67, label = .data$label),
-      size = 1.95,
+      size = 2.1,
       color = "black"
     ) +
     ggplot2::annotate(
@@ -465,7 +448,7 @@ build_fig6_heatmap_legend <- function(fill_limit) {
       x = 0,
       y = 1.36,
       label = "Effect size",
-      size = 2.05,
+      size = 2.2,
       color = "black"
     ) +
     ggplot2::annotate(
@@ -484,7 +467,7 @@ build_fig6_heatmap_legend <- function(fill_limit) {
       label = "NA",
       hjust = 0,
       vjust = 0.5,
-      size = 2.05,
+      size = 2.1,
       color = "black"
     ) +
     ggplot2::scale_fill_gradient2(
@@ -495,7 +478,7 @@ build_fig6_heatmap_legend <- function(fill_limit) {
       limits = c(-fill_limit, fill_limit),
       guide = "none"
     ) +
-    ggplot2::theme_void(base_size = 6.2) +
+    ggplot2::theme_void(base_size = 6.8) +
     ggplot2::coord_cartesian(
       xlim = c(-legend_limit, legend_limit),
       ylim = c(0.48, 1.5),
@@ -514,13 +497,8 @@ make_fig6 <- function(nonsignificant_mode = FIG6_HEATMAP_NONSIGNIFICANT_MODE,
   nonsignificant_mode <- match.arg(nonsignificant_mode, FIG6_HEATMAP_NONSIGNIFICANT_MODES)
   axis_layout <- match.arg(axis_layout, FIG6_HEATMAP_AXIS_LAYOUTS)
   volume_summary <- prepare_fig6_volume_summary()
-  y_limits <- compute_range_limits(
-    volume_summary %>%
-      dplyr::mutate(lower = .data$mean - .data$se, upper = .data$mean + .data$se, estimate = .data$mean),
-    cols = c("lower", "upper", "estimate"),
-    pad = 0.07,
-    floor = 0.15
-  )
+  fagus_y_limits <- c(0, 100)
+  quercus_y_limits <- c(0, 200)
 
   sem_df <- prepare_fig6_sem_data(repeated_sem_totals = repeated_sem_totals)
   fill_limit <- heatmap_fill_limit
@@ -529,11 +507,11 @@ make_fig6 <- function(nonsignificant_mode = FIG6_HEATMAP_NONSIGNIFICANT_MODE,
   }
   if (!is.finite(fill_limit) || fill_limit <= 0) fill_limit <- 1
 
-  p_a <- build_fig6_volume_panel(volume_summary, "fagus", "without-robinia", y_limits, show_y = TRUE, show_legend = FALSE)
-  p_b <- build_fig6_volume_panel(volume_summary, "fagus", "with-robinia", y_limits, show_y = FALSE, show_legend = FALSE)
+  p_a <- build_fig6_volume_panel(volume_summary, "fagus", "without-robinia", fagus_y_limits, show_y = TRUE, show_legend = FALSE)
+  p_b <- build_fig6_volume_panel(volume_summary, "fagus", "with-robinia", fagus_y_limits, show_y = FALSE, show_legend = FALSE)
   p_c <- build_fig6_sem_heatmap(sem_df, "fagus", fill_limit, show_y = TRUE, show_legend = FALSE, nonsignificant_mode = nonsignificant_mode, axis_layout = axis_layout)
-  p_d <- build_fig6_volume_panel(volume_summary, "quercus", "without-robinia", y_limits, show_y = TRUE, show_legend = FALSE)
-  p_e <- build_fig6_volume_panel(volume_summary, "quercus", "with-robinia", y_limits, show_y = FALSE, show_legend = FALSE)
+  p_d <- build_fig6_volume_panel(volume_summary, "quercus", "without-robinia", quercus_y_limits, show_y = TRUE, show_legend = FALSE)
+  p_e <- build_fig6_volume_panel(volume_summary, "quercus", "with-robinia", quercus_y_limits, show_y = FALSE, show_legend = FALSE)
   p_f <- build_fig6_sem_heatmap(sem_df, "quercus", fill_limit, show_y = TRUE, show_legend = FALSE, nonsignificant_mode = nonsignificant_mode, axis_layout = axis_layout)
 
   p_a <- p_a + ggplot2::labs(tag = "A")

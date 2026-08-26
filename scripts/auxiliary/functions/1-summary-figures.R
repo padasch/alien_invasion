@@ -70,7 +70,7 @@ normalize_factors_soil <- function(df) {
 
 # -------- universal theme & scales --------
 theme_common <- function() {
-  theme_linedraw(base_size = 13) +
+  theme_classic(base_size = 13) +
   theme(
     legend.position = "bottom",
     panel.grid.major = element_line(color = "lightgrey", linewidth = 0.3),
@@ -78,7 +78,8 @@ theme_common <- function() {
     panel.grid.major.x = element_line(),
     panel.grid.major.y = element_line(),
     panel.grid.minor.x = element_line(),
-    strip.text = element_text(face = "bold"),
+    strip.background = element_rect(fill = "grey92", color = "grey75", linewidth = 0.25),
+    strip.text = element_text(face = "plain", color = "black"),
     axis.text = element_text(size = 11),
     axis.title = element_text(size = 12),
     legend.text = element_text(size = 10),
@@ -254,7 +255,7 @@ library(lubridate)
 
 # ---- drought periods & helpers ----
 DROUGHT_PERIODS <- list(c("2025-06-20","2025-07-07"),
-                        c("2025-08-12","2025-08-20"))
+                        c("2025-08-05","2025-08-19"))
 
 y_limits_from_sum <- function(df_sum) {
   ymin <- min(df_sum$mean - df_sum$se, na.rm = TRUE)
@@ -311,7 +312,7 @@ save_plot <- function(p, stub, soiltype = "both",
   dirout <- alinv_data_path("figure_exports", subdir, paste0("soil_", gsub("-","_", soiltype)), create_dir = TRUE)
   if (!dir.exists(dirout)) dir.create(dirout, recursive = TRUE, showWarnings = FALSE)
   fpath <- file.path(dirout, paste0(stub, ".", device))
-  if (device == "pdf") ggsave(fpath, p, width = width, height = height, device = cairo_pdf)
+  if (device == "pdf") ggsave(fpath, p, width = width, height = height)
   else                ggsave(fpath, p, width = width, height = height, dpi = dpi)
   message("Saved: ", fpath)
   invisible(p)

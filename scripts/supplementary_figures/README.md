@@ -104,7 +104,7 @@ One Gaussian linear mixed-effects model is fitted separately for *Fagus
 sylvatica* and *Quercus ilex* (shown as Fagus and Quercus in the figures):
 
 ```text
-transition DOY ~ phenological stage + precipitation + Robinia + culture + block
+transition DOY ~ phenological stage + precipitation + Robinia + culture
                + (1 | container) + (1 | tree)
 ```
 
@@ -116,10 +116,10 @@ profile. Treatment contrasts are treatment minus reference (drought minus
 control, with minus without *Robinia*, and mixed culture minus monoculture).
 
 Raw DOY contrasts are retained in the bootstrap audit output: negative values
-mean earlier and positive values mean later attainment. The plotted contrast is multiplied
-by -1 solely to align its interpretation with the other stress responses:
-negative plotted values mean delayed phenology and positive values mean earlier
-phenology. Because DOY is continuous, this is an LMM rather than a GLMM.
+mean earlier and positive values mean later attainment. Displayed phenology
+effects are multiplied by -1 so that negative values mean later and positive
+values earlier leaf-out in Figures 6, S16, and the leaf-out cells of S17.
+Because DOY is continuous, this is an LMM rather than a GLMM.
 
 Bootstrap model artifacts and audit tables are retained in
 `exploration/2026-08-18 Testing bootstrapping/`; they are intentionally kept

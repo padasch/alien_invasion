@@ -49,14 +49,14 @@ TREATMENT_COLORS <- c(
 theme_supplement <- function(base_size = 8) {
   ggplot2::theme_classic(base_size = base_size) +
     ggplot2::theme(
-      text = ggplot2::element_text(family = "Helvetica", color = "black"),
+      text = ggplot2::element_text(color = "black"),
       axis.text = ggplot2::element_text(color = "black"),
       axis.line = ggplot2::element_line(linewidth = 0.25, color = "black"),
       axis.ticks = ggplot2::element_line(linewidth = 0.25, color = "black"),
       panel.grid.major = ggplot2::element_line(color = "grey90", linewidth = 0.2),
       panel.grid.minor = ggplot2::element_blank(),
-      strip.background = ggplot2::element_rect(fill = "grey12", color = "grey12", linewidth = 0.25),
-      strip.text = ggplot2::element_text(color = "white", face = "bold"),
+      strip.background = ggplot2::element_rect(fill = "grey92", color = "grey75", linewidth = 0.25),
+      strip.text = ggplot2::element_text(color = "black", face = "plain", size = base_size + 0.2),
       plot.title = ggplot2::element_blank(),
       plot.subtitle = ggplot2::element_blank(),
       plot.caption = ggplot2::element_blank(),
@@ -76,7 +76,6 @@ save_supplementary_plot <- function(plot, stem, width_mm = 160, height_mm) {
     width = width_mm,
     height = height_mm,
     units = "mm",
-    device = grDevices::cairo_pdf,
     bg = "white",
     limitsize = FALSE
   )
