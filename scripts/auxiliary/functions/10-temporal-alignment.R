@@ -123,7 +123,7 @@ MEASUREMENT_SCHEDULE_BIOMASS_DATES <- as.Date(c("2025-12-10", "2025-12-11"))
 MEASUREMENT_SCHEDULE_HEATWAVE_WINDOWS <- tibble::tribble(
   ~start                , ~end                  ,
   as.Date("2025-06-20") , as.Date("2025-07-02") ,
-  as.Date("2025-08-12") , as.Date("2025-08-20")
+  as.Date("2025-08-05") , as.Date("2025-08-19")
 )
 MEASUREMENT_SCHEDULE_HEATWAVE_DATES <- unique(unlist(Map(
   seq.Date,

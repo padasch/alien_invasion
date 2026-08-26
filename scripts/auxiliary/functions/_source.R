@@ -353,7 +353,7 @@ alinv_empty_plot <- function(title, subtitle = NULL) {
     ggplot2::theme_void() +
     ggplot2::labs(title = title, subtitle = subtitle) +
     ggplot2::theme(
-      plot.title = ggplot2::element_text(size = 12, face = "bold"),
+      plot.title = ggplot2::element_text(size = 12, face = "plain"),
       plot.subtitle = ggplot2::element_text(size = 10)
     )
 }
@@ -1042,8 +1042,8 @@ get_data <- function(type = c("tree", "box"), data_name, with_meta = TRUE, path 
           ) |
           dplyr::between(
             .data$date,
-            as.Date("2025-08-12"),
-            as.Date("2025-08-20") + buffer_days
+            as.Date("2025-08-05"),
+            as.Date("2025-08-19") + buffer_days
           ),
         extreme_event = if_else(extreme_event, "yes", "no")
       )

@@ -209,7 +209,14 @@ df <- read_excel(fp, sheet = "Growth_Measurements_D_H") %>%
   mutate(
     date   = as.Date(date, format = "%d.%m.%Y"),
     metric = tolower(metric),
-    metric = gsub("\\[mm\\]", "_mm", metric) |> gsub("\\[cm\\]", "_cm", x = _)
+    metric = gsub("\\[mm\\]", "_mm", metric) |> gsub("\\[cm\\]", "_cm", x = _),
+    # Diameter and height were measured three days apart in the final summer
+    # growth round. Assign the diameter measurement to the 1 September round
+    # so that both measurements form one volume observation.
+    date = dplyr::case_when(
+      metric == "diameter_mm" & date == as.Date("2025-08-29") ~ as.Date("2025-09-01"),
+      TRUE ~ date
+    )
   ) %>%
   filter(!is.na(id_number)) %>%
   pivot_wider(
@@ -241,8 +248,8 @@ df <- read_excel(fp, sheet = "Growth_Measurements_D_H") %>%
   group_by(tree_id) |>
   mutate(
     phase = dplyr::case_when(
-      lubridate::month(date) <= 6 ~ "until June",
-      lubridate::month(date) <= 8 ~ "July-August",
+      date <= as.Date("2025-06-20") ~ "until June",
+      date <= as.Date("2025-09-01") ~ "July-August",
       TRUE ~ "September+"
     ),
     phase = factor(phase, levels = c("until June", "July-August", "September+")),
