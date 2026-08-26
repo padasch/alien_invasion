@@ -11,8 +11,10 @@ Rscript --vanilla scripts/supplementary_figures/fig_s17.R
 
 The scripts locate the repository root automatically and use the project
 `renv` library when it is available. Publication outputs are vector PDFs in
-`output/supplementary/`; the output directory contains no
-figure-specific subdirectories, PNGs, CSVs, reports, or model objects.
+`output/supplementary/`; the output directory contains no figure-specific
+subdirectories, PNGs, CSVs, reports, or model objects. Small tidy tables
+containing the values shown in each figure are stored separately under
+`data/final/figure_data/`.
 
 ## Reconstruction of `Supplementary_v1.pdf`
 

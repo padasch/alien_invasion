@@ -18,6 +18,9 @@ The active pipeline uses measured SWC only. The retired GAM-based interpolation
 script and its generated daily dataset are stored locally in
 `_archive/gam-swc/`.
 
-Compact model summaries consumed by the figures are tracked under
-`data/final/bootstrap/`. Large replicate-level draws and model caches are
-regenerated locally and are not publication outputs.
+Bootstrap summaries, replicate-level draws, and model caches are generated
+locally under `data/final/bootstrap/` and are not version controlled.
+
+Every main and supplementary figure also writes one or more small, tidy CSV
+tables under `data/final/figure_data/`. Only the scientific values shown in the
+figure are retained; plot styling and other ggplot internals are excluded.

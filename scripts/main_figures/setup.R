@@ -41,6 +41,7 @@ suppressMessages(suppressPackageStartupMessages({
   source(file.path(function_dir, "project_data.R"))
   source(file.path(function_dir, "growth.R"))
   source(file.path(function_dir, "bootstrap.R"))
+  source(file.path(function_dir, "figure_data.R"))
 }))
 
 alinv_set_analysis_context(
@@ -282,7 +283,26 @@ make_temporal_effect_figure <- function(data_name, resp_var, panel_suffix, outpu
       legend.key.width = grid::unit(7, "mm")
     )
 
-  alinv_save_pdf(fig, output_file, height_mm = height_mm)
+  pdf_path <- alinv_save_pdf(fig, output_file, height_mm = height_mm)
+  figure_id <- sub("_.*$", "", tools::file_path_sans_ext(basename(output_file)))
+  effect_table <- effects %>%
+    dplyr::transmute(
+      species = .data$species,
+      date = .data$date,
+      treatment = .data$effect,
+      contrast = .data$contrast,
+      estimate = .data$estimate,
+      lower_95 = .data$lower,
+      upper_95 = .data$upper,
+      p_value = .data$p_boot
+    )
+  alinv_write_figure_data(
+    effect_table,
+    figure_id = figure_id,
+    table_name = "effects",
+    project_root = ALINV_PROJECT_ROOT
+  )
+  pdf_path
 }
 
 alinv_final_setup_loaded <- TRUE

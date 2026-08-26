@@ -79,5 +79,23 @@ make_fig5 <- function() {
       plot.margin = ggplot2::margin(3, 5, 3, 4)
     )
 
-  alinv_save_pdf(fig, "fig5_biomass_effects.pdf", height_mm = 118)
+  pdf_path <- alinv_save_pdf(fig, "fig5_biomass_effects.pdf", height_mm = 118)
+  alinv_write_figure_data(
+    effects %>%
+      dplyr::transmute(
+        species = .data$species,
+        biomass_response = .data$metric,
+        treatment = .data$term,
+        estimate = .data$estimate,
+        lower_95 = .data$ci_lo,
+        upper_95 = .data$ci_hi,
+        p_value = .data$p_boot,
+        n_trees = .data$n_trees,
+        n_containers = .data$n_containers
+      ),
+    figure_id = "fig5",
+    table_name = "effects",
+    project_root = ALINV_PROJECT_ROOT
+  )
+  pdf_path
 }

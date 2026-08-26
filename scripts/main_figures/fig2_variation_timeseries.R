@@ -142,11 +142,14 @@ build_fig2_response_panel <- function(summary_obj, species_key = NULL, y_lab, ti
   format_fig2_axis(p, show_x = show_x)
 }
 
-build_fig2_weather_panel <- function() {
-  weather <- get_climate(c("air_temp", "precip_mm")) %>%
+prepare_fig2_weather_data <- function() {
+  get_climate(c("air_temp", "precip_mm")) %>%
     dplyr::filter(lubridate::year(.data$date) == 2025) %>%
     dplyr::rename(ta = "air_temp") %>%
     dplyr::arrange(.data$date)
+}
+
+build_fig2_weather_panel <- function(weather) {
 
   y_min <- -10
   y_max <- 32
@@ -200,13 +203,14 @@ make_fig2 <- function() {
   growth <- summarize_fig2_tree("growth", "diameter_inc_t0")
   qy <- summarize_fig2_tree("quantum_yield", "qy")
   swc <- summarize_fig2_swc()
+  weather <- prepare_fig2_weather_data()
 
   p_a <- build_fig2_response_panel(growth, "fagus", "Diameter incr. (mm)", "Fagus", y_limits = c(0, 8))
   p_b <- build_fig2_response_panel(growth, "quercus", "Diameter incr. (mm)", "Quercus", y_limits = c(0, 8))
   p_c <- build_fig2_response_panel(qy, "fagus", "Fv/Fm", "Fagus", y_limits = c(0, 1.02))
   p_d <- build_fig2_response_panel(qy, "quercus", "Fv/Fm", "Quercus", y_limits = c(0, 1.02))
   p_e <- build_fig2_response_panel(swc, NULL, "SWC (%)", "Soil water content", y_limits = c(0, 31))
-  p_f <- build_fig2_weather_panel()
+  p_f <- build_fig2_weather_panel(weather)
 
   fig <- (p_a / p_b / p_c / p_d / p_e / p_f) +
     patchwork::plot_layout(heights = c(1, 1, 1, 1, 1, 1), guides = "collect") +
@@ -217,5 +221,41 @@ make_fig2 <- function() {
       legend.text = ggplot2::element_text(size = 6.2)
     )
 
-  alinv_save_pdf(fig, "fig2_variation_timeseries.pdf", height_mm = 220)
+  pdf_path <- alinv_save_pdf(fig, "fig2_variation_timeseries.pdf", height_mm = 220)
+
+  timeseries <- dplyr::bind_rows(
+    dplyr::mutate(growth$thin, response = "Diameter increment", summary_level = "treatment combination"),
+    dplyr::mutate(growth$thick, response = "Diameter increment", summary_level = "Robinia mean"),
+    dplyr::mutate(qy$thin, response = "Quantum yield", summary_level = "treatment combination"),
+    dplyr::mutate(qy$thick, response = "Quantum yield", summary_level = "Robinia mean"),
+    dplyr::mutate(swc$thin, response = "Soil water content", summary_level = "treatment combination"),
+    dplyr::mutate(swc$thick, response = "Soil water content", summary_level = "Robinia mean")
+  ) %>%
+    dplyr::select(dplyr::any_of(c(
+      "response", "summary_level", "date", "species", "robinia",
+      "precipitation", "culture", "mean", "sd", "n", "se"
+    )))
+  alinv_write_figure_data(
+    timeseries,
+    figure_id = "fig2",
+    table_name = "timeseries",
+    project_root = ALINV_PROJECT_ROOT
+  )
+  alinv_write_figure_data(
+    dplyr::transmute(
+      dplyr::filter(
+        weather,
+        .data$date >= FIG2_X_LIMITS[[1]],
+        .data$date <= FIG2_X_LIMITS[[2]]
+      ),
+      date = .data$date,
+      air_temperature_c = .data$ta,
+      precipitation_mm = .data$precip_mm
+    ),
+    figure_id = "fig2",
+    table_name = "climate",
+    project_root = ALINV_PROJECT_ROOT
+  )
+
+  pdf_path
 }

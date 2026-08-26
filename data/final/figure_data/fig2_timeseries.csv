@@ -1,0 +1,611 @@
+response,summary_level,date,species,robinia,precipitation,culture,mean,sd,n,se
+Diameter increment,treatment combination,2025-03-07,fagus,without-robinia,control,mono,0,0,48,0
+Diameter increment,treatment combination,2025-03-07,fagus,without-robinia,control,mixed,0,0,24,0
+Diameter increment,treatment combination,2025-03-07,fagus,without-robinia,drought,mono,0,0,48,0
+Diameter increment,treatment combination,2025-03-07,fagus,without-robinia,drought,mixed,0,0,24,0
+Diameter increment,treatment combination,2025-03-07,fagus,with-robinia,control,mono,0,0,40,0
+Diameter increment,treatment combination,2025-03-07,fagus,with-robinia,control,mixed,0,0,24,0
+Diameter increment,treatment combination,2025-03-07,fagus,with-robinia,drought,mono,0,0,48,0
+Diameter increment,treatment combination,2025-03-07,fagus,with-robinia,drought,mixed,0,0,24,0
+Diameter increment,treatment combination,2025-03-07,quercus,without-robinia,control,mono,0,0,48,0
+Diameter increment,treatment combination,2025-03-07,quercus,without-robinia,control,mixed,0,0,24,0
+Diameter increment,treatment combination,2025-03-07,quercus,without-robinia,drought,mono,0,0,48,0
+Diameter increment,treatment combination,2025-03-07,quercus,without-robinia,drought,mixed,0,0,24,0
+Diameter increment,treatment combination,2025-03-07,quercus,with-robinia,control,mono,0,0,56,0
+Diameter increment,treatment combination,2025-03-07,quercus,with-robinia,control,mixed,0,0,24,0
+Diameter increment,treatment combination,2025-03-07,quercus,with-robinia,drought,mono,0,0,48,0
+Diameter increment,treatment combination,2025-03-07,quercus,with-robinia,drought,mixed,0,0,24,0
+Diameter increment,treatment combination,2025-05-08,fagus,without-robinia,control,mono,0.2504166666666668,0.34743411028986176,48,0.05014779427537746
+Diameter increment,treatment combination,2025-05-08,fagus,without-robinia,control,mixed,0.18249999999999977,0.24360070678843718,24,0.049724786051084116
+Diameter increment,treatment combination,2025-05-08,fagus,without-robinia,drought,mono,0.22583333333333339,0.25427270779436417,48,0.03670110407316281
+Diameter increment,treatment combination,2025-05-08,fagus,without-robinia,drought,mixed,0.11541666666666658,0.16790212383530395,24,0.03427287751050734
+Diameter increment,treatment combination,2025-05-08,fagus,with-robinia,control,mono,0.20949999999999994,0.30030710776529895,40,0.047482722903799145
+Diameter increment,treatment combination,2025-05-08,fagus,with-robinia,control,mixed,0.20624999999999996,0.18194152190004453,24,0.03713865764004334
+Diameter increment,treatment combination,2025-05-08,fagus,with-robinia,drought,mono,0.1606249999999999,0.22671010873857236,48,0.032722785577056025
+Diameter increment,treatment combination,2025-05-08,fagus,with-robinia,drought,mixed,0.40791666666666665,0.9451752962174317,24,0.19293309943472092
+Diameter increment,treatment combination,2025-05-08,quercus,without-robinia,control,mono,0.8108333333333333,0.3812177204100171,48,0.05502403837464472
+Diameter increment,treatment combination,2025-05-08,quercus,without-robinia,control,mixed,0.97125,0.28993721209344914,24,0.05918318558950455
+Diameter increment,treatment combination,2025-05-08,quercus,without-robinia,drought,mono,0.7499999999999998,0.39049341400717463,48,0.056362869423454566
+Diameter increment,treatment combination,2025-05-08,quercus,without-robinia,drought,mixed,1.0933333333333335,0.49205572914021656,24,0.10044045511722152
+Diameter increment,treatment combination,2025-05-08,quercus,with-robinia,control,mono,0.6428571428571428,0.3387609201766949,56,0.04526883211890957
+Diameter increment,treatment combination,2025-05-08,quercus,with-robinia,control,mixed,0.8075,0.39052083393735915,24,0.07971473142272452
+Diameter increment,treatment combination,2025-05-08,quercus,with-robinia,drought,mono,0.6366666666666666,0.3487810587608717,48,0.050342209540957986
+Diameter increment,treatment combination,2025-05-08,quercus,with-robinia,drought,mixed,0.4670833333333333,0.9410977825029042,24,0.19210078043307152
+Diameter increment,treatment combination,2025-06-11,fagus,without-robinia,control,mono,1.7679166666666668,0.41498504629984223,48,0.05989793204772081
+Diameter increment,treatment combination,2025-06-11,fagus,without-robinia,control,mixed,2.140833333333333,0.7839970977467724,24,0.160032737441875
+Diameter increment,treatment combination,2025-06-11,fagus,without-robinia,drought,mono,1.5372916666666667,0.6188380999676987,48,0.08932158590028685
+Diameter increment,treatment combination,2025-06-11,fagus,without-robinia,drought,mixed,1.63625,0.607008434150988,24,0.12390507776964363
+Diameter increment,treatment combination,2025-06-11,fagus,with-robinia,control,mono,1.46525,0.5499882865885553,40,0.08696078360166362
+Diameter increment,treatment combination,2025-06-11,fagus,with-robinia,control,mixed,1.3679166666666664,0.5665300879738958,24,0.11564246995584246
+Diameter increment,treatment combination,2025-06-11,fagus,with-robinia,drought,mono,0.8239583333333333,0.4495375381733435,48,0.06488515466880539
+Diameter increment,treatment combination,2025-06-11,fagus,with-robinia,drought,mixed,1.24,1.1327112529716903,24,0.23121371630743645
+Diameter increment,treatment combination,2025-06-11,quercus,without-robinia,control,mono,1.5041666666666667,0.6128025378167178,48,0.08845042754214197
+Diameter increment,treatment combination,2025-06-11,quercus,without-robinia,control,mixed,1.6795833333333332,0.5353136355500362,24,0.10927043828764885
+Diameter increment,treatment combination,2025-06-11,quercus,without-robinia,drought,mono,1.4964583333333332,0.6184314048318288,48,0.0892628845137437
+Diameter increment,treatment combination,2025-06-11,quercus,without-robinia,drought,mixed,1.7566666666666666,0.6692543980246691,24,0.13661098193949647
+Diameter increment,treatment combination,2025-06-11,quercus,with-robinia,control,mono,0.9498214285714285,0.5208855783320228,56,0.0696062632796439
+Diameter increment,treatment combination,2025-06-11,quercus,with-robinia,control,mixed,1.1683333333333332,0.5917084084071395,24,0.12078197309265398
+Diameter increment,treatment combination,2025-06-11,quercus,with-robinia,drought,mono,0.8652083333333332,0.4596575486780757,48,0.06634585236608263
+Diameter increment,treatment combination,2025-06-11,quercus,with-robinia,drought,mixed,0.9558333333333332,1.619556881604849,24,0.3305906641120823
+Diameter increment,treatment combination,2025-07-09,fagus,without-robinia,control,mono,2.9941666666666666,0.8332372994310329,48,0.12026744478133591
+Diameter increment,treatment combination,2025-07-09,fagus,without-robinia,control,mixed,3.8320833333333337,0.8926900195557765,24,0.18221958719889914
+Diameter increment,treatment combination,2025-07-09,fagus,without-robinia,drought,mono,2.0483333333333333,0.6757449264876203,48,0.09753537880278787
+Diameter increment,treatment combination,2025-07-09,fagus,without-robinia,drought,mixed,2.8116666666666665,0.7584002996391507,24,0.15480781290748238
+Diameter increment,treatment combination,2025-07-09,fagus,with-robinia,control,mono,1.723,0.6382958079617462,40,0.1009234287048278
+Diameter increment,treatment combination,2025-07-09,fagus,with-robinia,control,mixed,1.5041666666666667,0.5267778730510918,24,0.10752808306364905
+Diameter increment,treatment combination,2025-07-09,fagus,with-robinia,drought,mono,0.9106250000000001,0.5481435060196276,48,0.07911770018874431
+Diameter increment,treatment combination,2025-07-09,fagus,with-robinia,drought,mixed,1.4120833333333334,1.149937537686161,24,0.23473001695029963
+Diameter increment,treatment combination,2025-07-09,quercus,without-robinia,control,mono,2.5385416666666667,0.9524347067213457,48,0.1374721085777778
+Diameter increment,treatment combination,2025-07-09,quercus,without-robinia,control,mixed,2.5508333333333333,0.7259771026851938,24,0.14818945554356935
+Diameter increment,treatment combination,2025-07-09,quercus,without-robinia,drought,mono,2.379375,0.7979052528672759,48,0.11516770313268454
+Diameter increment,treatment combination,2025-07-09,quercus,without-robinia,drought,mixed,2.537916666666667,0.5726747249352901,24,0.1168967387233476
+Diameter increment,treatment combination,2025-07-09,quercus,with-robinia,control,mono,1.1714285714285713,0.6120440523997615,56,0.0817878267747366
+Diameter increment,treatment combination,2025-07-09,quercus,with-robinia,control,mixed,1.3054166666666667,0.68599644546339,24,0.14002843806235782
+Diameter increment,treatment combination,2025-07-09,quercus,with-robinia,drought,mono,0.9360416666666667,0.5402550208824094,48,0.07797909543437649
+Diameter increment,treatment combination,2025-07-09,quercus,with-robinia,drought,mixed,1.0641666666666665,1.7044313514729945,24,0.34791559272593087
+Diameter increment,treatment combination,2025-08-05,fagus,without-robinia,control,mono,3.834791666666667,0.9613465502701468,48,0.13875842239574684
+Diameter increment,treatment combination,2025-08-05,fagus,without-robinia,control,mixed,4.73875,0.8783992976357372,24,0.17930250580222387
+Diameter increment,treatment combination,2025-08-05,fagus,without-robinia,drought,mono,2.315833333333333,0.7117489197903253,48,0.10273210760909242
+Diameter increment,treatment combination,2025-08-05,fagus,without-robinia,drought,mixed,3.5508333333333333,0.9604705217696196,24,0.19605522427669086
+Diameter increment,treatment combination,2025-08-05,fagus,with-robinia,control,mono,2.22675,0.8116345884252378,40,0.12833069635985433
+Diameter increment,treatment combination,2025-08-05,fagus,with-robinia,control,mixed,1.6762499999999998,0.6373232917922187,24,0.13009307217348753
+Diameter increment,treatment combination,2025-08-05,fagus,with-robinia,drought,mono,0.9910416666666666,0.5352638624849146,48,0.07725868377328608
+Diameter increment,treatment combination,2025-08-05,fagus,with-robinia,drought,mixed,1.4633333333333334,1.1439620952471803,24,0.23351028487006012
+Diameter increment,treatment combination,2025-08-05,quercus,without-robinia,control,mono,3.777083333333333,1.3545588248315676,48,0.1955137255374222
+Diameter increment,treatment combination,2025-08-05,quercus,without-robinia,control,mixed,3.3345833333333332,0.9295252606276642,24,0.18973854929711031
+Diameter increment,treatment combination,2025-08-05,quercus,without-robinia,drought,mono,3.3966666666666665,1.0481418885054237,48,0.15128625036938229
+Diameter increment,treatment combination,2025-08-05,quercus,without-robinia,drought,mixed,3.2845833333333334,0.795372372002528,24,0.1623547055761099
+Diameter increment,treatment combination,2025-08-05,quercus,with-robinia,control,mono,1.5558928571428572,0.8523396181542454,56,0.11389867243953261
+Diameter increment,treatment combination,2025-08-05,quercus,with-robinia,control,mixed,1.8654166666666667,0.9922787965813477,24,0.20254806118393726
+Diameter increment,treatment combination,2025-08-05,quercus,with-robinia,drought,mono,1.326875,0.7073599590746764,48,0.10209861569643178
+Diameter increment,treatment combination,2025-08-05,quercus,with-robinia,drought,mixed,1.0629166666666665,1.0977505821359013,24,0.2240773992563461
+Diameter increment,treatment combination,2025-09-01,fagus,without-robinia,control,mono,3.9537500000000003,1.074407555699736,48,0.1550773728756526
+Diameter increment,treatment combination,2025-09-01,fagus,without-robinia,control,mixed,4.9991666666666665,0.8934151217156249,24,0.18236759805748398
+Diameter increment,treatment combination,2025-09-01,fagus,without-robinia,drought,mono,2.4595833333333332,0.8045666425284504,48,0.11612919191119857
+Diameter increment,treatment combination,2025-09-01,fagus,without-robinia,drought,mixed,3.8325,1.0931337083576858,24,0.22313498384272412
+Diameter increment,treatment combination,2025-09-01,fagus,with-robinia,control,mono,2.343,0.8137794068891906,40,0.12866982193553805
+Diameter increment,treatment combination,2025-09-01,fagus,with-robinia,control,mixed,1.8849999999999998,0.6482954238013249,24,0.13233274924121824
+Diameter increment,treatment combination,2025-09-01,fagus,with-robinia,drought,mono,0.9643750000000001,0.6008430469109854,48,0.08672422371869311
+Diameter increment,treatment combination,2025-09-01,fagus,with-robinia,drought,mixed,1.5120833333333332,1.3425639946423953,24,0.27404972782554643
+Diameter increment,treatment combination,2025-09-01,quercus,without-robinia,control,mono,4.807291666666667,1.7136904802375306,48,0.24734991501820935
+Diameter increment,treatment combination,2025-09-01,quercus,without-robinia,control,mixed,4.25875,1.255576474217598,24,0.2562934745729895
+Diameter increment,treatment combination,2025-09-01,quercus,without-robinia,drought,mono,4.4025,1.239757182814613,48,0.17894353580694725
+Diameter increment,treatment combination,2025-09-01,quercus,without-robinia,drought,mixed,3.9175,0.7609104957934906,24,0.1553202045518515
+Diameter increment,treatment combination,2025-09-01,quercus,with-robinia,control,mono,1.89375,0.9773257808009477,56,0.13060065096494555
+Diameter increment,treatment combination,2025-09-01,quercus,with-robinia,control,mixed,2.31,0.865593538511606,24,0.17668854116696459
+Diameter increment,treatment combination,2025-09-01,quercus,with-robinia,drought,mono,1.78875,0.7445421983382697,48,0.10746540965840895
+Diameter increment,treatment combination,2025-09-01,quercus,with-robinia,drought,mixed,1.5999999999999999,1.1630806170421422,24,0.23741283678955477
+Diameter increment,treatment combination,2025-09-29,fagus,without-robinia,control,mono,4.240625,1.1001477777911126,48,0.15879265391401687
+Diameter increment,treatment combination,2025-09-29,fagus,without-robinia,control,mixed,5.182916666666666,0.8667654974306672,24,0.17692776627956489
+Diameter increment,treatment combination,2025-09-29,fagus,without-robinia,drought,mono,2.674583333333333,0.7676711350775187,48,0.11080378412152775
+Diameter increment,treatment combination,2025-09-29,fagus,without-robinia,drought,mixed,4.01875,1.235233871536603,24,0.25214105818893856
+Diameter increment,treatment combination,2025-09-29,fagus,with-robinia,control,mono,2.54225,0.8052153319263302,40,0.127315722788785
+Diameter increment,treatment combination,2025-09-29,fagus,with-robinia,control,mixed,2.0620833333333333,0.737987740953128,24,0.15064111681370138
+Diameter increment,treatment combination,2025-09-29,fagus,with-robinia,drought,mono,1.2781250000000002,0.5962708803605603,48,0.08606428832152617
+Diameter increment,treatment combination,2025-09-29,fagus,with-robinia,drought,mixed,1.6533333333333333,1.284024470397551,24,0.26210039747678365
+Diameter increment,treatment combination,2025-09-29,quercus,without-robinia,control,mono,6.411041666666667,2.223157845664043,48,0.32088519516129094
+Diameter increment,treatment combination,2025-09-29,quercus,without-robinia,control,mixed,5.429166666666666,1.7163482890355797,24,0.35034812741967586
+Diameter increment,treatment combination,2025-09-29,quercus,without-robinia,drought,mono,5.70125,1.5533952176209564,48,0.22421328676283414
+Diameter increment,treatment combination,2025-09-29,quercus,without-robinia,drought,mixed,4.6025,1.0740101610724906,24,0.21923140609933123
+Diameter increment,treatment combination,2025-09-29,quercus,with-robinia,control,mono,2.659642857142857,1.3179432520349332,56,0.1761175751544778
+Diameter increment,treatment combination,2025-09-29,quercus,with-robinia,control,mixed,3.34375,1.1941335316053847,24,0.24375148643173686
+Diameter increment,treatment combination,2025-09-29,quercus,with-robinia,drought,mono,2.7004166666666665,0.8928461741980762,48,0.1288712447545467
+Diameter increment,treatment combination,2025-09-29,quercus,with-robinia,drought,mixed,2.325833333333333,1.494424177798394,24,0.3050480579070292
+Diameter increment,treatment combination,2025-11-05,fagus,without-robinia,control,mono,4.274791666666666,1.0338422234111944,48,0.14922227149651357
+Diameter increment,treatment combination,2025-11-05,fagus,without-robinia,control,mixed,5.333333333333333,0.9033448312012259,24,0.1843944915186337
+Diameter increment,treatment combination,2025-11-05,fagus,without-robinia,drought,mono,2.77875,0.9174284713262392,48,0.13241939372060776
+Diameter increment,treatment combination,2025-11-05,fagus,without-robinia,drought,mixed,4.024583333333333,1.1216059106658542,24,0.22894684780174965
+Diameter increment,treatment combination,2025-11-05,fagus,with-robinia,control,mono,2.6344999999999996,0.8528893576603335,40,0.13485364811623157
+Diameter increment,treatment combination,2025-11-05,fagus,with-robinia,control,mixed,2.077916666666667,0.7627751344905661,24,0.15570082233205843
+Diameter increment,treatment combination,2025-11-05,fagus,with-robinia,drought,mono,1.2768749999999998,0.6340352237010313,48,0.09151510176987375
+Diameter increment,treatment combination,2025-11-05,fagus,with-robinia,drought,mixed,1.7466666666666666,1.2172837426602425,24,0.2484770034752485
+Diameter increment,treatment combination,2025-11-05,quercus,without-robinia,control,mono,6.620833333333333,2.273635979521763,48,0.3281710862040271
+Diameter increment,treatment combination,2025-11-05,quercus,without-robinia,control,mixed,5.610833333333333,1.5450423285792043,24,0.31538044466838316
+Diameter increment,treatment combination,2025-11-05,quercus,without-robinia,drought,mono,5.868333333333333,1.5450130252612595,48,0.22300342150901659
+Diameter increment,treatment combination,2025-11-05,quercus,without-robinia,drought,mixed,4.694583333333333,1.0813235817301856,24,0.2207242518398048
+Diameter increment,treatment combination,2025-11-05,quercus,with-robinia,control,mono,2.855892857142857,1.3593391131999861,56,0.18164932978698098
+Diameter increment,treatment combination,2025-11-05,quercus,with-robinia,control,mixed,3.473333333333333,1.2561800849389002,24,0.25641668609552815
+Diameter increment,treatment combination,2025-11-05,quercus,with-robinia,drought,mono,2.8904166666666664,0.9313887099798955,48,0.13443438060676774
+Diameter increment,treatment combination,2025-11-05,quercus,with-robinia,drought,mixed,2.498333333333333,1.6302804951153722,24,0.33277961255371546
+Diameter increment,treatment combination,2025-12-02,fagus,without-robinia,control,mono,4.274791666666666,1.0338422234111944,48,0.14922227149651357
+Diameter increment,treatment combination,2025-12-02,fagus,without-robinia,control,mixed,5.333333333333333,0.9033448312012259,24,0.1843944915186337
+Diameter increment,treatment combination,2025-12-02,fagus,without-robinia,drought,mono,2.77875,0.9174284713262392,48,0.13241939372060776
+Diameter increment,treatment combination,2025-12-02,fagus,without-robinia,drought,mixed,4.024583333333333,1.1216059106658542,24,0.22894684780174965
+Diameter increment,treatment combination,2025-12-02,fagus,with-robinia,control,mono,2.6344999999999996,0.8528893576603335,40,0.13485364811623157
+Diameter increment,treatment combination,2025-12-02,fagus,with-robinia,control,mixed,2.077916666666667,0.7627751344905661,24,0.15570082233205843
+Diameter increment,treatment combination,2025-12-02,fagus,with-robinia,drought,mono,1.2768749999999998,0.6340352237010313,48,0.09151510176987375
+Diameter increment,treatment combination,2025-12-02,fagus,with-robinia,drought,mixed,1.7466666666666666,1.2172837426602425,24,0.2484770034752485
+Diameter increment,treatment combination,2025-12-02,quercus,without-robinia,control,mono,6.640625,2.332048142134729,48,0.33660215565616314
+Diameter increment,treatment combination,2025-12-02,quercus,without-robinia,control,mixed,5.647083333333333,1.4403274964748292,24,0.29400561907197237
+Diameter increment,treatment combination,2025-12-02,quercus,without-robinia,drought,mono,5.815416666666667,1.5413905829081787,48,0.22248056699209778
+Diameter increment,treatment combination,2025-12-02,quercus,without-robinia,drought,mixed,4.819583333333333,1.0538891912987018,24,0.21512423034301908
+Diameter increment,treatment combination,2025-12-02,quercus,with-robinia,control,mono,2.767857142857143,1.4589295132648883,56,0.19495765678893143
+Diameter increment,treatment combination,2025-12-02,quercus,with-robinia,control,mixed,3.402083333333333,1.203155196778966,24,0.2455930261238628
+Diameter increment,treatment combination,2025-12-02,quercus,with-robinia,drought,mono,2.84625,0.9885894206156525,48,0.14269059202761578
+Diameter increment,treatment combination,2025-12-02,quercus,with-robinia,drought,mixed,2.60625,1.5333135828910736,24,0.3129863244801508
+Diameter increment,Robinia mean,2025-03-07,fagus,without-robinia,,,0,0,24,0
+Diameter increment,Robinia mean,2025-03-07,fagus,with-robinia,,,0,0,23,0
+Diameter increment,Robinia mean,2025-03-07,quercus,without-robinia,,,0,0,24,0
+Diameter increment,Robinia mean,2025-03-07,quercus,with-robinia,,,0,0,25,0
+Diameter increment,Robinia mean,2025-05-08,fagus,without-robinia,,,0.1935416666666666,0.10204343349202144,24,0.02082952863809033
+Diameter increment,Robinia mean,2025-05-08,fagus,with-robinia,,,0.24766304347826082,0.24507081083257218,23,0.051100796523246006
+Diameter increment,Robinia mean,2025-05-08,quercus,without-robinia,,,0.9063541666666666,0.24790670269832082,24,0.05060374378556131
+Diameter increment,Robinia mean,2025-05-08,quercus,with-robinia,,,0.6386999999999999,0.26909050134976276,25,0.053818100269952554
+Diameter increment,Robinia mean,2025-06-11,fagus,without-robinia,,,1.7705729166666666,0.35463104279971036,24,0.0723887584841994
+Diameter increment,Robinia mean,2025-06-11,fagus,with-robinia,,,1.213804347826087,0.5101549004765487,23,0.10637465015121285
+Diameter increment,Robinia mean,2025-06-11,quercus,without-robinia,,,1.60921875,0.3063891237897169,24,0.06254141800193641
+Diameter increment,Robinia mean,2025-06-11,quercus,with-robinia,,,0.9833999999999999,0.4325408699379363,25,0.08650817398758726
+Diameter increment,Robinia mean,2025-07-09,fagus,without-robinia,,,2.9215625,0.7424295686475412,24,0.15154780109509097
+Diameter increment,Robinia mean,2025-07-09,fagus,with-robinia,,,1.3728804347826087,0.5623925951477983,23,0.11726696244728084
+Diameter increment,Robinia mean,2025-07-09,quercus,without-robinia,,,2.5016666666666665,0.2953543530076706,24,0.06028895484822092
+Diameter increment,Robinia mean,2025-07-09,quercus,with-robinia,,,1.1213499999999998,0.5005075444819321,25,0.10010150889638643
+Diameter increment,Robinia mean,2025-08-05,fagus,without-robinia,,,3.610052083333333,0.9745314843642612,24,0.19892540624746025
+Diameter increment,Robinia mean,2025-08-05,fagus,with-robinia,,,1.5616304347826087,0.6607499865406269,23,0.13777589628173886
+Diameter increment,Robinia mean,2025-08-05,quercus,without-robinia,,,3.4482291666666667,0.40477515173259465,24,0.08262438185854128
+Diameter increment,Robinia mean,2025-08-05,quercus,with-robinia,,,1.4569,0.5384738174538604,25,0.10769476349077207
+Diameter increment,Robinia mean,2025-09-01,fagus,without-robinia,,,3.8112500000000002,1.0371834247237754,24,0.21171418002046805
+Diameter increment,Robinia mean,2025-09-01,fagus,with-robinia,,,1.6471195652173913,0.7530505607103456,23,0.15702189642186934
+Diameter increment,Robinia mean,2025-09-01,quercus,without-robinia,,,4.346510416666667,0.5063341957853112,24,0.10335503491637413
+Diameter increment,Robinia mean,2025-09-01,quercus,with-robinia,,,1.89795,0.49230205412937283,25,0.09846041082587456
+Diameter increment,Robinia mean,2025-09-29,fagus,without-robinia,,,4.02921875,1.0500917928626525,24,0.21434908963315544
+Diameter increment,Robinia mean,2025-09-29,fagus,with-robinia,,,1.8553260869565218,0.7300052748672385,23,0.15221662214751605
+Diameter increment,Robinia mean,2025-09-29,quercus,without-robinia,,,5.5359895833333335,0.9263919447042177,24,0.18909896386249522
+Diameter increment,Robinia mean,2025-09-29,quercus,with-robinia,,,2.7535,0.7572902624929668,25,0.15145805249859337
+Diameter increment,Robinia mean,2025-11-05,fagus,without-robinia,,,4.102864583333333,1.0389342155471641,24,0.21207155870077218
+Diameter increment,Robinia mean,2025-11-05,fagus,with-robinia,,,1.903532608695652,0.7674041852553521,23,0.1600148340334666
+Diameter increment,Robinia mean,2025-11-05,quercus,without-robinia,,,5.698645833333333,0.9557462737382201,24,0.1950908911854178
+Diameter increment,Robinia mean,2025-11-05,quercus,with-robinia,,,2.9265499999999998,0.7775663389437157,25,0.15551326778874314
+Diameter increment,Robinia mean,2025-12-02,fagus,without-robinia,,,4.102864583333333,1.0389342155471641,24,0.21207155870077218
+Diameter increment,Robinia mean,2025-12-02,fagus,with-robinia,,,1.903532608695652,0.7674041852553521,23,0.1600148340334666
+Diameter increment,Robinia mean,2025-12-02,quercus,without-robinia,,,5.730677083333333,0.8787383633936889,24,0.17937171731024318
+Diameter increment,Robinia mean,2025-12-02,quercus,with-robinia,,,2.9001,0.7342730354745433,25,0.14685460709490866
+Quantum yield,treatment combination,2025-06-18,fagus,without-robinia,control,mono,0.7454166666666666,0.07621361094157411,24,0.015557038188487799
+Quantum yield,treatment combination,2025-06-18,fagus,without-robinia,control,mixed,0.6966666666666667,0.12047884260380122,12,0.0347792461044796
+Quantum yield,treatment combination,2025-06-18,fagus,without-robinia,drought,mono,0.75375,0.08520116859782374,24,0.017391615712792456
+Quantum yield,treatment combination,2025-06-18,fagus,without-robinia,drought,mixed,0.7641666666666667,0.05946096249310183,12,0.017164901350833293
+Quantum yield,treatment combination,2025-06-18,fagus,with-robinia,control,mono,0.8215,0.022070461326349683,20,0.004935105182049806
+Quantum yield,treatment combination,2025-06-18,fagus,with-robinia,control,mixed,0.795,0.06459665063087466,12,0.018647446815241848
+Quantum yield,treatment combination,2025-06-18,fagus,with-robinia,drought,mono,0.7066666666666667,0.10132456102380441,24,0.02068278940998476
+Quantum yield,treatment combination,2025-06-18,fagus,with-robinia,drought,mixed,0.7033333333333334,0.11586303303574623,12,0.0334467766561573
+Quantum yield,treatment combination,2025-06-18,quercus,without-robinia,control,mono,0.7670833333333333,0.05060324501251973,24,0.010329344134142592
+Quantum yield,treatment combination,2025-06-18,quercus,without-robinia,control,mixed,0.7408333333333333,0.03964807305493798,12,0.011445412825559194
+Quantum yield,treatment combination,2025-06-18,quercus,without-robinia,drought,mono,0.7820833333333334,0.039229443984873415,24,0.008007676721336223
+Quantum yield,treatment combination,2025-06-18,quercus,without-robinia,drought,mixed,0.7975,0.030785179433085588,12,0.008886915816371448
+Quantum yield,treatment combination,2025-06-18,quercus,with-robinia,control,mono,0.7346428571428572,0.0878754228842738,28,0.016606893950458765
+Quantum yield,treatment combination,2025-06-18,quercus,with-robinia,control,mixed,0.7816666666666667,0.037618499639825054,12,0.010859525446781417
+Quantum yield,treatment combination,2025-06-18,quercus,with-robinia,drought,mono,0.7408333333333333,0.08612007121842544,24,0.01757918592477416
+Quantum yield,treatment combination,2025-06-18,quercus,with-robinia,drought,mixed,0.755,0.06529652642856561,12,0.018849483555339934
+Quantum yield,treatment combination,2025-07-03,fagus,without-robinia,control,mono,0.7620833333333333,0.037414152944837756,24,0.00763713198944176
+Quantum yield,treatment combination,2025-07-03,fagus,without-robinia,control,mixed,0.7608333333333334,0.046604395682914926,12,0.013453530196475383
+Quantum yield,treatment combination,2025-07-03,fagus,without-robinia,drought,mono,0.7729166666666667,0.036887510159905115,24,0.007529631481124822
+Quantum yield,treatment combination,2025-07-03,fagus,without-robinia,drought,mixed,0.7908333333333334,0.030289011909011558,12,0.008743684589577803
+Quantum yield,treatment combination,2025-07-03,fagus,with-robinia,control,mono,0.733,0.0644899012902102,20,0.01442038031471614
+Quantum yield,treatment combination,2025-07-03,fagus,with-robinia,control,mixed,0.445,0.2873230680863363,12,0.08294302535201772
+Quantum yield,treatment combination,2025-07-03,fagus,with-robinia,drought,mono,0.10833333333333332,0.2162258615161605,24,0.044136919159024256
+Quantum yield,treatment combination,2025-07-03,fagus,with-robinia,drought,mixed,0.2816666666666666,0.3580968211717793,12,0.10337364804973805
+Quantum yield,treatment combination,2025-07-03,quercus,without-robinia,control,mono,0.7275,0.06549145314300643,24,0.013368386892813283
+Quantum yield,treatment combination,2025-07-03,quercus,without-robinia,control,mixed,0.7616666666666666,0.05219427578041894,12,0.01506718958599122
+Quantum yield,treatment combination,2025-07-03,quercus,without-robinia,drought,mono,0.7575,0.047844857976407584,24,0.00976629073817736
+Quantum yield,treatment combination,2025-07-03,quercus,without-robinia,drought,mixed,0.77,0.051698426211319794,12,0.014924050144892745
+Quantum yield,treatment combination,2025-07-03,quercus,with-robinia,control,mono,0.6842857142857143,0.0825262504333137,28,0.01559599537722746
+Quantum yield,treatment combination,2025-07-03,quercus,with-robinia,control,mixed,0.6308333333333334,0.14336592300399656,12,0.04138617711948829
+Quantum yield,treatment combination,2025-07-03,quercus,with-robinia,drought,mono,0.68375,0.07988102566235343,24,0.01630564608357788
+Quantum yield,treatment combination,2025-07-03,quercus,with-robinia,drought,mixed,0.7266666666666667,0.0879393730551528,12,0.0253859103528797
+Quantum yield,treatment combination,2025-07-17,fagus,without-robinia,control,mono,0.7670833333333333,0.028964621098200454,24,0.005912378523636938
+Quantum yield,treatment combination,2025-07-17,fagus,without-robinia,control,mixed,0.7733333333333333,0.026742316936860872,12,0.007719841941125457
+Quantum yield,treatment combination,2025-07-17,fagus,without-robinia,drought,mono,0.7320833333333333,0.05389032071408247,24,0.011000315652036739
+Quantum yield,treatment combination,2025-07-17,fagus,without-robinia,drought,mixed,0.7541666666666667,0.032039275140289175,12,0.00924894206344322
+Quantum yield,treatment combination,2025-07-17,fagus,with-robinia,control,mono,0.7625,0.045638741622026656,20,0.010205132867440061
+Quantum yield,treatment combination,2025-07-17,fagus,with-robinia,control,mixed,0.5516666666666666,0.33512096413990666,12,0.09674108942863102
+Quantum yield,treatment combination,2025-07-17,fagus,with-robinia,drought,mono,0.22708333333333333,0.30657262657047324,24,0.062578875350206
+Quantum yield,treatment combination,2025-07-17,fagus,with-robinia,drought,mixed,0.2833333333333333,0.35466586921760423,12,0.10238321753257822
+Quantum yield,treatment combination,2025-07-17,quercus,without-robinia,control,mono,0.7766666666666666,0.026484887678869237,24,0.005406205059012898
+Quantum yield,treatment combination,2025-07-17,quercus,without-robinia,control,mixed,0.7533333333333333,0.0357601437187811,12,0.010323064301148986
+Quantum yield,treatment combination,2025-07-17,quercus,without-robinia,drought,mono,0.7620833333333333,0.030642279212916252,24,0.006254829052294714
+Quantum yield,treatment combination,2025-07-17,quercus,without-robinia,drought,mixed,0.7391666666666666,0.06316764611058034,12,0.01823492874300929
+Quantum yield,treatment combination,2025-07-17,quercus,with-robinia,control,mono,0.7096428571428571,0.15824224614687593,28,0.02990497358635019
+Quantum yield,treatment combination,2025-07-17,quercus,with-robinia,control,mixed,0.7466666666666667,0.07450849046595397,12,0.021508748513715596
+Quantum yield,treatment combination,2025-07-17,quercus,with-robinia,drought,mono,0.6970833333333333,0.08888092506595388,24,0.018142742856511192
+Quantum yield,treatment combination,2025-07-17,quercus,with-robinia,drought,mixed,0.6908333333333333,0.09019759453891252,12,0.026037802743648933
+Quantum yield,treatment combination,2025-07-31,fagus,without-robinia,control,mono,0.7770833333333333,0.03355451977158145,24,0.00684928766704201
+Quantum yield,treatment combination,2025-07-31,fagus,without-robinia,control,mixed,0.7666666666666666,0.029024545516239238,12,0.008378664583453635
+Quantum yield,treatment combination,2025-07-31,fagus,without-robinia,drought,mono,0.7566666666666666,0.04439610898213517,24,0.00906231779760202
+Quantum yield,treatment combination,2025-07-31,fagus,without-robinia,drought,mixed,0.7566666666666667,0.048116021397778916,12,0.013889898953170726
+Quantum yield,treatment combination,2025-07-31,fagus,with-robinia,control,mono,0.77,0.06680687011630498,20,0.014938470294405723
+Quantum yield,treatment combination,2025-07-31,fagus,with-robinia,control,mixed,0.5725,0.3498083891088221,12,0.10098098380838391
+Quantum yield,treatment combination,2025-07-31,fagus,with-robinia,drought,mono,0.30874999999999997,0.34274229766501774,24,0.06996197854569998
+Quantum yield,treatment combination,2025-07-31,fagus,with-robinia,drought,mixed,0.355,0.3653267528715032,12,0.10546074955626714
+Quantum yield,treatment combination,2025-07-31,quercus,without-robinia,control,mono,0.7729166666666667,0.02367885989225625,24,0.004833427035573473
+Quantum yield,treatment combination,2025-07-31,quercus,without-robinia,control,mixed,0.7808333333333334,0.032879486097878836,12,0.009491490074713452
+Quantum yield,treatment combination,2025-07-31,quercus,without-robinia,drought,mono,0.7508333333333334,0.04471325712044293,24,0.00912705539024599
+Quantum yield,treatment combination,2025-07-31,quercus,without-robinia,drought,mixed,0.765,0.07440674456232874,12,0.02147937700129211
+Quantum yield,treatment combination,2025-07-31,quercus,with-robinia,control,mono,0.7503571428571428,0.15348982697275734,28,0.029006850782017847
+Quantum yield,treatment combination,2025-07-31,quercus,with-robinia,control,mixed,0.7925,0.025271255679850294,12,0.007295183134760713
+Quantum yield,treatment combination,2025-07-31,quercus,with-robinia,drought,mono,0.7324999999999999,0.07072604833470816,24,0.014436894161954579
+Quantum yield,treatment combination,2025-07-31,quercus,with-robinia,drought,mixed,0.7391666666666666,0.04999242366841623,12,0.014431569631200966
+Quantum yield,treatment combination,2025-08-14,fagus,without-robinia,control,mono,0.7504166666666666,0.11098292726778984,24,0.022654295163875227
+Quantum yield,treatment combination,2025-08-14,fagus,without-robinia,control,mixed,0.7708333333333334,0.03396745322787506,12,0.009805559132399845
+Quantum yield,treatment combination,2025-08-14,fagus,without-robinia,drought,mono,0.7783333333333333,0.04093119004916154,24,0.008355044182110841
+Quantum yield,treatment combination,2025-08-14,fagus,without-robinia,drought,mixed,0.7775000000000001,0.035194266061907946,12,0.010159709492386933
+Quantum yield,treatment combination,2025-08-14,fagus,with-robinia,control,mono,0.773,0.04366137640379294,20,0.009762980563008632
+Quantum yield,treatment combination,2025-08-14,fagus,with-robinia,control,mixed,0.5466666666666666,0.2826283564662043,12,0.0815877788431923
+Quantum yield,treatment combination,2025-08-14,fagus,with-robinia,drought,mono,0.4965217391304348,0.34486636009345806,23,0.07190960700288357
+Quantum yield,treatment combination,2025-08-14,fagus,with-robinia,drought,mixed,0.2816666666666666,0.36825962514936594,12,0.10630739685582856
+Quantum yield,treatment combination,2025-08-14,quercus,without-robinia,control,mono,0.7566666666666666,0.04310418789970128,24,0.00879860551094309
+Quantum yield,treatment combination,2025-08-14,quercus,without-robinia,control,mixed,0.7808333333333334,0.05550730227691318,12,0.016023577955782877
+Quantum yield,treatment combination,2025-08-14,quercus,without-robinia,drought,mono,0.7033333333333334,0.14851926142589303,24,0.030316367289038193
+Quantum yield,treatment combination,2025-08-14,quercus,without-robinia,drought,mixed,0.7716666666666666,0.03433348043510707,12,0.009911222085712908
+Quantum yield,treatment combination,2025-08-14,quercus,with-robinia,control,mono,0.6546428571428571,0.1573267923041704,28,0.029731969071738956
+Quantum yield,treatment combination,2025-08-14,quercus,with-robinia,control,mixed,0.6416666666666667,0.16743157806499148,12,0.04833333333333334
+Quantum yield,treatment combination,2025-08-14,quercus,with-robinia,drought,mono,0.6608333333333333,0.1376484705664228,24,0.028097376396853738
+Quantum yield,treatment combination,2025-08-14,quercus,with-robinia,drought,mixed,0.6675,0.10847077528490835,12,0.031312815654974624
+Quantum yield,treatment combination,2025-08-29,fagus,without-robinia,control,mono,0.7225,0.08226415564720656,24,0.016792100454712612
+Quantum yield,treatment combination,2025-08-29,fagus,without-robinia,control,mixed,0.7433333333333333,0.053143601912576686,12,0.01534123643496623
+Quantum yield,treatment combination,2025-08-29,fagus,without-robinia,drought,mono,0.7424999999999999,0.04045931934349777,24,0.008258723977657235
+Quantum yield,treatment combination,2025-08-29,fagus,without-robinia,drought,mixed,0.7441666666666666,0.056802422056767526,12,0.016397446832548734
+Quantum yield,treatment combination,2025-08-29,fagus,with-robinia,control,mono,0.159375,0.23379389071002973,16,0.05844847267750743
+Quantum yield,treatment combination,2025-08-29,fagus,with-robinia,control,mixed,0.242,0.33184333653096004,5,0.14840485167271317
+Quantum yield,treatment combination,2025-08-29,fagus,with-robinia,drought,mono,0.28285714285714286,0.3378038314931146,21,0.07371483942206215
+Quantum yield,treatment combination,2025-08-29,fagus,with-robinia,drought,mixed,0.1809090909090909,0.31788219659032635,11,0.09584508851128229
+Quantum yield,treatment combination,2025-08-29,quercus,without-robinia,control,mono,0.76625,0.05531038899189543,24,0.01129018587541629
+Quantum yield,treatment combination,2025-08-29,quercus,without-robinia,control,mixed,0.7275,0.07337636478520115,12,0.02118193198044603
+Quantum yield,treatment combination,2025-08-29,quercus,without-robinia,drought,mono,0.7525,0.07278616686539088,24,0.014857414096106651
+Quantum yield,treatment combination,2025-08-29,quercus,without-robinia,drought,mixed,0.7833333333333333,0.030846639225613433,12,0.008904657730251593
+Quantum yield,treatment combination,2025-08-29,quercus,with-robinia,control,mono,0.6971428571428572,0.15505929911935706,28,0.02930345313841396
+Quantum yield,treatment combination,2025-08-29,quercus,with-robinia,control,mixed,0.7324999999999999,0.043301270189221974,12,0.012500000000000013
+Quantum yield,treatment combination,2025-08-29,quercus,with-robinia,drought,mono,0.7391666666666666,0.04708148963941846,24,0.009610468828892334
+Quantum yield,treatment combination,2025-08-29,quercus,with-robinia,drought,mixed,0.765,0.061422530660395915,12,0.017731157305543813
+Quantum yield,treatment combination,2025-09-10,fagus,without-robinia,control,mono,0.735,0.03296902366978934,24,0.006729773775727068
+Quantum yield,treatment combination,2025-09-10,fagus,without-robinia,control,mixed,0.7516666666666667,0.037132033054868965,12,0.01071909463989334
+Quantum yield,treatment combination,2025-09-10,fagus,without-robinia,drought,mono,0.75625,0.08972482085945266,24,0.018315002364023954
+Quantum yield,treatment combination,2025-09-10,fagus,without-robinia,drought,mixed,0.7683333333333333,0.030993645487519872,12,0.008947094782693715
+Quantum yield,treatment combination,2025-09-10,fagus,with-robinia,control,mono,0.22349999999999998,0.3203168661448256,20,0.0716250287039531
+Quantum yield,treatment combination,2025-09-10,fagus,with-robinia,control,mixed,0.10583333333333332,0.24791708046820574,12,0.07156749657251235
+Quantum yield,treatment combination,2025-09-10,fagus,with-robinia,drought,mono,0.30791666666666667,0.37331626837292264,24,0.07620286418279719
+Quantum yield,treatment combination,2025-09-10,fagus,with-robinia,drought,mixed,0.29666666666666663,0.36859273739536164,12,0.10640355807827655
+Quantum yield,treatment combination,2025-09-10,quercus,without-robinia,control,mono,0.7354166666666666,0.044622003410938395,24,0.009108428304794133
+Quantum yield,treatment combination,2025-09-10,quercus,without-robinia,control,mixed,0.7591666666666667,0.026443192398846682,12,0.007633492124853599
+Quantum yield,treatment combination,2025-09-10,quercus,without-robinia,drought,mono,0.7625,0.04811670594818757,24,0.009821781473049983
+Quantum yield,treatment combination,2025-09-10,quercus,without-robinia,drought,mixed,0.7716666666666667,0.03904154741096242,12,0.011270323953649346
+Quantum yield,treatment combination,2025-09-10,quercus,with-robinia,control,mono,0.6939285714285715,0.15597576463489177,28,0.029476648841219064
+Quantum yield,treatment combination,2025-09-10,quercus,with-robinia,control,mixed,0.7508333333333334,0.0331548250522066,12,0.009570973584413214
+Quantum yield,treatment combination,2025-09-10,quercus,with-robinia,drought,mono,0.7595833333333333,0.04358691134480296,24,0.008897141021557885
+Quantum yield,treatment combination,2025-09-10,quercus,with-robinia,drought,mixed,0.76,0.030451153135353154,12,0.008790490729915331
+Quantum yield,treatment combination,2025-09-25,fagus,without-robinia,control,mono,0.7416666666666666,0.04114308718592233,24,0.00839829750402923
+Quantum yield,treatment combination,2025-09-25,fagus,without-robinia,control,mixed,0.7533333333333333,0.03915780041490246,12,0.011303883305208788
+Quantum yield,treatment combination,2025-09-25,fagus,without-robinia,drought,mono,0.7879166666666667,0.028738576810646888,24,0.005866237426655505
+Quantum yield,treatment combination,2025-09-25,fagus,without-robinia,drought,mixed,0.7925,0.024167972796469935,12,0.006976692799904735
+Quantum yield,treatment combination,2025-09-25,fagus,with-robinia,control,mono,0.18699999999999997,0.3331050095216538,20,0.07448454449361325
+Quantum yield,treatment combination,2025-09-25,fagus,with-robinia,control,mixed,0.1025,0.23939791903097998,12,0.06910822649798627
+Quantum yield,treatment combination,2025-09-25,fagus,with-robinia,drought,mono,0.2845833333333333,0.3769901298058273,24,0.0769527880074894
+Quantum yield,treatment combination,2025-09-25,fagus,with-robinia,drought,mixed,0.3175,0.3928479928096177,12,0.11340544719961848
+Quantum yield,treatment combination,2025-09-25,quercus,without-robinia,control,mono,0.7408333333333333,0.04312939748635763,24,0.008803751396270968
+Quantum yield,treatment combination,2025-09-25,quercus,without-robinia,control,mixed,0.7366666666666667,0.05297226261035681,12,0.015291775038836528
+Quantum yield,treatment combination,2025-09-25,quercus,without-robinia,drought,mono,0.7725,0.04035171458024082,24,0.008236759247334526
+Quantum yield,treatment combination,2025-09-25,quercus,without-robinia,drought,mixed,0.7916666666666666,0.028550858396053827,12,0.008241922890278282
+Quantum yield,treatment combination,2025-09-25,quercus,with-robinia,control,mono,0.7117857142857142,0.14638998071940051,28,0.027665105958219572
+Quantum yield,treatment combination,2025-09-25,quercus,with-robinia,control,mixed,0.7424999999999999,0.04092676385936227,12,0.011814539065631527
+Quantum yield,treatment combination,2025-09-25,quercus,with-robinia,drought,mono,0.7908333333333334,0.024122273068079958,24,0.004923938371073064
+Quantum yield,treatment combination,2025-09-25,quercus,with-robinia,drought,mixed,0.7941666666666667,0.021514618004482206,12,0.006210735248199885
+Quantum yield,treatment combination,2025-10-07,fagus,without-robinia,control,mono,0.6970833333333333,0.06931209610642769,24,0.01414827237195804
+Quantum yield,treatment combination,2025-10-07,fagus,without-robinia,control,mixed,0.6516666666666666,0.12619129298110238,12,0.0364282884860132
+Quantum yield,treatment combination,2025-10-07,fagus,without-robinia,drought,mono,0.6475,0.10669949675933647,24,0.021779943572676805
+Quantum yield,treatment combination,2025-10-07,fagus,without-robinia,drought,mixed,0.6958333333333333,0.08753787059255433,12,0.025270006575448936
+Quantum yield,treatment combination,2025-10-07,fagus,with-robinia,control,mono,0.09249999999999999,0.20657291308652412,20,0.04619110759716238
+Quantum yield,treatment combination,2025-10-07,fagus,with-robinia,control,mixed,0.05333333333333333,0.15593316361554238,12,0.04501402699451168
+Quantum yield,treatment combination,2025-10-07,fagus,with-robinia,drought,mono,0.22,0.32004075827388256,24,0.0653280462220355
+Quantum yield,treatment combination,2025-10-07,fagus,with-robinia,drought,mixed,0.2583333333333333,0.3384143058800003,12,0.09769179529871927
+Quantum yield,treatment combination,2025-10-07,quercus,without-robinia,control,mono,0.6920833333333333,0.06100457336146605,24,0.012452506392647918
+Quantum yield,treatment combination,2025-10-07,quercus,without-robinia,control,mixed,0.6916666666666667,0.061175356496094416,12,0.017659804270395717
+Quantum yield,treatment combination,2025-10-07,quercus,without-robinia,drought,mono,0.6941666666666666,0.05339896324239188,24,0.010900017728124572
+Quantum yield,treatment combination,2025-10-07,quercus,without-robinia,drought,mixed,0.7025,0.052936497119404576,12,0.015281450430922041
+Quantum yield,treatment combination,2025-10-07,quercus,with-robinia,control,mono,0.6153571428571428,0.15638229848810664,28,0.02955347651801445
+Quantum yield,treatment combination,2025-10-07,quercus,with-robinia,control,mixed,0.6233333333333333,0.17562011343358208,12,0.05069715988299562
+Quantum yield,treatment combination,2025-10-07,quercus,with-robinia,drought,mono,0.6891666666666666,0.06426282086033522,24,0.013117593378308664
+Quantum yield,treatment combination,2025-10-07,quercus,with-robinia,drought,mixed,0.7225,0.057544449222871503,12,0.016611651624596806
+Quantum yield,treatment combination,2025-10-20,fagus,without-robinia,control,mono,0.6766666666666666,0.12383954087470599,24,0.025278640426964205
+Quantum yield,treatment combination,2025-10-20,fagus,without-robinia,control,mixed,0.6625,0.12166459109894186,12,0.03512154221090991
+Quantum yield,treatment combination,2025-10-20,fagus,without-robinia,drought,mono,0.5775,0.24585697503612353,24,0.05018534487855704
+Quantum yield,treatment combination,2025-10-20,fagus,without-robinia,drought,mixed,0.725,0.044415394546567705,12,0.01282161999881215
+Quantum yield,treatment combination,2025-10-20,fagus,with-robinia,control,mono,0.083,0.19001661977172862,20,0.042489007866431575
+Quantum yield,treatment combination,2025-10-20,fagus,with-robinia,control,mixed,0,0,12,0
+Quantum yield,treatment combination,2025-10-20,fagus,with-robinia,drought,mono,0.20500000000000002,0.3279581097322194,24,0.06694416882096929
+Quantum yield,treatment combination,2025-10-20,fagus,with-robinia,drought,mixed,0.13916666666666666,0.27825620415637664,12,0.08032564718668377
+Quantum yield,treatment combination,2025-10-20,quercus,without-robinia,control,mono,0.6770833333333333,0.054968699921086835,24,0.011220438885902392
+Quantum yield,treatment combination,2025-10-20,quercus,without-robinia,control,mixed,0.6908333333333333,0.05089353117196248,12,0.014691696961071574
+Quantum yield,treatment combination,2025-10-20,quercus,without-robinia,drought,mono,0.6954166666666667,0.06801401177038043,24,0.013883302016423434
+Quantum yield,treatment combination,2025-10-20,quercus,without-robinia,drought,mixed,0.7258333333333333,0.0416606056197706,12,0.012026380934588696
+Quantum yield,treatment combination,2025-10-20,quercus,with-robinia,control,mono,0.6542857142857142,0.14568938473820534,28,0.027532705762807166
+Quantum yield,treatment combination,2025-10-20,quercus,with-robinia,control,mixed,0.7141666666666666,0.04581749037477308,12,0.013226370200734165
+Quantum yield,treatment combination,2025-10-20,quercus,with-robinia,drought,mono,0.7033333333333333,0.1009806983996217,24,0.020612598745746256
+Quantum yield,treatment combination,2025-10-20,quercus,with-robinia,drought,mixed,0.7191666666666666,0.04501683186892601,12,0.012995239998794279
+Quantum yield,treatment combination,2025-11-12,fagus,without-robinia,control,mono,0.05,0.1571761681238188,24,0.03208345096910487
+Quantum yield,treatment combination,2025-11-12,fagus,without-robinia,control,mixed,0.048333333333333325,0.16743157806499145,12,0.04833333333333333
+Quantum yield,treatment combination,2025-11-12,fagus,without-robinia,drought,mono,0,0,24,0
+Quantum yield,treatment combination,2025-11-12,fagus,without-robinia,drought,mixed,0.05916666666666666,0.19570192238259293,12,0.05649427878425864
+Quantum yield,treatment combination,2025-11-12,fagus,with-robinia,control,mono,0,0,20,0
+Quantum yield,treatment combination,2025-11-12,fagus,with-robinia,control,mixed,0.05916666666666666,0.20495934556231712,12,0.059166666666666666
+Quantum yield,treatment combination,2025-11-12,fagus,with-robinia,drought,mono,0,0,24,0
+Quantum yield,treatment combination,2025-11-12,fagus,with-robinia,drought,mixed,0,0,12,0
+Quantum yield,treatment combination,2025-11-12,quercus,without-robinia,control,mono,0.6516666666666666,0.07275131354957382,24,0.014850299692806993
+Quantum yield,treatment combination,2025-11-12,quercus,without-robinia,control,mixed,0.6541666666666667,0.08005206639015217,12,0.023109041039770073
+Quantum yield,treatment combination,2025-11-12,quercus,without-robinia,drought,mono,0.6420833333333333,0.07377870357663703,24,0.015060014803901083
+Quantum yield,treatment combination,2025-11-12,quercus,without-robinia,drought,mixed,0.6666666666666666,0.07714606374608592,12,0.022270150335361366
+Quantum yield,treatment combination,2025-11-12,quercus,with-robinia,control,mono,0.5789285714285715,0.1457887687010391,28,0.02755148756637618
+Quantum yield,treatment combination,2025-11-12,quercus,with-robinia,control,mixed,0.5841666666666666,0.19778125351616174,12,0.057094529979108806
+Quantum yield,treatment combination,2025-11-12,quercus,with-robinia,drought,mono,0.645,0.08934544585848889,24,0.01823756276622986
+Quantum yield,treatment combination,2025-11-12,quercus,with-robinia,drought,mixed,0.6433333333333333,0.07877855422677293,12,0.022741409744598443
+Quantum yield,Robinia mean,2025-06-18,fagus,without-robinia,,,0.74,0.055872525720919254,24,0.011404931554731752
+Quantum yield,Robinia mean,2025-06-18,fagus,with-robinia,,,0.753804347826087,0.08065030281327853,23,0.016816750634636425
+Quantum yield,Robinia mean,2025-06-18,quercus,without-robinia,,,0.771875,0.03206862546369015,24,0.006545980761538706
+Quantum yield,Robinia mean,2025-06-18,quercus,with-robinia,,,0.7523,0.0615888585703616,25,0.01231777171407232
+Quantum yield,Robinia mean,2025-07-03,fagus,without-robinia,,,0.7716666666666666,0.026382086588320204,24,0.005385220874275666
+Quantum yield,Robinia mean,2025-07-03,fagus,with-robinia,,,0.37717391304347825,0.31568315562139676,23,0.0658244882220839
+Quantum yield,Robinia mean,2025-07-03,quercus,without-robinia,,,0.7541666666666667,0.043754916907968074,24,0.00893143501353317
+Quantum yield,Robinia mean,2025-07-03,quercus,with-robinia,,,0.6815,0.07574972497199796,25,0.015149944994399592
+Quantum yield,Robinia mean,2025-07-17,fagus,without-robinia,,,0.7566666666666666,0.02699302110557093,24,0.005509927360402153
+Quantum yield,Robinia mean,2025-07-17,fagus,with-robinia,,,0.44282608695652176,0.33507063735249953,23,0.06986705761528704
+Quantum yield,Robinia mean,2025-07-17,quercus,without-robinia,,,0.7578125,0.026939066710214597,24,0.005498913965568536
+Quantum yield,Robinia mean,2025-07-17,quercus,with-robinia,,,0.711,0.07222288995417821,25,0.014444577990835641
+Quantum yield,Robinia mean,2025-07-31,fagus,without-robinia,,,0.7642708333333333,0.029977157668532536,24,0.006119061685572046
+Quantum yield,Robinia mean,2025-07-31,fagus,with-robinia,,,0.4898913043478261,0.321039220080724,23,0.06694130486447245
+Quantum yield,Robinia mean,2025-07-31,quercus,without-robinia,,,0.7673958333333333,0.029777062651392055,24,0.0060782174612330755
+Quantum yield,Robinia mean,2025-07-31,quercus,with-robinia,,,0.7535,0.05120424787066012,25,0.010240849574132025
+Quantum yield,Robinia mean,2025-08-14,fagus,without-robinia,,,0.7692708333333333,0.0322227232698842,24,0.006577435844510182
+Quantum yield,Robinia mean,2025-08-14,fagus,with-robinia,,,0.514963768115942,0.29185864658628174,23,0.06085673468042941
+Quantum yield,Robinia mean,2025-08-14,quercus,without-robinia,,,0.7531249999999999,0.057734634695980024,24,0.011785032957594739
+Quantum yield,Robinia mean,2025-08-14,quercus,with-robinia,,,0.6561,0.06770832051281929,25,0.013541664102563859
+Quantum yield,Robinia mean,2025-08-29,fagus,without-robinia,,,0.738125,0.033921664874031275,24,0.00692423084725567
+Quantum yield,Robinia mean,2025-08-29,fagus,with-robinia,,,0.23384920634920636,0.28131850723553103,21,0.06138873113327634
+Quantum yield,Robinia mean,2025-08-29,quercus,without-robinia,,,0.7573958333333334,0.043952043818201475,24,0.008971673375586776
+Quantum yield,Robinia mean,2025-08-29,quercus,with-robinia,,,0.732,0.058665719689326816,25,0.011733143937865363
+Quantum yield,Robinia mean,2025-09-10,fagus,without-robinia,,,0.7528125,0.03236437000239884,24,0.006606349362709629
+Quantum yield,Robinia mean,2025-09-10,fagus,with-robinia,,,0.23391304347826086,0.26191474376970947,23,0.054612999330049844
+Quantum yield,Robinia mean,2025-09-10,quercus,without-robinia,,,0.7571875,0.03230554283441293,24,0.006594341317328089
+Quantum yield,Robinia mean,2025-09-10,quercus,with-robinia,,,0.7392,0.054751902554462294,25,0.01095038051089246
+Quantum yield,Robinia mean,2025-09-25,fagus,without-robinia,,,0.7688541666666666,0.03483641247399008,24,0.007110952919200222
+Quantum yield,Robinia mean,2025-09-25,fagus,with-robinia,,,0.22445652173913044,0.26565416312821405,23,0.055392722166502116
+Quantum yield,Robinia mean,2025-09-25,quercus,without-robinia,,,0.7604166666666666,0.040389857386603216,24,0.008244545115079997
+Quantum yield,Robinia mean,2025-09-25,quercus,with-robinia,,,0.7579,0.06300909325909504,25,0.012601818651819007
+Quantum yield,Robinia mean,2025-10-07,fagus,without-robinia,,,0.6730208333333333,0.05914692082225096,24,0.01207331465594271
+Quantum yield,Robinia mean,2025-10-07,fagus,with-robinia,,,0.15880434782608693,0.2160424905140419,23,0.045047973320966585
+Quantum yield,Robinia mean,2025-10-07,quercus,without-robinia,,,0.6951041666666666,0.03373875953451069,24,0.006886895451167675
+Quantum yield,Robinia mean,2025-10-07,quercus,with-robinia,,,0.6607,0.08926937231398757,25,0.017853874462797514
+Quantum yield,Robinia mean,2025-10-20,fagus,without-robinia,,,0.6604166666666667,0.08984789884875569,24,0.0183401255533873
+Quantum yield,Robinia mean,2025-10-20,fagus,with-robinia,,,0.10782608695652174,0.1785043677015707,23,0.03722073363792164
+Quantum yield,Robinia mean,2025-10-20,quercus,without-robinia,,,0.6972916666666666,0.034937184833039585,24,0.007131522990854207
+Quantum yield,Robinia mean,2025-10-20,quercus,with-robinia,,,0.696,0.0673609679265374,25,0.01347219358530748
+Quantum yield,Robinia mean,2025-11-12,fagus,without-robinia,,,0.03937500000000001,0.09371049892459037,24,0.019128575492239848
+Quantum yield,Robinia mean,2025-11-12,fagus,with-robinia,,,0.015434782608695652,0.07402261699026154,23,0.015434782608695654
+Quantum yield,Robinia mean,2025-11-12,quercus,without-robinia,,,0.6536458333333334,0.04309354818215291,24,0.00879643368769302
+Quantum yield,Robinia mean,2025-11-12,quercus,with-robinia,,,0.6114999999999999,0.09399689711190824,25,0.01879937942238165
+Soil water content,treatment combination,2025-01-30,,without-robinia,control,mono,22.28333333333333,2.4906491790963523,12,0.7189884870040998
+Soil water content,treatment combination,2025-01-30,,without-robinia,control,mixed,22.21666666666667,2.837898283354544,6,1.1585671226898242
+Soil water content,treatment combination,2025-01-30,,without-robinia,drought,mono,22.3,2.6111648393354674,12,0.753778361444409
+Soil water content,treatment combination,2025-01-30,,without-robinia,drought,mixed,21.433333333333334,2.9159332411196703,6,1.1904247607938567
+Soil water content,treatment combination,2025-01-30,,with-robinia,control,mono,22.191666666666666,3.0212755684654224,12,0.8721671313747756
+Soil water content,treatment combination,2025-01-30,,with-robinia,control,mixed,21.283333333333335,2.306006649311027,6,0.9414232723795278
+Soil water content,treatment combination,2025-01-30,,with-robinia,drought,mono,21.308333333333334,3.12772305601879,12,0.9028958741715237
+Soil water content,treatment combination,2025-01-30,,with-robinia,drought,mixed,22.566666666666666,3.0605010483034745,6,1.2494443209327541
+Soil water content,treatment combination,2025-03-04,,without-robinia,control,mono,20.808333333333334,2.3294393915248968,12,0.6724512298789086
+Soil water content,treatment combination,2025-03-04,,without-robinia,control,mixed,21.683333333333334,3.1243666024758796,6,1.2755173242431659
+Soil water content,treatment combination,2025-03-04,,without-robinia,drought,mono,20.391666666666666,2.4945243063861926,12,0.7201071398960665
+Soil water content,treatment combination,2025-03-04,,without-robinia,drought,mixed,18.433333333333334,3.2413988749715243,6,1.3232955494186138
+Soil water content,treatment combination,2025-03-04,,with-robinia,control,mono,20.025,3.009114940854325,12,0.8686566605623847
+Soil water content,treatment combination,2025-03-04,,with-robinia,control,mixed,19.8,3.4519559672742064,6,1.4092551223962255
+Soil water content,treatment combination,2025-03-04,,with-robinia,drought,mono,18.441666666666666,3.0770287714946805,12,0.8882616947633387
+Soil water content,treatment combination,2025-03-04,,with-robinia,drought,mixed,17.483333333333334,2.16464007785744,6,0.8837106112548633
+Soil water content,treatment combination,2025-04-02,,without-robinia,control,mono,14.616666666666667,2.404856198057034,12,0.6942221866552843
+Soil water content,treatment combination,2025-04-02,,without-robinia,control,mixed,14.833333333333332,3.3625387234449304,6,1.3727506854649332
+Soil water content,treatment combination,2025-04-02,,without-robinia,drought,mono,11.541666666666666,2.316917361626448,12,0.6688364312125736
+Soil water content,treatment combination,2025-04-02,,without-robinia,drought,mixed,10.983333333333334,1.9456789731779152,6,0.7943201145913683
+Soil water content,treatment combination,2025-04-02,,with-robinia,control,mono,14.65,2.716782856782833,12,0.7842676568466646
+Soil water content,treatment combination,2025-04-02,,with-robinia,control,mixed,14.183333333333334,3.1889914811216826,6,1.3019003204717496
+Soil water content,treatment combination,2025-04-02,,with-robinia,drought,mono,11.125,1.456724220484253,12,0.42052006041581563
+Soil water content,treatment combination,2025-04-02,,with-robinia,drought,mixed,10.8,1.5231546211727816,6,0.621825270205921
+Soil water content,treatment combination,2025-04-11,,without-robinia,control,mono,10.091666666666667,2.009277723386434,12,0.580028517236938
+Soil water content,treatment combination,2025-04-11,,without-robinia,control,mixed,10.433333333333334,1.4948801512718892,6,0.6102822662051097
+Soil water content,treatment combination,2025-04-11,,without-robinia,drought,mono,9.05,1.722313454735704,12,0.49718906836028653
+Soil water content,treatment combination,2025-04-11,,without-robinia,drought,mixed,7.65,0.9894442884771228,6,0.4039389392800187
+Soil water content,treatment combination,2025-04-11,,with-robinia,control,mono,9.758333333333333,1.6194602542673022,12,0.4674979068715634
+Soil water content,treatment combination,2025-04-11,,with-robinia,control,mixed,9.783333333333333,1.7034279164868311,6,0.6954215348341689
+Soil water content,treatment combination,2025-04-11,,with-robinia,drought,mono,7.958333333333333,1.0202123961868592,12,0.2945099507845382
+Soil water content,treatment combination,2025-04-11,,with-robinia,drought,mixed,8.216666666666667,1.1107054815146395,6,0.45344361403719347
+Soil water content,treatment combination,2025-04-28,,without-robinia,control,mono,16.191666666666666,2.896222722893745,12,0.8360674843479073
+Soil water content,treatment combination,2025-04-28,,without-robinia,control,mixed,16.616666666666667,2.709551008316076,6,1.1061695670696745
+Soil water content,treatment combination,2025-04-28,,without-robinia,drought,mono,14.441666666666666,2.1551031754813263,12,0.6221246992477806
+Soil water content,treatment combination,2025-04-28,,without-robinia,drought,mixed,13.616666666666667,1.5276343367005953,6,0.6236541064119154
+Soil water content,treatment combination,2025-04-28,,with-robinia,control,mono,16.03333333333333,2.392918846526268,12,0.6907761700954349
+Soil water content,treatment combination,2025-04-28,,with-robinia,control,mixed,14.733333333333333,1.8261069702146873,6,0.7455050487942906
+Soil water content,treatment combination,2025-04-28,,with-robinia,drought,mono,13.241666666666667,1.9042814599706315,12,0.5497187067634288
+Soil water content,treatment combination,2025-04-28,,with-robinia,drought,mixed,12.833333333333334,1.2225656083281033,6,0.49911031957986096
+Soil water content,treatment combination,2025-05-12,,without-robinia,control,mono,12.633333333333333,2.4992119970223827,12,0.7214603596214074
+Soil water content,treatment combination,2025-05-12,,without-robinia,control,mixed,12.233333333333334,1.9169420092080687,6,0.7825882981775568
+Soil water content,treatment combination,2025-05-12,,without-robinia,drought,mono,11.141666666666667,2.679029109527735,12,0.7733690887763407
+Soil water content,treatment combination,2025-05-12,,without-robinia,drought,mixed,10.166666666666666,1.150072461485217,6,0.4695151163109068
+Soil water content,treatment combination,2025-05-12,,with-robinia,control,mono,10.275,2.48746859276655,12,0.7180703308172536
+Soil water content,treatment combination,2025-05-12,,with-robinia,control,mixed,10.316666666666666,3.0472391876363543,6,1.2440301889870324
+Soil water content,treatment combination,2025-05-12,,with-robinia,drought,mono,7.841666666666667,2.9681516542158426,12,0.8568315782785749
+Soil water content,treatment combination,2025-05-12,,with-robinia,drought,mixed,8.316666666666666,2.1075261959621443,6,0.8603939666093539
+Soil water content,treatment combination,2025-05-26,,without-robinia,control,mono,23.6,2.262339898905958,12,0.6530812748158928
+Soil water content,treatment combination,2025-05-26,,without-robinia,control,mixed,23.46666666666667,2.1759289204077112,6,0.8883192619273272
+Soil water content,treatment combination,2025-05-26,,without-robinia,drought,mono,18.441666666666666,3.73228137235448,12,1.0774168275101426
+Soil water content,treatment combination,2025-05-26,,without-robinia,drought,mixed,18.833333333333332,1.4445299120013633,6,0.5897268670984711
+Soil water content,treatment combination,2025-05-26,,with-robinia,control,mono,19.875,4.041629959220998,12,1.1667180724605497
+Soil water content,treatment combination,2025-05-26,,with-robinia,control,mixed,20.2,3.8304046783597165,6,1.5637561617251374
+Soil water content,treatment combination,2025-05-26,,with-robinia,drought,mono,11.866666666666667,4.519117639808046,12,1.3045568929213809
+Soil water content,treatment combination,2025-05-26,,with-robinia,drought,mixed,13.1,4.08166632639171,6,1.6663332999933318
+Soil water content,treatment combination,2025-06-06,,without-robinia,control,mono,19.775,3.281386901905961,12,0.9472548055653593
+Soil water content,treatment combination,2025-06-06,,without-robinia,control,mixed,19.066666666666666,2.333809475228573,6,0.9527737285304303
+Soil water content,treatment combination,2025-06-06,,without-robinia,drought,mono,12.65,5.78061022258503,12,1.6687184340448848
+Soil water content,treatment combination,2025-06-06,,without-robinia,drought,mixed,14.683333333333334,1.1720352668186513,6,0.478481394042072
+Soil water content,treatment combination,2025-06-06,,with-robinia,control,mono,11.558333333333334,6.3438529063156635,12,1.8313125915803692
+Soil water content,treatment combination,2025-06-06,,with-robinia,control,mixed,10.816666666666666,6.259526073647003,6,2.555440818680366
+Soil water content,treatment combination,2025-06-06,,with-robinia,drought,mono,4.316666666666666,3.18685748129103,12,0.9199665123461745
+Soil water content,treatment combination,2025-06-06,,with-robinia,drought,mixed,5.15,3.938908478246226,6,1.608052652537638
+Soil water content,treatment combination,2025-06-20,,without-robinia,control,mono,10.208333333333334,3.545152473534257,12,1.0233973674566355
+Soil water content,treatment combination,2025-06-20,,without-robinia,control,mixed,9.683333333333334,0.8704405015086711,6,0.3553558466914226
+Soil water content,treatment combination,2025-06-20,,without-robinia,drought,mono,6.075,3.3464024101875567,12,0.9660231661692992
+Soil water content,treatment combination,2025-06-20,,without-robinia,drought,mixed,5.216666666666667,1.072225100744553,6,0.43773406437140705
+Soil water content,treatment combination,2025-06-20,,with-robinia,control,mono,1.95,2.156807404896919,12,0.6226166679037072
+Soil water content,treatment combination,2025-06-20,,with-robinia,control,mixed,1.4333333333333333,1.197775716345371,6,0.48898988855712666
+Soil water content,treatment combination,2025-06-20,,with-robinia,drought,mono,0.7416666666666666,0.7525210155124432,12,0.21723410543847982
+Soil water content,treatment combination,2025-06-20,,with-robinia,drought,mixed,0.9,1.0788883167408942,6,0.44045431091090487
+Soil water content,treatment combination,2025-07-02,,without-robinia,control,mono,6.083333333333333,3.496448414484549,12,1.0093377166551474
+Soil water content,treatment combination,2025-07-02,,without-robinia,control,mixed,4.283333333333333,0.8328665359267755,6,0.3400163394766657
+Soil water content,treatment combination,2025-07-02,,without-robinia,drought,mono,3.3916666666666666,2.4358901054974966,12,0.7031809040626629
+Soil water content,treatment combination,2025-07-02,,without-robinia,drought,mixed,2.2333333333333334,0.8733078876700168,6,0.3565264521898917
+Soil water content,treatment combination,2025-07-02,,with-robinia,control,mono,0.8833333333333333,0.9222830696733301,12,0.26624018927246573
+Soil water content,treatment combination,2025-07-02,,with-robinia,control,mixed,0.9333333333333333,0.5202563470700446,6,0.21239376429431994
+Soil water content,treatment combination,2025-07-02,,with-robinia,drought,mono,0.375,0.5642774945973753,12,0.16289288170172112
+Soil water content,treatment combination,2025-07-02,,with-robinia,drought,mixed,0.7166666666666667,0.8447879418331363,6,0.3448832330578633
+Soil water content,treatment combination,2025-07-03,,without-robinia,control,mono,8.858333333333333,3.1901719341905337,12,0.9209233124830469
+Soil water content,treatment combination,2025-07-03,,without-robinia,control,mixed,6.9,0.9654014708917736,6,0.39412350010286545
+Soil water content,treatment combination,2025-07-03,,without-robinia,drought,mono,5.283333333333333,2.3490165575999646,12,0.6781026709306138
+Soil water content,treatment combination,2025-07-03,,without-robinia,drought,mixed,4.183333333333334,0.9516652072376433,6,0.38851569394870583
+Soil water content,treatment combination,2025-07-03,,with-robinia,control,mono,3.6666666666666665,1.6177050710712682,12,0.4669912291262097
+Soil water content,treatment combination,2025-07-03,,with-robinia,control,mixed,3.55,1.0876580344942983,6,0.4440345331915827
+Soil water content,treatment combination,2025-07-03,,with-robinia,drought,mono,2.283333333333333,0.8321203292939324,12,0.24021244805800598
+Soil water content,treatment combination,2025-07-03,,with-robinia,drought,mixed,2.8666666666666667,0.6531972647421808,6,0.26666666666666666
+Soil water content,treatment combination,2025-07-17,,without-robinia,control,mono,14.941666666666666,3.8434024541078737,12,1.1094947207416246
+Soil water content,treatment combination,2025-07-17,,without-robinia,control,mixed,11.683333333333334,2.9026998926286995,6,1.1850222688953054
+Soil water content,treatment combination,2025-07-17,,without-robinia,drought,mono,7.05,2.3388031127052997,12,0.6751543033509697
+Soil water content,treatment combination,2025-07-17,,without-robinia,drought,mixed,5.85,0.46797435827190337,6,0.19104973174542791
+Soil water content,treatment combination,2025-07-17,,with-robinia,control,mono,8.225,2.115365861328183,12,0.6106535247361856
+Soil water content,treatment combination,2025-07-17,,with-robinia,control,mixed,10.883333333333333,1.9477337258123009,6,0.7951589638416824
+Soil water content,treatment combination,2025-07-17,,with-robinia,drought,mono,5.266666666666667,0.8947659250362971,12,0.25829667384070537
+Soil water content,treatment combination,2025-07-17,,with-robinia,drought,mixed,5.016666666666667,0.9867454923467686,6,0.40283716037349115
+Soil water content,treatment combination,2025-07-31,,without-robinia,control,mono,23.65833333333333,3.654749918899646,12,1.0550354247487368
+Soil water content,treatment combination,2025-07-31,,without-robinia,control,mixed,23.033333333333335,1.5718354451616956,6,0.6416991333777674
+Soil water content,treatment combination,2025-07-31,,without-robinia,drought,mono,17.016666666666666,2.853971183307833,12,0.8238705154711061
+Soil water content,treatment combination,2025-07-31,,without-robinia,drought,mixed,16.28333333333333,1.1788412389574208,6,0.4812599205326693
+Soil water content,treatment combination,2025-07-31,,with-robinia,control,mono,17.983333333333334,3.1908486569430323,12,0.9211186655147078
+Soil water content,treatment combination,2025-07-31,,with-robinia,control,mixed,19.25,1.7236588989704429,6,0.7036807988475078
+Soil water content,treatment combination,2025-07-31,,with-robinia,drought,mono,13.933333333333334,2.3492100542071324,12,0.6781585285897317
+Soil water content,treatment combination,2025-07-31,,with-robinia,drought,mixed,14.266666666666666,1.9387281053996892,6,0.7914824347036672
+Soil water content,treatment combination,2025-08-14,,without-robinia,control,mono,7.091666666666667,3.493749830595757,12,1.0085587025878349
+Soil water content,treatment combination,2025-08-14,,without-robinia,control,mixed,4.7,1.4422205101855956,6,0.5887840577551898
+Soil water content,treatment combination,2025-08-14,,without-robinia,drought,mono,3.475,1.9217061548151801,12,0.5547487828929525
+Soil water content,treatment combination,2025-08-14,,without-robinia,drought,mixed,2.5166666666666666,0.9662642840686324,6,0.39447574210730774
+Soil water content,treatment combination,2025-08-14,,with-robinia,control,mono,0.9583333333333334,0.8295215853768125,12,0.23946225530795393
+Soil water content,treatment combination,2025-08-14,,with-robinia,control,mixed,0.9,0.6324555320336759,6,0.25819888974716115
+Soil water content,treatment combination,2025-08-14,,with-robinia,drought,mono,0.9166666666666666,0.5457827295534258,12,0.15755390291335955
+Soil water content,treatment combination,2025-08-14,,with-robinia,drought,mixed,0.9,0.7042726744663603,6,0.28751811537130434
+Soil water content,treatment combination,2025-08-28,,without-robinia,control,mono,18.575,4.843012773808544,12,1.3980573643235796
+Soil water content,treatment combination,2025-08-28,,without-robinia,control,mixed,14.066666666666666,4.937475738337016,6,2.0157160293828866
+Soil water content,treatment combination,2025-08-28,,without-robinia,drought,mono,9.75,2.359699518621347,12,0.6811865761413326
+Soil water content,treatment combination,2025-08-28,,without-robinia,drought,mixed,8.816666666666666,1.9020164738157939,6,0.7764949738694028
+Soil water content,treatment combination,2025-08-28,,with-robinia,control,mono,15.775,3.9381871694750847,12,1.1368567112077854
+Soil water content,treatment combination,2025-08-28,,with-robinia,control,mixed,17.7,2.0532900428336958,6,0.8382521498133284
+Soil water content,treatment combination,2025-08-28,,with-robinia,drought,mono,8.891666666666666,1.7778732613247024,12,0.5132278030054275
+Soil water content,treatment combination,2025-08-28,,with-robinia,drought,mixed,9.55,1.497664849023305,6,0.6114191143015839
+Soil water content,treatment combination,2025-09-10,,without-robinia,control,mono,20.325,3.4051097966545405,12,0.9829705288593654
+Soil water content,treatment combination,2025-09-10,,without-robinia,control,mixed,18.96666666666667,2.401388487243717,6,0.9803627446568496
+Soil water content,treatment combination,2025-09-10,,without-robinia,drought,mono,14.758333333333333,2.845876868649652,12,0.8215338880977029
+Soil water content,treatment combination,2025-09-10,,without-robinia,drought,mixed,13.316666666666666,1.5078682524234888,6,0.615584636296622
+Soil water content,treatment combination,2025-09-10,,with-robinia,control,mono,17.625,2.1909420970731457,12,0.6324705047620319
+Soil water content,treatment combination,2025-09-10,,with-robinia,control,mixed,18.083333333333336,2.660388442815572,6,1.086099033749276
+Soil water content,treatment combination,2025-09-10,,with-robinia,drought,mono,11.75,2.4347857848652352,12,0.7028621141555089
+Soil water content,treatment combination,2025-09-10,,with-robinia,drought,mixed,12.8,1.5836666315863321,6,0.6465291950097846
+Soil water content,treatment combination,2025-09-23,,without-robinia,control,mono,22.758333333333333,3.5780793053189184,12,1.0329025250538535
+Soil water content,treatment combination,2025-09-23,,without-robinia,control,mixed,21.566666666666666,2.3880256838373133,6,0.9749074030103807
+Soil water content,treatment combination,2025-09-23,,without-robinia,drought,mono,17.09166666666667,2.3317797858496347,12,0.6731268435256073
+Soil water content,treatment combination,2025-09-23,,without-robinia,drought,mixed,15.049999999999999,2.281008548866049,6,0.9312178406080215
+Soil water content,treatment combination,2025-09-23,,with-robinia,control,mono,20.616666666666667,2.6815305444104234,12,0.7740911908277809
+Soil water content,treatment combination,2025-09-23,,with-robinia,control,mixed,21.333333333333332,2.373745282600192,6,0.969077453618188
+Soil water content,treatment combination,2025-09-23,,with-robinia,drought,mono,13.466666666666667,2.4908316732052413,12,0.7190411685155461
+Soil water content,treatment combination,2025-09-23,,with-robinia,drought,mixed,15.183333333333334,2.36001412425152,6,0.9634717316962539
+Soil water content,treatment combination,2025-10-07,,without-robinia,control,mono,20.083333333333332,3.193127088930318,12,0.9217763921753026
+Soil water content,treatment combination,2025-10-07,,without-robinia,control,mixed,18.766666666666666,1.7840029895341174,6,0.7283161706597244
+Soil water content,treatment combination,2025-10-07,,without-robinia,drought,mono,13.641666666666667,2.6328202415361415,12,0.7600297375893934
+Soil water content,treatment combination,2025-10-07,,without-robinia,drought,mixed,13.283333333333333,1.6857243744653712,6,0.6881940940687526
+Soil water content,treatment combination,2025-10-07,,with-robinia,control,mono,16.183333333333334,2.159896181567882,12,0.6235083209249307
+Soil water content,treatment combination,2025-10-07,,with-robinia,control,mixed,15.95,1.9957454747537324,6,0.814759678269202
+Soil water content,treatment combination,2025-10-07,,with-robinia,drought,mono,8.991666666666667,2.4644594957232724,12,0.7114281766313804
+Soil water content,treatment combination,2025-10-07,,with-robinia,drought,mixed,11.15,2.513762120806183,6,1.026239088451939
+Soil water content,treatment combination,2025-10-21,,without-robinia,control,mono,15.225,4.788646610853255,12,1.382363204915058
+Soil water content,treatment combination,2025-10-21,,without-robinia,control,mixed,12.866666666666667,3.7297006135434874,6,1.52264389942115
+Soil water content,treatment combination,2025-10-21,,without-robinia,drought,mono,7.533333333333333,2.867476982021694,12,0.8277693037326405
+Soil water content,treatment combination,2025-10-21,,without-robinia,drought,mixed,6.683333333333334,2.5103120655939706,6,1.0248306093095474
+Soil water content,treatment combination,2025-10-21,,with-robinia,control,mono,10.15,2.2199508594069868,12,0.6408446131331825
+Soil water content,treatment combination,2025-10-21,,with-robinia,control,mixed,10.616666666666667,2.2265818347113737,6,0.90899822759881
+Soil water content,treatment combination,2025-10-21,,with-robinia,drought,mono,2.283333333333333,1.276951863073178,12,0.36862425094374673
+Soil water content,treatment combination,2025-10-21,,with-robinia,drought,mixed,4.183333333333334,2.2337561788759905,6,0.9119271413392143
+Soil water content,treatment combination,2025-11-07,,without-robinia,control,mono,21.058333333333334,3.894391849671509,12,1.1242140913688652
+Soil water content,treatment combination,2025-11-07,,without-robinia,control,mixed,19.9,3.5799441336423117,6,1.461506072515609
+Soil water content,treatment combination,2025-11-07,,without-robinia,drought,mono,17.15,2.092193281528436,12,0.6039641771435845
+Soil water content,treatment combination,2025-11-07,,without-robinia,drought,mixed,15.05,2.671890716328046,6,1.0907948172471913
+Soil water content,treatment combination,2025-11-07,,with-robinia,control,mono,18.516666666666666,3.205629517904496,12,0.9253855325421855
+Soil water content,treatment combination,2025-11-07,,with-robinia,control,mixed,17.466666666666665,3.020375252624525,6,1.2330630334433208
+Soil water content,treatment combination,2025-11-07,,with-robinia,drought,mono,13.908333333333333,1.9833206009267905,12,0.5725353414172064
+Soil water content,treatment combination,2025-11-07,,with-robinia,drought,mixed,14.3,1.37695315824468,6,0.5621387729022077
+Soil water content,treatment combination,2025-12-02,,without-robinia,control,mono,23.6,3.131366242625501,12,0.90394757155557
+Soil water content,treatment combination,2025-12-02,,without-robinia,control,mixed,22.75,2.277498627881036,6,0.9297849213662268
+Soil water content,treatment combination,2025-12-02,,without-robinia,drought,mono,20.783333333333335,2.2192682386659603,12,0.6406475574988895
+Soil water content,treatment combination,2025-12-02,,without-robinia,drought,mixed,19.15,2.1695621678117454,6,0.8857200460642178
+Soil water content,treatment combination,2025-12-02,,with-robinia,control,mono,19.591666666666665,1.8652118248379057,12,0.538440274582919
+Soil water content,treatment combination,2025-12-02,,with-robinia,control,mixed,20.05,2.8289574051229547,6,1.1549170244365323
+Soil water content,treatment combination,2025-12-02,,with-robinia,drought,mono,17.875,2.8052305042221004,12,0.8098002933757897
+Soil water content,treatment combination,2025-12-02,,with-robinia,drought,mixed,15.95,1.080277742064511,6,0.4410215414239987
+Soil water content,Robinia mean,2025-01-30,,without-robinia,,,22.13611111111111,2.5612667376880727,36,0.42687778961467876
+Soil water content,Robinia mean,2025-01-30,,with-robinia,,,21.808333333333334,2.884973384378343,36,0.4808288973963905
+Soil water content,Robinia mean,2025-03-04,,without-robinia,,,20.419444444444444,2.749318818953882,36,0.45821980315898037
+Soil water content,Robinia mean,2025-03-04,,with-robinia,,,19.03611111111111,3.027035586914109,36,0.5045059311523515
+Soil water content,Robinia mean,2025-04-02,,without-robinia,,,13.022222222222222,2.92556330215578,36,0.48759388369262996
+Soil water content,Robinia mean,2025-04-02,,with-robinia,,,12.755555555555555,2.8138884579826993,36,0.4689814096637832
+Soil water content,Robinia mean,2025-04-11,,without-robinia,,,9.394444444444444,1.8905697469953253,36,0.3150949578325542
+Soil water content,Robinia mean,2025-04-11,,with-robinia,,,8.905555555555555,1.5850992658315386,36,0.2641832109719231
+Soil water content,Robinia mean,2025-04-28,,without-robinia,,,15.25,2.6045564470201614,36,0.4340927411700269
+Soil water content,Robinia mean,2025-04-28,,with-robinia,,,14.352777777777778,2.332685284156574,36,0.38878088069276234
+Soil water content,Robinia mean,2025-05-12,,without-robinia,,,11.658333333333333,2.4058707957233043,36,0.40097846595388403
+Soil water content,Robinia mean,2025-05-12,,with-robinia,,,9.144444444444444,2.8368437637068666,36,0.47280729395114446
+Soil water content,Robinia mean,2025-05-26,,without-robinia,,,21.06388888888889,3.6560050623423668,36,0.6093341770570612
+Soil water content,Robinia mean,2025-05-26,,with-robinia,,,16.130555555555556,5.610898550114993,36,0.9351497583524989
+Soil water content,Robinia mean,2025-06-06,,without-robinia,,,16.433333333333334,5.030932887078272,36,0.8384888145130454
+Soil water content,Robinia mean,2025-06-06,,with-robinia,,,7.9527777777777775,5.949525124440538,36,0.9915875207400897
+Soil water content,Robinia mean,2025-06-20,,without-robinia,,,7.911111111111111,3.534141866161958,36,0.5890236443603264
+Soil water content,Robinia mean,2025-06-20,,with-robinia,,,1.2861111111111112,1.5143414934320982,36,0.2523902489053497
+Soil water content,Robinia mean,2025-07-02,,without-robinia,,,4.2444444444444445,2.831500807945642,36,0.47191680132427366
+Soil water content,Robinia mean,2025-07-02,,with-robinia,,,0.6944444444444444,0.7517387252969685,36,0.12528978754949474
+Soil water content,Robinia mean,2025-07-03,,without-robinia,,,6.561111111111111,2.924602808468457,36,0.4874338014114095
+Soil water content,Robinia mean,2025-07-03,,with-robinia,,,3.0527777777777776,1.2847425781313129,36,0.2141237630218855
+Soil water content,Robinia mean,2025-07-17,,without-robinia,,,10.252777777777778,4.724978374016185,36,0.7874963956693642
+Soil water content,Robinia mean,2025-07-17,,with-robinia,,,7.147222222222222,2.668491934848072,36,0.444748655808012
+Soil water content,Robinia mean,2025-07-31,,without-robinia,,,20.11111111111111,4.345360598403627,36,0.7242267664006046
+Soil water content,Robinia mean,2025-07-31,,with-robinia,,,16.225,3.3139855159611065,36,0.5523309193268511
+Soil water content,Robinia mean,2025-08-14,,without-robinia,,,4.7250000000000005,2.952904139511281,36,0.4921506899185468
+Soil water content,Robinia mean,2025-08-14,,with-robinia,,,0.925,0.6621933252457322,36,0.11036555420762202
+Soil water content,Robinia mean,2025-08-28,,without-robinia,,,13.255555555555555,5.525082776080344,36,0.9208471293467241
+Soil water content,Robinia mean,2025-08-28,,with-robinia,,,12.76388888888889,4.581213362529176,36,0.7635355604215294
+Soil water content,Robinia mean,2025-09-10,,without-robinia,,,17.075,3.9792587249386036,36,0.6632097874897672
+Soil water content,Robinia mean,2025-09-10,,with-robinia,,,14.938888888888888,3.630527531741105,36,0.6050879219568509
+Soil water content,Robinia mean,2025-09-23,,without-robinia,,,19.38611111111111,4.127064178100303,36,0.6878440296833839
+Soil water content,Robinia mean,2025-09-23,,with-robinia,,,17.447222222222223,4.260817232886608,36,0.7101362054811013
+Soil water content,Robinia mean,2025-10-07,,without-robinia,,,16.583333333333332,4.011804011734799,36,0.6686340019557998
+Soil water content,Robinia mean,2025-10-07,,with-robinia,,,12.908333333333333,3.9874356242004536,36,0.6645726040334089
+Soil water content,Robinia mean,2025-10-21,,without-robinia,,,10.844444444444445,5.165846325043773,36,0.8609743875072956
+Soil water content,Robinia mean,2025-10-21,,with-robinia,,,6.611111111111112,4.237774198648408,36,0.7062956997747346
+Soil water content,Robinia mean,2025-11-07,,without-robinia,,,18.56111111111111,3.7728562713737777,36,0.6288093785622962
+Soil water content,Robinia mean,2025-11-07,,with-robinia,,,16.102777777777778,3.250361396267991,36,0.5417268993779986
+Soil water content,Robinia mean,2025-12-02,,without-robinia,,,21.77777777777778,2.9776415510180554,36,0.49627359183634256
+Soil water content,Robinia mean,2025-12-02,,with-robinia,,,18.488888888888887,2.635448216449586,36,0.43924136940826436

@@ -1,3 +1,0 @@
-species,n_transition_observations,n_trees,n_containers,n_blocks,n_duration_trees,lmm_boot_success,lmm_boot_failures,sem_trees,sem_containers,sem_boot_success,sem_boot_failures
-fagus,778,278,47,3,230,1000,0,278,47,1000,0
-quercus,858,293,49,3,286,1000,0,293,49,1000,0

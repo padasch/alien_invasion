@@ -30,6 +30,7 @@ suppressPackageStartupMessages({
 suppressMessages(suppressPackageStartupMessages({
   function_dir <- file.path(PROJECT_ROOT, "scripts", "functions")
   source(file.path(function_dir, "bootstrap.R"))
+  source(file.path(function_dir, "figure_data.R"))
 }))
 
 SPECIES <- c("fagus", "quercus")

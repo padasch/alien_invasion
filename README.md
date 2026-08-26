@@ -19,7 +19,8 @@ scripts/
 data/
   raw/                   # Raw inputs; see data/raw/README.md
   interim/               # Cleaned analysis-ready CSV files
-  final/bootstrap/       # Promoted bootstrap summaries used by figures
+  final/bootstrap/       # Generated local bootstrap summaries (not tracked)
+  final/figure_data/     # Tidy tables containing the values shown in figures
 output/
   main_figures/          # Final main-figure PDFs
   supplementary/         # Final supplementary-figure PDFs
@@ -61,6 +62,10 @@ ALINV_SUPP_BOOT_B=1000 ALINV_SUPP_BOOT_CORES=8 \
 The supplementary runner creates the 15 reconstructed supplementary figures.
 `scripts/run_all.R` additionally creates the overall phenology-effect and
 exploratory SWC-pathway figures.
+
+Every figure script also refreshes one or more tidy CSV tables under
+`data/final/figure_data/`. These contain the scientific values shown in the
+figure, without plot styling or ggplot rendering details.
 
 ## Rebuilding cleaned data
 

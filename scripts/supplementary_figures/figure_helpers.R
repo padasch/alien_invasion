@@ -34,6 +34,7 @@ suppressMessages(suppressPackageStartupMessages({
   source(file.path(function_dir, "factorial_effects.R"))
   source(file.path(function_dir, "temporal_alignment.R"))
   source(file.path(function_dir, "bootstrap.R"))
+  source(file.path(function_dir, "figure_data.R"))
 }))
 
 SUPP_BOOT_B <- as.integer(Sys.getenv("ALINV_SUPP_BOOT_B", unset = "1000"))
@@ -96,6 +97,15 @@ supp_save <- function(plot, figure_id, width_mm = 160, height_mm = 120, width_li
   pdf <- file.path(out, paste0(figure_id, ".pdf"))
   ggsave(pdf, plot, width = width_mm, height = height_mm, units = "mm", bg = "white", limitsize = FALSE)
   invisible(pdf)
+}
+
+supp_write_data <- function(data, figure_id, table_name) {
+  alinv_write_figure_data(
+    data,
+    figure_id = figure_id,
+    table_name = table_name,
+    project_root = PROJECT_ROOT
+  )
 }
 
 supp_block <- function(boxlabel) {
@@ -168,7 +178,25 @@ supp_timeseries_figure <- function(figure_id, data_name, value_col, species, y_l
   yr <- range(c(src$lower, src$upper), na.rm = TRUE)
   if (!is.null(limits)) { p <- p + coord_cartesian(ylim = limits); ybar <- limits[1] + diff(limits) * .02 } else ybar <- yr[1] - diff(yr) * .03
   for (i in seq_len(nrow(SUPP_DROUGHT))) p <- p + annotate("segment", x = SUPP_DROUGHT$start[i], xend = SUPP_DROUGHT$end[i], y = ybar, yend = ybar, color = "#E69F00", linewidth = 1.2, lineend = "round")
-  supp_save(p, figure_id, height_mm = if (length(species) == 3) 145 else if (length(species) == 1) 78 else 112)
+  pdf_path <- supp_save(p, figure_id, height_mm = if (length(species) == 3) 145 else if (length(species) == 1) 78 else 112)
+  supp_write_data(
+    src %>%
+      dplyr::transmute(
+        species = .data$species,
+        robinia = .data$robinia,
+        precipitation = .data$precipitation,
+        culture = .data$culture,
+        date = .data$date,
+        mean = .data$mean,
+        lower_95 = .data$lower,
+        upper_95 = .data$upper,
+        n_containers = .data$n_containers,
+        n_trees = .data$n_trees
+      ),
+    figure_id,
+    "timeseries"
+  )
+  invisible(pdf_path)
 }
 
 supp_soil_elemental <- function(figure_id = "fig_s1", seed = 2026082101L) {
@@ -196,7 +224,32 @@ supp_soil_elemental <- function(figure_id = "fig_s1", seed = 2026082101L) {
     scale_color_manual(values = c(inoc_beech = "#B35CFF", inoc_robinia = "#8DD3F5"), guide = "none") +
     scale_x_discrete(labels = c(inoc_beech = "Beech", inoc_robinia = "Robinia")) +
     labs(x = "Soil inoculum", y = NULL) + supp_theme(7)
-  supp_save(p, figure_id, height_mm = 82)
+  pdf_path <- supp_save(p, figure_id, height_mm = 82)
+  supp_write_data(
+    long %>%
+      dplyr::transmute(
+        container = .data$boxlabel,
+        block = .data$block,
+        soil_type = as.character(.data$soiltype),
+        response = .data$metric,
+        value = .data$value
+      ),
+    figure_id,
+    "observations"
+  )
+  supp_write_data(
+    tests %>%
+      dplyr::transmute(
+        response = .data$metric,
+        estimate = .data$estimate,
+        lower_95 = .data$lower,
+        upper_95 = .data$upper,
+        p_value = .data$p_boot
+      ),
+    figure_id,
+    "effects"
+  )
+  invisible(pdf_path)
 }
 
 supp_measurement_schedule <- function(figure_id = "fig_s2") {
@@ -207,7 +260,9 @@ supp_measurement_schedule <- function(figure_id = "fig_s2") {
     heatwave_continuous = TRUE,
     merge_senescence_chlorophyll = TRUE
   )
-  supp_save(p, figure_id, width_mm = 180, height_mm = 80, width_limit_mm = 180)
+  pdf_path <- supp_save(p, figure_id, width_mm = 180, height_mm = 80, width_limit_mm = 180)
+  supp_write_data(src, figure_id, "schedule")
+  invisible(pdf_path)
 }
 
 supp_phenology_progression <- function(figure_id = "fig_s8") {
@@ -222,7 +277,23 @@ supp_phenology_progression <- function(figure_id = "fig_s8") {
     facet_grid(species ~ robinia, drop = FALSE) + scale_color_manual(values = SUPP_PRECIP_COLORS, labels = c(control = "control", drought = "reduced"), name = "Precipitation") +
     scale_linetype_manual(values = c(mono = "solid", mixed = "42"), name = "Culture") + scale_y_continuous(breaks = 1:4, labels = paste("Stage", 1:4)) +
     labs(x = "Mean day of year (+/- SE)", y = "Spring phenology") + supp_theme(7)
-  supp_save(p, figure_id, height_mm = 105)
+  pdf_path <- supp_save(p, figure_id, height_mm = 105)
+  supp_write_data(
+    src %>%
+      dplyr::transmute(
+        species = as.character(.data$species),
+        robinia = as.character(.data$robinia),
+        precipitation = as.character(.data$precipitation),
+        culture = as.character(.data$culture),
+        stage = .data$stage,
+        mean_doy = .data$mean_doy,
+        se = .data$se,
+        n = .data$n
+      ),
+    figure_id,
+    "timeseries"
+  )
+  invisible(pdf_path)
 }
 
 supp_biomass <- function(figure_id, species) {
@@ -260,7 +331,17 @@ supp_biomass <- function(figure_id, species) {
       strip.placement = "outside", legend.position = "bottom",
       plot.margin = margin(5, 5, 5, 10)
     )
-  supp_save(p, figure_id, height_mm = 145)
+  pdf_path <- supp_save(p, figure_id, height_mm = 145)
+  supp_write_data(
+    plot_data %>%
+      dplyr::select(dplyr::any_of(c(
+        "tree_id", "boxlabel", "species", "robinia", "precipitation",
+        "culture", "metric", "value"
+      ))),
+    figure_id,
+    "observations"
+  )
+  invisible(pdf_path)
 }
 
 # Species-specific temporal LMM with block-stratified container bootstrap.
@@ -343,5 +424,21 @@ supp_temporal_effect_figure <- function(figure_id, data_name, resp_var, species,
     scale_x_date(date_breaks = "1 month", date_labels = "%b") + coord_cartesian(ylim = lim) +
     labs(x = NULL, y = "Effect size") +
     supp_theme(7) + theme(plot.margin = margin(4, 4, 4, 10))
-  supp_save(fig, figure_id, height_mm = if (length(species) == 1) 82 else 125)
+  pdf_path <- supp_save(fig, figure_id, height_mm = if (length(species) == 1) 82 else 125)
+  supp_write_data(
+    effects %>%
+      dplyr::transmute(
+        species = .data$species,
+        date = .data$date,
+        treatment = .data$effect,
+        contrast = .data$contrast,
+        estimate = .data$estimate,
+        lower_95 = .data$lower,
+        upper_95 = .data$upper,
+        p_value = .data$p_boot
+      ),
+    figure_id,
+    "effects"
+  )
+  invisible(pdf_path)
 }

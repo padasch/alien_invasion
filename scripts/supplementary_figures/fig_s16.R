@@ -77,6 +77,20 @@ save_supplementary_plot(
   width_mm = 160,
   height_mm = 82
 )
+alinv_write_figure_data(
+  primary_effects %>%
+    dplyr::transmute(
+      species = .data$species,
+      treatment = .data$effect,
+      estimate_days = .data$estimate_oriented,
+      lower_95 = .data$lower_95_oriented,
+      upper_95 = .data$upper_95_oriented,
+      p_value = .data$p_boot
+    ),
+  figure_id = "fig_s16",
+  table_name = "effects",
+  project_root = PROJECT_ROOT
+)
 
 print(tibble::as_tibble(primary_effects), n = Inf)
 message("Saved Figure S16 in: ", normalizePath(SUPP_OUTPUT_DIR, winslash = "/", mustWork = TRUE))

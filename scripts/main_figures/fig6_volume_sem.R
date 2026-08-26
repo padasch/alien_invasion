@@ -537,5 +537,35 @@ GGHH
       heights = c(1, 1, 0.13)
     )
 
-  alinv_save_pdf(fig, output_file, height_mm = FIG6_HEIGHT_MM)
+  pdf_path <- alinv_save_pdf(fig, output_file, height_mm = FIG6_HEIGHT_MM)
+  figure_id <- sub("_.*$", "", tools::file_path_sans_ext(basename(output_file)))
+
+  alinv_write_figure_data(
+    volume_summary %>%
+      dplyr::select(dplyr::all_of(c(
+        "species", "robinia", "precipitation", "culture", "phase", "date",
+        "mean", "sd", "n", "se"
+      ))),
+    figure_id = figure_id,
+    table_name = "timeseries",
+    project_root = ALINV_PROJECT_ROOT
+  )
+  alinv_write_figure_data(
+    sem_df %>%
+      dplyr::transmute(
+        species = .data$species,
+        response = as.character(.data$response_label),
+        treatment = as.character(.data$treatment),
+        estimate = .data$estimate,
+        lower_95 = .data$lower,
+        upper_95 = .data$upper,
+        p_value = .data$p_value,
+        significant = .data$significant
+      ),
+    figure_id = figure_id,
+    table_name = "heatmap",
+    project_root = ALINV_PROJECT_ROOT
+  )
+
+  pdf_path
 }

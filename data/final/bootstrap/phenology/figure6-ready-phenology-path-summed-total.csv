@@ -1,7 +1,0 @@
-species,effect,treatment_label,plot_order,lower_95,upper_95,p_boot,n_boot_success,estimate,component,metric,bootstrap_design,bootstrap_replicates
-fagus,culture,Mixed culture,3,-0.5112632502870604,0.05700896276932677,0.12787212787212787,1000,-0.2265583910163503,Path-summed total,total_path,container resampling within block,1000
-fagus,precipitation,Drought,1,-0.180392478204086,0.3304173806912273,0.5734265734265734,1000,0.07300064012881363,Path-summed total,total_path,container resampling within block,1000
-fagus,robinia,With robinia,2,-0.05037086440781022,0.4763913526844763,0.14185814185814186,1000,0.20781928376447717,Path-summed total,total_path,container resampling within block,1000
-quercus,culture,Mixed culture,3,-0.05615511041583614,0.5523895928644466,0.12387612387612387,1000,0.2582977969675013,Path-summed total,total_path,container resampling within block,1000
-quercus,precipitation,Drought,1,-0.435560844159411,0.26833122248754104,0.6413586413586414,1000,-0.09205383837678927,Path-summed total,total_path,container resampling within block,1000
-quercus,robinia,With robinia,2,-0.6056521370526324,0.08422808540529744,0.12987012987012986,1000,-0.2714876623062491,Path-summed total,total_path,container resampling within block,1000

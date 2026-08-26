@@ -35,6 +35,7 @@ suppressPackageStartupMessages({
 suppressMessages(suppressPackageStartupMessages({
   function_dir <- file.path(project_root, "scripts", "functions")
   source(file.path(function_dir, "bootstrap.R"))
+  source(file.path(function_dir, "figure_data.R"))
 }))
 
 output_dir <- Sys.getenv(
@@ -242,5 +243,22 @@ ggplot2::ggsave(
   units = "mm",
   bg = "white",
   limitsize = FALSE
+)
+alinv_write_figure_data(
+  plot_data %>%
+    dplyr::transmute(
+      species = .data$species,
+      response = as.character(.data$response_label),
+      treatment = .data$treatment,
+      component = as.character(.data$component),
+      estimate = .data$estimate,
+      lower_95 = .data$lower,
+      upper_95 = .data$upper,
+      p_value = .data$p_boot,
+      significant = .data$significant
+    ),
+  figure_id = tools::file_path_sans_ext(basename(output_filename)),
+  table_name = "heatmap",
+  project_root = project_root
 )
 message("Created: ", normalizePath(pdf_file, winslash = "/", mustWork = TRUE))
