@@ -56,6 +56,10 @@ rsconnect/
 !/output/supplementary/
 *.xlsx
 *.dat
+
+# Raw inputs are supplied locally; keep only their documentation in Git.
+/data/raw/*
+!/data/raw/README.md
 *.pdf
 !/output/main_figures/*.pdf
 !/output/supplementary/*.pdf
