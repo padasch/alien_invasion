@@ -59,9 +59,9 @@ ALINV_SUPP_BOOT_B=1000 ALINV_SUPP_BOOT_CORES=8 \
   Rscript --vanilla scripts/supplementary_figures/make_all_figures.R
 ```
 
-The supplementary runner creates the 15 reconstructed supplementary figures.
-`scripts/run_all.R` additionally creates the overall phenology-effect and
-exploratory SWC-pathway figures.
+The supplementary runner creates all 18 supplementary figures, including
+phenology, the exploratory SWC pathways, and the temporal effects on phase-wise
+relative volume increments (S18).
 
 Every figure script also refreshes one or more tidy CSV tables under
 `data/final/figure_data/`. These contain the scientific values shown in the

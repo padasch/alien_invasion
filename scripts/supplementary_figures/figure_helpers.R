@@ -348,9 +348,11 @@ supp_biomass <- function(figure_id, species) {
 supp_temporal_formula <- y ~ date + date:robinia + date:precipitation + date:culture + (1 | boxlabel) + (1 | tree_id)
 
 supp_prepare_temporal <- function(data_name, resp_var, species) {
+  phasewise <- identical(data_name, "growth") && grepl("_inc_phase_", resp_var)
   prepare_df_generic(type = "tree", data_name = data_name, resp_var = resp_var, species_keep = species,
                      standardize_response = TRUE, add_covars = FALSE, soil_type = "both",
-                     include_soil_treatment = FALSE) %>%
+                     include_soil_treatment = FALSE,
+                     exclude_initial_growth_baseline = phasewise) %>%
     mutate(block = supp_block(.data$boxlabel), date = factor(as.character(.data$date), levels = sort(unique(as.character(.data$date)))),
            culture = factor(.data$culture, levels = c("mono", "mixed")), precipitation = factor(.data$precipitation, levels = c("control", "drought")),
            robinia = factor(.data$robinia, levels = c("without-robinia", "with-robinia")), boxlabel = factor(.data$boxlabel), tree_id = factor(.data$tree_id))
@@ -380,7 +382,8 @@ supp_run_temporal_model <- function(data_name, resp_var, species, seed) {
   d <- supp_prepare_temporal(data_name, resp_var, species); template <- supp_temporal_template(d); fit <- supp_fit_temporal(d); point <- supp_extract_temporal(fit, template)
   set.seed(seed); seeds <- sample.int(.Machine$integer.max, SUPP_BOOT_B * 10L); success <- list(); failures <- character(); singular <- 0L; attempt <- 1L
   while (length(success) < SUPP_BOOT_B) {
-    need <- SUPP_BOOT_B - length(success); ids <- seq.int(attempt, length.out = need)
+    if (attempt > length(seeds)) stop("Bootstrap attempt limit reached for ", id, call. = FALSE)
+    need <- SUPP_BOOT_B - length(success); ids <- seq.int(attempt, length.out = min(need, length(seeds) - attempt + 1L))
     batch <- parallel::mclapply(ids, function(i) tryCatch({
       f <- supp_fit_temporal(supp_resample_containers(d, seeds[i], i)); conv <- (f@optinfo$conv$opt %||% 0L) == 0L && !length(f@optinfo$conv$lme4$messages %||% character())
       if (!conv) stop("nonconverged"); list(est = supp_extract_temporal(f, template), singular = isSingular(f))
@@ -394,6 +397,11 @@ supp_run_temporal_model <- function(data_name, resp_var, species, seed) {
   effects <- template %>% transmute(date, effect, contrast, key, estimate = point[key], lower = lower[key], upper = upper[key],
     p_boot = vapply(seq_len(ncol(draws)), function(j) supp_boot_p(draws[, j]), numeric(1))[match(key, names(point))], bootstrap_replicates = SUPP_BOOT_B,
     species = species, data_name = data_name, response_var = resp_var)
+  if (identical(data_name, "growth") && grepl("_inc_phase_", resp_var)) {
+    phases <- d %>% transmute(date = as.Date(as.character(date)), phase) %>% distinct()
+    if (anyDuplicated(phases$date)) stop("Multiple growth phases assigned to one date.", call. = FALSE)
+    effects <- left_join(effects, phases, by = "date")
+  }
   status <- tibble(model_id = id, formula = paste(deparse(supp_temporal_formula), collapse = " "), successful = SUPP_BOOT_B,
     attempts = attempt - 1L, failures = length(failures), singular_successful = singular, original_singular = isSingular(fit),
     n_obs = nrow(d), n_containers = n_distinct(d$boxlabel), n_trees = n_distinct(d$tree_id), n_dates = n_distinct(d$date), n_blocks = n_distinct(d$block), seed = seed)
@@ -409,10 +417,14 @@ supp_temporal_effect_figure <- function(figure_id, data_name, resp_var, species,
       labels = paste0(unname(SUPP_SPECIES_LABELS[species]), " (", response_label, ")")
     ))
   status <- bind_rows(map(results, "status"))
+  # A changed phase baseline is a discontinuity, not an interpolated recovery.
+  effects$line_group <- if ("phase" %in% names(effects)) {
+    interaction(effects$effect, effects$phase, drop = TRUE)
+  } else effects$effect
   vals <- c(effects$lower, effects$upper, 0)
   lim <- range(vals[is.finite(vals)]); lim <- lim + c(-1, 1) * diff(lim) * .08
   drought_marks <- crossing(panel = levels(effects$panel), SUPP_DROUGHT) %>% mutate(y = lim[1] + diff(lim) * .035)
-  fig <- ggplot(effects, aes(date, estimate, ymin = lower, ymax = upper, color = effect, fill = effect, group = effect)) +
+  fig <- ggplot(effects, aes(date, estimate, ymin = lower, ymax = upper, color = effect, fill = effect, group = line_group)) +
     geom_hline(yintercept = 0, linetype = "22", linewidth = .25) +
     geom_vline(xintercept = c(SUPP_SUMMER_START, SUPP_SUMMER_END), linetype = "42", linewidth = .3) +
     geom_ribbon(alpha = .16, color = NA) + geom_line(linewidth = .55) + geom_point(size = .75) +
@@ -430,6 +442,7 @@ supp_temporal_effect_figure <- function(figure_id, data_name, resp_var, species,
       dplyr::transmute(
         species = .data$species,
         date = .data$date,
+        dplyr::across(dplyr::any_of("phase")),
         treatment = .data$effect,
         contrast = .data$contrast,
         estimate = .data$estimate,

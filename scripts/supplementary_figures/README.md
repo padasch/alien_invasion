@@ -7,6 +7,7 @@ the scripts from the repository root:
 ```sh
 Rscript --vanilla scripts/supplementary_figures/fig_s16.R
 Rscript --vanilla scripts/supplementary_figures/fig_s17.R
+Rscript --vanilla scripts/supplementary_figures/fig_s18.R
 ```
 
 The scripts locate the repository root automatically and use the project
@@ -18,7 +19,7 @@ containing the values shown in each figure are stored separately under
 
 ## Reconstruction of `Supplementary_v1.pdf`
 
-The first 15 reconstructed figures each have a dedicated numbered entry script.
+Each figure has a dedicated numbered entry script.
 Shared data preparation, bootstrap, modelling, plotting, and export code is in
 `scripts/supplementary_figures/figure_helpers.R`; the figure scripts only specify the relevant
 dataset, response, species, and labels. Run the complete collection with:
@@ -28,7 +29,7 @@ ALINV_SUPP_BOOT_B=1000 ALINV_SUPP_BOOT_CORES=8 \
   Rscript --vanilla scripts/supplementary_figures/make_all_figures.R
 ```
 
-All 17 outputs are written as `fig_s1.pdf` through `fig_s17.pdf` directly to
+All 18 outputs are written as `fig_s1.pdf` through `fig_s18.pdf` directly to
 `output/supplementary/`. No figure-specific subdirectories,
 PNGs, CSVs, reports, or model objects are written there. During a run, fitted
 bootstrap objects may be cached only in the R session's temporary directory;
@@ -54,6 +55,7 @@ supplementary output directory.
 | `fig_s15.pdf` | `fig_s15.R` | *Quercus* biomass distributions |
 | `fig_s16.pdf` | `fig_s16.R` | Overall phenology timing effects |
 | `fig_s17.pdf` | `fig_s17.R` | Exploratory SWC-path decomposition |
+| `fig_s18.pdf` | `fig_s18.R` | Phase-wise relative volume-increment temporal-LMM effects |
 
 ### Bootstrap used for the reconstructed figures
 
@@ -99,6 +101,44 @@ descriptive.
   intervals and probabilities use a 1,000-replicate block-stratified
   container-cluster bootstrap. Figure 6 reports their path-summed total
   (`c' + ab`).
+- `fig_s18.pdf`: date-specific treatment effects on phase-wise relative volume
+  increments, using the same response as the Figure 6 time series and the
+  shared temporal LMM above. The figure data are saved in
+  `data/final/figure_data/fig_s18_effects.csv`.
+
+### Phase-wise relative volume increments (S18)
+
+The response is `volume / phase_volume_baseline - 1`. The initial measurement
+(7 March) is the spring baseline; the last measurements before the next phases
+(11 June and 1 September) are the summer and autumn baselines. The 1 September
+growth round is still assigned to summer. The initial all-zero increment is
+excluded before standardization. The artificial zero-reset rows drawn in
+Figure 6 are not used for modelling. Genuine observed negative increments are
+retained.
+
+One model per species estimates the three treatment contrasts at each of eight
+post-baseline measurement dates, with container and tree random intercepts.
+The response SD is fixed across dates and bootstrap samples within each species.
+S18 uses 1,000 successful container-bootstrap refits per species and eight
+workers by default. Block is a resampling stratum, not a model predictor.
+Lines and confidence bands stop at phase boundaries because the denominator
+changes; the figure has no added zero-reset observations.
+
+Suggested caption: **Figure S18.** Temporal treatment effects on phase-wise
+relative volume increments in Fagus and Quercus. Points show standardized
+treatment-minus-reference contrasts from species-specific linear mixed-effects
+models; bands show 95% container-bootstrap confidence intervals (1,000 refits).
+Negative values indicate smaller increments. Vertical lines mark phase
+boundaries and orange bars indicate extreme-event periods. Lines are separated
+where the phase baseline changes.
+
+These are accumulated increments within each phase, not instantaneous growth
+rates. A summer-specific reduction can leave a persistent size deficit even
+when later phase-wise contrasts are near zero. However, the autumn denominator
+is already treatment-affected, so an autumn contrast near zero does not by
+itself demonstrate recovery or catch-up growth. Evidence of a stronger summer
+effect requires comparing coefficients across dates, not just their separate
+significance labels.
 
 ## Statistical model
 

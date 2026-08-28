@@ -51,13 +51,4 @@ run_script(
     paste0("ALINV_SUPP_BOOT_CORES=", bootstrap_cores)
   )
 )
-run_script(file.path(
-  project_root, "scripts", "supplementary_figures",
-  "fig_s16.R"
-))
-run_script(file.path(
-  project_root, "scripts", "supplementary_figures",
-  "fig_s17.R"
-))
-
 message("Publication figures rebuilt under output/main_figures and output/supplementary.")

@@ -74,7 +74,8 @@ prepare_df_generic <- function(
     add_covars = FALSE,
     covars_fun = NULL,                # function returning covariates (boxlabel+date)
     soil_type = "both",
-    include_soil_treatment = NULL
+    include_soil_treatment = NULL,
+    exclude_initial_growth_baseline = FALSE
 ) {
   data_name <- match.arg(data_name)
   include_soil_treatment <- alinv_resolve_include_soil_treatment(
@@ -96,6 +97,17 @@ prepare_df_generic <- function(
     include_soil_treatment = include_soil_treatment
   )
 
+  # Increment baselines are deterministic zeros, not growth observations.
+  # Opt in only for the new phase-wise temporal analysis; existing models
+  # retain their established data selection.
+  if (isTRUE(exclude_initial_growth_baseline)) {
+    if (data_name != "growth") stop("Baseline exclusion requires growth data.")
+    df_raw <- df_raw %>%
+      group_by(tree_id) %>%
+      filter(date > min(date, na.rm = TRUE)) %>%
+      ungroup()
+  }
+
   default_resp <- .default_resp_map[[data_name]]
   if (is.null(resp_var)) {
     if (length(default_resp) > 1) {
@@ -111,7 +123,8 @@ prepare_df_generic <- function(
   }
 
   base_cols <- c("tree_id", "boxlabel", "date", "date_num", "species", "culture", "soiltype", "extreme_event",
-                 "precipitation", "robinia", "swc", resp_var)
+                 "precipitation", "robinia", "swc", resp_var,
+                 intersect("phase", names(df_raw)))
   df <- dplyr::select(df_raw, dplyr::all_of(base_cols))
 
   # Response column 'y'
@@ -122,7 +135,7 @@ prepare_df_generic <- function(
 
   # Standardize factors/baselines and drop NAs on required columns
   cols_needed <- c("y", "date", "date_num", "robinia", "precipitation", "culture", "soiltype", "extreme_event",
-                   "species", "tree_id", "boxlabel", "swc")
+                   "species", "tree_id", "boxlabel", "swc", "phase")
   cols_needed <- intersect(cols_needed, names(df))
 
   df <- .standardize_and_clean(df, cols_needed)
